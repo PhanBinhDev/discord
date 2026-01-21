@@ -1,0 +1,12 @@
+{
+  "changeLanguage": "Đổi ngôn ngữ",
+  "hero": {
+    "badge": "Nền tảng tương tác nhóm",
+    "title": "Chào mừng đến với",
+    "subtitle": "Nền tảng cộng tác tối ưu cho các nhóm hiện đại",
+    "cta": {
+      "getStarted": "Bắt đầu miễn phí",
+      "goToDashboard": "Vào bảng điều khiển"
+    }
+  }
+}

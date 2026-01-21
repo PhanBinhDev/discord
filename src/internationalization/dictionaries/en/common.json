@@ -1,0 +1,92 @@
+{
+  "app": {
+    "name": "Facetime Instant"
+  },
+  "nav": {
+    "features": "Features",
+    "app": "Apps",
+    "pricing": "Pricing",
+    "getStarted": "Get Started",
+    "dashboard": "Home",
+    "chats": "Chats",
+    "settings": "Settings",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "general": "General",
+    "meetings": "Meetings",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "contacts": "Contacts",
+    "workspace": "Workspaces",
+    "logout": "Logout",
+    "createServer": "Create Server"
+  },
+  "common": {
+    "changeLanguage": "Change language",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "uploading": "Uploading...",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "typeToConfirm": "Type to confirm",
+    "verify": "Verify",
+    "continue": "Continue",
+    "back": "Back",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "update": "Update",
+    "remove": "Remove",
+    "reset": "Reset",
+    "refreshing": "Refreshing...",
+    "loadMore": "Load more",
+    "loadingMore": "Loading more...",
+    "refreshSuccess": "Refreshed successfully",
+    "refreshError": "Error refreshing data",
+    "somethingWrong": "Something went wrong. Please try again.",
+    "somethingWentWrong": "Oops! Something went wrong",
+    "new": "New",
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "sortBy": "Sort by"
+    },
+    "view": {
+      "grid": "Grid view",
+      "list": "List view"
+    },
+    "filter": {
+      "filterBy": "Filter by"
+    },
+    "description": "Description",
+    "noDescription": "No description provided",
+    "more": "more",
+    "artist": "Artist by ",
+    "goBack": "Go Back",
+    "goHome": "Go to Dashboard",
+    "needHelp": "Need help?",
+    "contactSupport": "Contact Support",
+    "endOfResults": "End of results",
+    "noResultsFound": "No results found.",
+    "table": {
+      "rowsPerPage": "Rows per page",
+      "page": "Page {{page}} of {{totalPages}}",
+      "goToFirstPage": "Go to first page",
+      "goToPreviousPage": "Go to previous page",
+      "goToNextPage": "Go to next page",
+      "goToLastPage": "Go to last page",
+      "numSelectedRows": "{{count}} of {{totalCount}} row(s) selected",
+      "asc": "Asc",
+      "desc": "Desc",
+      "hide": "Hide",
+      "openMenu": "Open menu",
+      "selected": "Selected",
+      "clearFilters": "Clear filters",
+      "view": "View",
+      "toggleColumns": "Toggle columns"
+    },
+    "searchPlaceholder": "Type to search..."
+  }
+}

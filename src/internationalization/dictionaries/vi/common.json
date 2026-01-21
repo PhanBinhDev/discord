@@ -1,0 +1,98 @@
+{
+  "app": {
+    "name": "CollabHub"
+  },
+  "nav": {
+    "features": "Tính năng",
+    "app": "Ứng dụng",
+    "pricing": "Giá cả",
+    "getStarted": "Bắt đầu",
+    "dashboard": "Trang chủ",
+    "chats": "Trò chuyện",
+    "settings": "Cài đặt",
+    "profile": "Hồ sơ",
+    "notifications": "Thông báo",
+    "general": "Chung",
+    "meetings": "Cuộc họp",
+    "collapse": "Thu gọn",
+    "expand": "Mở rộng",
+    "contacts": "Danh bạ",
+    "workspace": "Không gian làm việc",
+    "logout": "Đăng xuất",
+    "createServer": "Tạo máy chủ"
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "new": "{{count}} mới",
+    "empty": "Không có thông báo mới",
+    "viewAll": "Xem tất cả thông báo",
+    "markAllRead": "Đánh dấu đã đọc tất cả"
+  },
+  "common": {
+    "changeLanguage": "Đổi ngôn ngữ",
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "success": "Thành công",
+    "uploading": "Đang tải lên...",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "close": "Đóng",
+    "typeToConfirm": "Nhập để xác nhận",
+    "verify": "Xác minh",
+    "continue": "Tiếp tục",
+    "back": "Quay lại",
+    "save": "Lưu",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "update": "Cập nhật",
+    "remove": "Gỡ bỏ",
+    "reset": "Đặt lại",
+    "refreshing": "Đang làm mới...",
+    "loadMore": "Tải thêm",
+    "loadingMore": "Đang tải thêm...",
+    "refreshSuccess": "Làm mới thành công",
+    "refreshError": "Lỗi khi làm mới dữ liệu",
+    "somethingWrong": "Đã xảy ra sự cố. Vui lòng thử lại.",
+    "new": "Mới",
+    "sort": {
+      "newest": "Mới nhất",
+      "oldest": "Cũ nhất",
+      "sortBy": "Sắp xếp theo"
+    },
+    "view": {
+      "grid": "Chế độ lưới",
+      "list": "Chế độ danh sách"
+    },
+    "filter": {
+      "filterBy": "Lọc theo"
+    },
+    "description": "Mô tả",
+    "noDescription": "Chưa có mô tả",
+    "more": "khác",
+    "artist": "Sáng tác bởi ",
+    "goBack": "Quay lại",
+    "goHome": "Về trang chủ",
+    "needHelp": "Cần giúp đỡ?",
+    "contactSupport": "Liên hệ hỗ trợ",
+    "endOfResults": "Hết kết quả",
+    "noResultsFound": "Không tìm thấy kết quả.",
+    "table": {
+      "rowsPerPage": "Số hàng mỗi trang",
+      "page": "Trang {{page}} trên {{totalPages}}",
+      "goToFirstPage": "Đi đến trang đầu",
+      "goToPreviousPage": "Đi đến trang trước",
+      "goToNextPage": "Đi đến trang tiếp",
+      "goToLastPage": "Đi đến trang cuối",
+      "numSelectedRows": "{{count}} trong số {{totalCount}} hàng được chọn",
+      "asc": "Tăng dần",
+      "desc": "Giảm dần",
+      "hide": "Ẩn",
+      "openMenu": "Mở menu",
+      "selected": "Đã chọn",
+      "clearFilters": "Xóa bộ lọc",
+      "view": "Chế độ xem",
+      "toggleColumns": "Chuyển đổi cột"
+    },
+    "searchPlaceholder": "Nhập để tìm kiếm..."
+  }
+}

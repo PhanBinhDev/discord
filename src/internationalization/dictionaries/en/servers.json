@@ -1,0 +1,20 @@
+{
+  "noServers": "No servers yet",
+  "createOrJoin": "Create or join a server to get started",
+  "createServer": "Create Server",
+  "joinServer": "Join Server",
+  "serverName": "Server Name",
+  "serverDescription": "Server Description",
+  "inviteCode": "Invite Code",
+  "copyInviteLink": "Copy Invite Link",
+  "inviteCopied": "Invite link copied!",
+  "leaveServer": "Leave Server",
+  "deleteServer": "Delete Server",
+  "serverSettings": "Server Settings",
+  "members": "Members",
+  "channels": "Channels",
+  "owner": "Owner",
+  "admin": "Admin",
+  "moderator": "Moderator",
+  "member": "Member"
+}

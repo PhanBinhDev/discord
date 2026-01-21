@@ -1,0 +1,52 @@
+{
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "filter": {
+      "all": "All",
+      "unread": "Unread",
+      "read": "Read"
+    },
+    "viewDetails": "View details",
+    "filterByType": "Filter by type",
+    "allTypes": "All types",
+    "type": {
+      "mention": "Mention",
+      "comment": "Comment",
+      "task_assigned": "Task assigned",
+      "task_completed": "Task completed",
+      "team_invite": "Team invite",
+      "workspace_invite": "Workspace invite",
+      "message": "Message",
+      "call_incoming": "Incoming call",
+      "call_missed": "Missed call",
+      "meeting_invite": "Meeting invite",
+      "meeting_reminder": "Meeting reminder",
+      "meeting_started": "Meeting started",
+      "meeting_cancelled": "Meeting cancelled",
+      "contact_request": "Contact request",
+      "system": "System"
+    },
+    "contactRequest": {
+      "title": "New contact request",
+      "message": "{{name}} sent you a contact request",
+      "success": "Contact request sent successfully",
+      "error": "Failed to send contact request"
+    },
+    "contactRequestAccepted": {
+      "title": "Contact request accepted",
+      "message": "{{name}} accepted your contact request",
+      "success": "Contact request accepted successfully",
+      "error": "Failed to accept contact request"
+    },
+    "contactRequestRejected": {
+      "title": "Contact request rejected",
+      "message": "{{name}} rejected your contact request",
+      "success": "Contact request rejected successfully",
+      "error": "Failed to reject contact request"
+    },
+    "new": "{{count}} new",
+    "empty": "No new notifications",
+    "viewAll": "View All Notifications"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "notifications": {
+    "title": "Thông báo",
+    "markAllRead": "Đánh dấu tất cả là đã đọc",
+    "filter": {
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "read": "Đã đọc"
+    },
+    "filterByType": "Lọc theo loại",
+    "allTypes": "Tất cả loại",
+    "empty": "Không có thông báo nào.",
+    "viewAll": "Xem tất cả thông báo",
+    "viewDetails": "Xem chi tiết",
+    "type": {
+      "mention": "Đề cập",
+      "comment": "Bình luận",
+      "task_assigned": "Nhiệm vụ được giao",
+      "task_completed": "Nhiệm vụ đã hoàn thành",
+      "team_invite": "Lời mời nhóm",
+      "workspace_invite": "Lời mời không gian làm việc",
+      "message": "Tin nhắn",
+      "call_incoming": "Cuộc gọi đến",
+      "call_missed": "Cuộc gọi nhỡ",
+      "meeting_invite": "Lời mời họp",
+      "meeting_reminder": "Nhắc nhở cuộc họp",
+      "meeting_started": "Cuộc họp đã bắt đầu",
+      "meeting_cancelled": "Cuộc họp đã bị hủy",
+      "contact_request": "Yêu cầu kết bạn",
+      "system": "Hệ thống"
+    },
+    "contactRequest": {
+      "title": "Yêu cầu kết bạn mới",
+      "message": "{{name}} đã gửi cho bạn yêu cầu kết bạn",
+      "success": "Gửi yêu cầu kết bạn thành công",
+      "error": "Gửi yêu cầu kết bạn thất bại"
+    },
+    "contactRequestAccepted": {
+      "title": "Yêu cầu kết bạn được chấp nhận",
+      "message": "{{name}} đã chấp nhận yêu cầu kết bạn của bạn",
+      "success": "Chấp nhận yêu cầu kết bạn thành công",
+      "error": "Chấp nhận yêu cầu kết bạn thất bại"
+    },
+    "contactRequestRejected": {
+      "title": "Yêu cầu kết bạn bị từ chối",
+      "message": "{{name}} đã từ chối yêu cầu kết bạn của bạn",
+      "success": "Từ chối yêu cầu kết bạn thành công",
+      "error": "Từ chối yêu cầu kết bạn thất bại"
+    },
+    "new": "{{count}} mới"
+  }
+}

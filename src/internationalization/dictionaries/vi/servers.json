@@ -1,0 +1,20 @@
+{
+  "noServers": "Chưa có máy chủ nào",
+  "createOrJoin": "Tạo hoặc tham gia máy chủ để bắt đầu",
+  "createServer": "Tạo máy chủ",
+  "joinServer": "Tham gia máy chủ",
+  "serverName": "Tên máy chủ",
+  "serverDescription": "Mô tả máy chủ",
+  "inviteCode": "Mã mời",
+  "copyInviteLink": "Sao chép liên kết mời",
+  "inviteCopied": "Đã sao chép liên kết mời!",
+  "leaveServer": "Rời khỏi máy chủ",
+  "deleteServer": "Xóa máy chủ",
+  "serverSettings": "Cài đặt máy chủ",
+  "members": "Thành viên",
+  "channels": "Kênh",
+  "owner": "Chủ sở hữu",
+  "admin": "Quản trị viên",
+  "moderator": "Người kiểm duyệt",
+  "member": "Thành viên"
+}
