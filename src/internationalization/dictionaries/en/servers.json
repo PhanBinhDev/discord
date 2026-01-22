@@ -31,6 +31,12 @@
     "publicServer": "Public Server",
     "publicServerDescription": "Anyone can find and join this server",
     "nameRequired": "Server name is required",
-    "nameMaxLength": "Server name must be at most 100 characters"
+    "nameMaxLength": "Server name must be at most 100 characters",
+    "nav": {
+      "friends": "Friends",
+      "store": "Store",
+      "quests": "Quests",
+      "findOrStart": ""
+    }
   }
 }

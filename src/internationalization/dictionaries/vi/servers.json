@@ -31,6 +31,12 @@
     "publicServer": "Máy Chủ Công Khai",
     "publicServerDescription": "Bất kỳ ai cũng có thể tìm và tham gia máy chủ này",
     "nameRequired": "Tên máy chủ là bắt buộc",
-    "nameMaxLength": "Tên máy chủ tối đa 100 ký tự"
+    "nameMaxLength": "Tên máy chủ tối đa 100 ký tự",
+    "nav": {
+      "friends": "Bạn bè",
+      "store": "Cửa hàng",
+      "quests": "Nhiệm vụ",
+      "findOrStart": "Tìm hoặc bắt đầu cuộc trò chuyện"
+    }
   }
 }

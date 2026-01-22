@@ -23,7 +23,7 @@ export function NavigationItem({
   const router = useRouter();
 
   const onClick = () => {
-    router.push(`/servers/${id}`);
+    router.push(`/servers/channels/${id}`);
   };
 
   return (
@@ -39,7 +39,7 @@ export function NavigationItem({
           />
           <div
             className={cn(
-              'relative group flex mx-3 size-10 md:size-11 rounded-lg transition-all overflow-hidden',
+              'relative group flex mx-3 size-10 md:size-11 rounded-lg transition-all overflow-hidden cursor-pointer',
             )}
           >
             <Image

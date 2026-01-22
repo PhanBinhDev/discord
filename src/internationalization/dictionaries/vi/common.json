@@ -1,23 +1,14 @@
 {
   "app": {
-    "name": "CollabHub"
+    "name": "Discord"
   },
   "nav": {
     "features": "Tính năng",
     "app": "Ứng dụng",
-    "pricing": "Giá cả",
     "getStarted": "Bắt đầu",
-    "dashboard": "Trang chủ",
-    "chats": "Trò chuyện",
     "settings": "Cài đặt",
     "profile": "Hồ sơ",
     "notifications": "Thông báo",
-    "general": "Chung",
-    "meetings": "Cuộc họp",
-    "collapse": "Thu gọn",
-    "expand": "Mở rộng",
-    "contacts": "Danh bạ",
-    "workspace": "Không gian làm việc",
     "logout": "Đăng xuất",
     "createServer": "Tạo máy chủ"
   },

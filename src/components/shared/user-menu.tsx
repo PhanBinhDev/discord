@@ -119,13 +119,13 @@ export function UserMenu() {
 
         {/* Menu Items */}
         <DropdownMenuItem asChild>
-          <Link href="/dashboard" className="cursor-pointer">
+          <Link href="/servers" className="cursor-pointer">
             <IconLayoutDashboard className="h-4 w-4" stroke={1.5} />
             <TranslateText value="nav.dashboard" />
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings" className="cursor-pointer">
+          <Link href="/servers/settings" className="cursor-pointer">
             <IconSettings className="h-4 w-4" stroke={1.5} />
             <TranslateText value="nav.settings" />
           </Link>
