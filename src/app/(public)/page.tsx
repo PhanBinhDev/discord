@@ -54,7 +54,7 @@ export default function LandingPage() {
             className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 text-white drop-shadow-2xl"
           >
             <TranslateText value="hero.title" />{' '}
-            <span className="bg-linear-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent animate-pulse">
               <TranslateText value="app.name" />
             </span>
           </motion.h1>
@@ -80,11 +80,11 @@ export default function LandingPage() {
               <SignInButton mode="modal" fallbackRedirectUrl={redirectUrl}>
                 <div className="relative group">
                   {/* Glow effect */}
-                  <div className="absolute -inset-1 bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300 animate-pulse" />
+                  <div className="absolute -inset-1 bg-(--accent-color) rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300 animate-pulse" />
 
                   <Button
                     size="lg"
-                    className="relative bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-2xl hover:shadow-purple-500/50 transition-all rounded-xl px-8"
+                    className="relative bg-(--accent-color) hover:bg-(--accent-hover) text-white font-semibold shadow-2xl transition-all rounded-xl px-8"
                   >
                     <TranslateText value="hero.cta.getStarted" />
                     <IconArrowRight
@@ -97,14 +97,14 @@ export default function LandingPage() {
             </Unauthenticated>
 
             <Authenticated>
-              <Link href="/dashboard">
+              <Link href="/servers">
                 <div className="relative group">
                   {/* Glow effect */}
-                  <div className="absolute -inset-1 bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300 animate-pulse" />
+                  <div className="absolute -inset-1 bg-(--accent-color) rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300 animate-pulse" />
 
                   <Button
                     size="lg"
-                    className="relative bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-2xl hover:shadow-purple-500/50 transition-all rounded-xl px-8"
+                    className="relative bg-(--accent-color) hover:bg-(--accent-hover) text-white font-semibold shadow-2xl transition-all rounded-xl px-8"
                   >
                     <TranslateText value="hero.cta.goToDashboard" />
                     <IconArrowRight

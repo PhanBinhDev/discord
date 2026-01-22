@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import { i18n, Locale } from '@/internationalization/i18n-config';
-import { IconCheck } from '@tabler/icons-react';
 import Image from 'next/image';
 
 const languageNames: Record<Locale, string> = {
@@ -71,17 +70,16 @@ export function ChangeLanguage({ mode = 'dropdown' }: ChangeLanguageProps) {
           </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-48 flex flex-col gap-1 p-1.5"
-      >
+      <DropdownMenuContent align="end" className="w-48 gap-0.5 flex flex-col">
         {i18n.locales.map(locale => (
           <DropdownMenuItem
             key={locale}
-            onClick={() => setLocale(locale)}
-            className={`flex items-center gap-2 cursor-pointer ${
-              currentLocale === locale ? 'bg-accent' : ''
-            }`}
+            onClick={() => {
+              if (locale !== currentLocale) {
+                setLocale(locale);
+              }
+            }}
+            className="cursor-pointer"
           >
             <Image
               src={languageFlags[locale]}
@@ -90,9 +88,9 @@ export function ChangeLanguage({ mode = 'dropdown' }: ChangeLanguageProps) {
               height={15}
               className="rounded-sm object-cover"
             />
-            <span>{languageNames[locale]}</span>
+            <span className="flex-1">{languageNames[locale]}</span>
             {currentLocale === locale && (
-              <IconCheck className="ml-auto text-muted-foreground" size={16} />
+              <div className="h-2 w-2 rounded-full bg-(--accent-color)" />
             )}
           </DropdownMenuItem>
         ))}

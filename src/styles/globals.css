@@ -73,6 +73,12 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Dynamic accent color from user settings - Discord style */
+  --accent-color: #5865f2; /* Default Blurple */
+  --accent-color-rgb: 88, 101, 242;
+  --accent-hover: #4752c4;
+  --accent-active: #3c45a5;
 }
 
 .dark {

@@ -63,6 +63,7 @@ export const upsertFromClerk = internalMutation({
       await ctx.db.insert('userSettings', {
         userId: newUserId,
         theme: 'dark',
+        accentColor: 'blue',
         language: 'en',
         notifications: {
           messages: true,
@@ -197,6 +198,7 @@ export const getUserSettings = query({
 export const updateUserSettings = mutation({
   args: {
     theme: v.optional(v.string()),
+    accentColor: v.optional(v.string()),
     language: v.optional(v.string()),
     notifications: v.optional(
       v.object({
@@ -244,6 +246,7 @@ export const updateUserSettings = mutation({
     const updates: any = {};
 
     if (args.theme !== undefined) updates.theme = args.theme;
+    if (args.accentColor !== undefined) updates.accentColor = args.accentColor;
     if (args.language !== undefined) updates.language = args.language;
     if (args.notifications !== undefined)
       updates.notifications = args.notifications;

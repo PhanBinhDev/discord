@@ -4,7 +4,7 @@ import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import '@/styles/loader.css';
 
 export const PageSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-white to-zinc-50">
+  <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-4">
       <svg className="pl" width="240" height="240" viewBox="0 0 240 240">
         <circle

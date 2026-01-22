@@ -361,6 +361,7 @@ const reports = defineTable({
 const userSettings = defineTable({
   userId: v.id('users'),
   theme: v.string(), // 'dark', 'light', 'system'
+  accentColor: v.optional(v.string()), // 'blue', 'green', 'purple', 'pink', 'orange'
   language: v.string(),
   notifications: v.object({
     messages: v.boolean(),

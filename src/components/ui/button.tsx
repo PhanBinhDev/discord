@@ -10,20 +10,20 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        default: 'bg-[var(--accent-color)] text-white hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] shadow-sm',
         destructive: 'bg-destructive text-white hover:bg-destructive/90',
         outline:
-          'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground ',
+          'border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground',
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+        link: 'text-[var(--accent-color)] underline-offset-4 hover:underline hover:text-[var(--accent-hover)]',
         board:
-          'hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-800 hover:shadow-sm transition-all duration-200',
+          'hover:bg-[var(--accent-color)]/5 hover:text-[var(--accent-color)] hover:shadow-sm transition-all duration-200 border border-transparent hover:border-[var(--accent-color)]/20',
         boardActive:
-          'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800',
+          'bg-[var(--accent-color)]/10 text-[var(--accent-color)] border border-[var(--accent-color)]/20',
         gradient:
-          'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all',
+          'bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white shadow-md hover:shadow-lg transition-all',
       },
       size: {
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',

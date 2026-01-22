@@ -10,10 +10,7 @@ export type NavItem = {
   exactMatch?: boolean;
 };
 
-export type ModalType =
-  | 'ModalQuickCall'
-  | 'ModalAddContact'
-  | 'ModalCreateServer';
+export type ModalType = 'ModalCreateServer';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
 

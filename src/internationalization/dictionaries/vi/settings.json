@@ -1,0 +1,33 @@
+{
+  "settings": {
+    "title": "Cài đặt",
+    "description": "Quản lý cài đặt tài khoản và tùy chọn của bạn",
+    "theme": {
+      "title": "Giao diện",
+      "light": "Sáng",
+      "dark": "Tối",
+      "system": "Hệ thống"
+    },
+    "accentColor": {
+      "title": "Màu nhấn",
+      "selected": "Màu đã chọn",
+      "blurple": "Xanh Blurple",
+      "green": "Xanh lá",
+      "yellow": "Vàng",
+      "fuchsia": "Hồng tím",
+      "red": "Đỏ",
+      "aqua": "Xanh ngọc",
+      "orange": "Cam",
+      "purple": "Tím",
+      "upgradeTitle": "Nâng cấp lên Premium",
+      "upgradeDescription": "Mở khóa màu nhấn tùy chỉnh và nhiều tính năng khác với gói Premium."
+    },
+    "notifications": {
+      "themeUpdated": "Đã cập nhật giao diện",
+      "themeUpdateFailed": "Không thể cập nhật giao diện",
+      "accentColorUpdated": "Đã cập nhật màu nhấn",
+      "accentColorUpdateFailed": "Không thể cập nhật màu nhấn",
+      "subscriptionRequired": "Cần gói Premium để sử dụng màu tùy chỉnh"
+    }
+  }
+}

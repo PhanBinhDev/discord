@@ -44,7 +44,7 @@ export function UserMenu() {
               src={user.avatarUrl}
               alt={user.displayName || user.username}
             />
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+            <AvatarFallback className="bg-[var(--accent-color)]/10 text-[var(--accent-color)] font-semibold">
               {getInitials(user.displayName || user.username || user.email)}
             </AvatarFallback>
           </Avatar>
@@ -60,7 +60,7 @@ export function UserMenu() {
                   src={user.avatarUrl}
                   alt={user.displayName || user.username}
                 />
-                <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                <AvatarFallback className="bg-[var(--accent-color)]/10 text-[var(--accent-color)] text-sm">
                   {getInitials(user.displayName || user.username || user.email)}
                 </AvatarFallback>
               </Avatar>

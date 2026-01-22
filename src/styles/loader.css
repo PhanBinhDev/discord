@@ -31,22 +31,23 @@
 }
 
 .pl__ring--a {
-  stroke: #f42f25;
+  stroke: var(--accent-color);
 }
 
 .pl__ring--b {
   animation-name: ringB;
-  stroke: #f49725;
+  stroke: var(--accent-hover);
 }
 
 .pl__ring--c {
   animation-name: ringC;
-  stroke: #255ff4;
+  stroke: var(--accent-active);
 }
 
 .pl__ring--d {
   animation-name: ringD;
-  stroke: #f42582;
+  stroke: var(--accent-color);
+  opacity: 0.6;
 }
 
 @keyframes ringA {

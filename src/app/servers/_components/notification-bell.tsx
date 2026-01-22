@@ -14,6 +14,7 @@ import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { useApiMutation } from '@/hooks/use-api-mutation';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
+import { cn } from '@/lib/utils';
 import { getByPath, getInitials } from '@/utils';
 import {
   IconAlertCircle,
@@ -67,18 +68,18 @@ function DefaultNotification({
 
   return (
     <div
-      className="flex gap-3 p-3 rounded-lg hover:bg-accent transition-colors cursor-pointer group"
+      className="flex gap-3 p-3 rounded-lg hover:bg-(--accent-color)/10 transition-colors cursor-pointer group"
       onClick={() => onMarkAsRead(notification._id)}
     >
       {notification.actorImageUrl ? (
         <Avatar className="h-10 w-10 shrink-0">
           <AvatarImage src={notification.actorImageUrl} alt={actorName} />
-          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+          <AvatarFallback className="bg-(--accent-color)/10 text-(--accent-color) text-xs">
             {getInitials(actorName || 'N')}
           </AvatarFallback>
         </Avatar>
       ) : (
-        <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+        <div className="h-10 w-10 shrink-0 rounded-full bg-(--accent-color)/10 text-(--accent-color) flex items-center justify-center">
           <NotificationIcon type={notification.type} />
         </div>
       )}
@@ -149,7 +150,11 @@ function NotificationItem(props: NotificationItemProps) {
   }
 }
 
-export function NotificationBell() {
+interface NotificationBellProps {
+  size: 'small' | 'medium' | 'large';
+}
+
+export function NotificationBell({ size }: NotificationBellProps) {
   const { locale: lang } = useClientDictionary();
   const { results: notifications, status } = usePaginatedQuery(
     api.notifications.getUserNotifications,
@@ -183,10 +188,29 @@ export function NotificationBell() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <IconBell className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            'relative',
+            size === 'small'
+              ? 'h-6.5 w-6.5'
+              : size === 'large'
+                ? 'h-10 w-10'
+                : 'h-9 w-9',
+          )}
+        >
+          <IconBell
+            className={`text-(--accent-color) ${
+              size === 'small'
+                ? 'h-4 w-4'
+                : size === 'large'
+                  ? 'h-6 w-6'
+                  : 'h-5 w-5'
+            }`}
+          />
           {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-medium">
+            <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-(--accent-color) text-white text-[10px] flex items-center justify-center font-medium">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -209,7 +233,7 @@ export function NotificationBell() {
           <ScrollArea className="h-[300px]">
             {status === 'LoadingFirstPage' ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-(--accent-color)" />
               </div>
             ) : !notifications || notifications.length === 0 ? (
               <div className="space-y-2">
@@ -246,7 +270,7 @@ export function NotificationBell() {
               </Button>
             )}
             <Button asChild variant="link" size="sm" className="w-full">
-              <Link href="/dashboard/notifications">
+              <Link href="/servers/notifications">
                 <TranslateText value="notifications.viewAll" />
               </Link>
             </Button>

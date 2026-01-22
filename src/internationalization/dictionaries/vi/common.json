@@ -93,6 +93,7 @@
       "view": "Chế độ xem",
       "toggleColumns": "Chuyển đổi cột"
     },
-    "searchPlaceholder": "Nhập để tìm kiếm..."
+    "searchPlaceholder": "Nhập để tìm kiếm...",
+    "upload": "Tải lên"
   }
 }

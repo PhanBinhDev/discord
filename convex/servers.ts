@@ -137,7 +137,6 @@ export const getServerMembers = query({
 export const createServer = mutation({
   args: {
     name: v.string(),
-    description: v.optional(v.string()),
     iconUrl: v.optional(v.string()),
     iconStorageId: v.optional(v.id('_storage')),
     isPublic: v.optional(v.boolean()),
@@ -153,17 +152,20 @@ export const createServer = mutation({
 
     if (!user) throw new Error('User not found');
 
-    // Generate invite code
     const inviteCode = Math.random()
       .toString(36)
       .substring(2, 10)
       .toUpperCase();
 
-    // Create server
+    let iconUrl = args.iconUrl;
+    if (!iconUrl && args.iconStorageId) {
+      iconUrl = (await ctx.storage.getUrl(args.iconStorageId)) ?? undefined;
+    }
+
     const serverId = await ctx.db.insert('servers', {
       name: args.name,
-      description: args.description,
-      iconUrl: args.iconUrl,
+      description: '',
+      iconUrl,
       iconStorageId: args.iconStorageId,
       ownerId: user._id,
       inviteCode,
@@ -220,7 +222,6 @@ export const createServer = mutation({
   },
 });
 
-// Update server
 export const updateServer = mutation({
   args: {
     serverId: v.id('servers'),
@@ -247,7 +248,6 @@ export const updateServer = mutation({
     const server = await ctx.db.get(args.serverId);
     if (!server) throw new Error('Server not found');
 
-    // Check if user is owner or admin
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -264,16 +264,71 @@ export const updateServer = mutation({
 
     const { serverId, ...updates } = args;
 
+    const finalUpdates: Partial<typeof server> = {};
+
+    if (updates.iconStorageId !== undefined) {
+      if (
+        server.iconStorageId &&
+        server.iconStorageId !== updates.iconStorageId
+      ) {
+        try {
+          await ctx.storage.delete(server.iconStorageId);
+        } catch (error) {
+          console.error('Failed to delete old icon:', error);
+        }
+      }
+
+      finalUpdates.iconStorageId = updates.iconStorageId;
+      if (!updates.iconUrl && updates.iconStorageId) {
+        finalUpdates.iconUrl =
+          (await ctx.storage.getUrl(updates.iconStorageId)) ?? undefined;
+      } else {
+        finalUpdates.iconUrl = updates.iconUrl;
+      }
+    }
+
+    if (updates.bannerStorageId !== undefined) {
+      if (
+        server.bannerStorageId &&
+        server.bannerStorageId !== updates.bannerStorageId
+      ) {
+        try {
+          await ctx.storage.delete(server.bannerStorageId);
+        } catch (error) {
+          console.error('Failed to delete old banner:', error);
+        }
+      }
+
+      finalUpdates.bannerStorageId = updates.bannerStorageId;
+      if (!updates.bannerUrl && updates.bannerStorageId) {
+        finalUpdates.bannerUrl =
+          (await ctx.storage.getUrl(updates.bannerStorageId)) ?? undefined;
+      } else {
+        finalUpdates.bannerUrl = updates.bannerUrl;
+      }
+    }
+
+    if (updates.name !== undefined) finalUpdates.name = updates.name;
+    if (updates.description !== undefined)
+      finalUpdates.description = updates.description;
+    if (updates.isPublic !== undefined)
+      finalUpdates.isPublic = updates.isPublic;
+    if (updates.vanityUrl !== undefined)
+      finalUpdates.vanityUrl = updates.vanityUrl;
+
     await ctx.db.patch(serverId, {
-      ...updates,
+      ...finalUpdates,
       updatedAt: Date.now(),
     });
 
-    return { success: true };
+    return {
+      success: true,
+      iconUrl: finalUpdates.iconUrl,
+      bannerUrl: finalUpdates.bannerUrl,
+    };
   },
 });
 
-// Delete server
 export const deleteServer = mutation({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
@@ -347,7 +402,6 @@ export const deleteServer = mutation({
       }
     }
 
-    // Delete server
     await ctx.db.delete(args.serverId);
 
     return { success: true };

@@ -3,6 +3,7 @@
 import { Dict } from '@/internationalization/get-dictionaries';
 import { i18n, Locale } from '@/internationalization/i18n-config';
 import { setLocaleAction } from '@/internationalization/set-locale-server';
+import { useDictionaryStore } from '@/lib/dictionary-store';
 import { getCookieLocale } from '@/utils/cookies';
 import { useRouter } from 'next/navigation';
 import { createContext, useEffect, useState, useTransition } from 'react';
@@ -24,6 +25,7 @@ export function DictionaryProvider({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const { setDictStore } = useDictionaryStore();
   const [isPending, startTransition] = useTransition();
   const defaultLocale = (getCookieLocale() as Locale) ?? i18n.defaultLocale;
   const [locale, setLocaleState] = useState<Locale>(defaultLocale);
@@ -37,7 +39,9 @@ export function DictionaryProvider({
       .then(m => {
         if (mounted) {
           console.log('Dictionary loaded successfully:', locale);
-          setDict(m.default ?? m);
+          const loadedDict = m.default ?? m;
+          setDict(loadedDict);
+          setDictStore(loadedDict, locale);
           setIsLoading(false);
         }
       })
@@ -45,6 +49,7 @@ export function DictionaryProvider({
         console.error('Failed to load dictionary:', error);
         if (mounted) {
           setDict(null);
+          setDictStore(null, locale);
           setIsLoading(false);
         }
       });

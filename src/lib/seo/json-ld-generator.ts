@@ -35,7 +35,7 @@ export function generateArticleJsonLd(props: ArticleJsonLdProps) {
       name: siteConfig.siteName[props.locale],
       logo: {
         '@type': 'ImageObject',
-        url: `${siteConfig.siteUrl}/logo.svg`,
+        url: `${siteConfig.siteUrl}/logo.png`,
       },
     },
     mainEntityOfPage: {

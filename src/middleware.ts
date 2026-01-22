@@ -12,7 +12,7 @@ export const config = {
 
 // Routes that require authentication
 const isProtectedRoute = createRouteMatcher([
-  '/dashboard(.*)',
+  '/servers(.*)',
   '/calls(.*)',
   '/meetings(.*)',
   '/chat(.*)',
@@ -32,7 +32,7 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
 
   if (userId && isPublicOnlyRoute(req)) {
-    const dashboardUrl = new URL('/dashboard', req.url);
+    const dashboardUrl = new URL('/servers', req.url);
     return NextResponse.redirect(dashboardUrl);
   }
 

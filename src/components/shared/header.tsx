@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useReadLocalStorage } from 'usehooks-ts';
 import { ChangeLanguage } from './change-language';
+import { ToggleTheme } from './toggle-theme';
 import TranslateText from './translate/translate-text';
 import { UserMenu } from './user-menu';
 
@@ -37,8 +38,8 @@ export default function Header() {
         transition-all duration-300
         ${
           scrolled
-            ? 'bg-white/80 backdrop-blur-2xl border border-gray-200/50 shadow-lg shadow-black/5'
-            : 'bg-white/60 backdrop-blur-xl border border-white/40 shadow-sm'
+            ? 'bg-background/80 backdrop-blur-2xl border border-border shadow-lg shadow-black/5'
+            : 'bg-background/60 backdrop-blur-xl border border-border/40 shadow-sm'
         }
       `}
     >
@@ -48,15 +49,15 @@ export default function Header() {
       >
         <div className="relative">
           <Image
-            src="/logo.svg"
+            src="/logo.png"
             alt="Facetime"
             width={32}
             height={32}
             className="rounded-lg"
           />
-          <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-30 transition-opacity -z-10" />
+          <div className="absolute -inset-1 bg-[var(--accent-color)] rounded-lg blur opacity-20 group-hover:opacity-30 transition-opacity -z-10" />
         </div>
-        <span className="hidden md:block bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+        <span className="hidden md:block text-foreground font-semibold">
           <TranslateText value="app.name" />
         </span>
       </Link>
@@ -67,7 +68,7 @@ export default function Header() {
           <Button
             variant="ghost"
             asChild
-            className="text-gray-700 hover:text-gray-900 hover:bg-gray-100/60 rounded-xl"
+            className="text-foreground hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-xl"
           >
             <Link href="/features">
               <TranslateText value="nav.features" />
@@ -76,17 +77,19 @@ export default function Header() {
           <Button
             variant="ghost"
             asChild
-            className="text-gray-700 hover:text-gray-900 hover:bg-gray-100/60 rounded-xl"
+            className="text-foreground hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-xl"
           >
             <Link href="/apps">
               <TranslateText value="nav.app" />
             </Link>
           </Button>
 
-          <div className="w-px h-6 bg-gray-300/50 mx-2" />
+          <div className="w-px h-6 bg-border mx-2" />
 
           <div className="flex items-center gap-2">
             <ChangeLanguage />
+
+            <ToggleTheme />
 
             <Unauthenticated>
               <SignInButton mode="modal" fallbackRedirectUrl={redirectUrl}>
@@ -104,6 +107,7 @@ export default function Header() {
         {/* Mobile navigation */}
         <div className="flex md:hidden items-center gap-1.5">
           <ChangeLanguage mode="toggle" />
+          <ToggleTheme />
           <Unauthenticated>
             <SignInButton mode="modal" fallbackRedirectUrl={redirectUrl}>
               <Button size="sm" variant="gradient">

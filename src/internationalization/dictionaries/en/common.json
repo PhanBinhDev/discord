@@ -87,6 +87,7 @@
       "view": "View",
       "toggleColumns": "Toggle columns"
     },
-    "searchPlaceholder": "Type to search..."
+    "searchPlaceholder": "Type to search...",
+    "upload": "Upload"
   }
 }

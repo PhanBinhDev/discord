@@ -1,6 +1,6 @@
 import type { Locale } from './i18n-config';
 
-const dictionaries = {
+export const dictionaries = {
   en: () => import('./dictionaries/en').then(module => module.default),
   vi: () => import('./dictionaries/vi').then(module => module.default),
 };

@@ -10,9 +10,15 @@ interface NavigationItemProps {
   id: string;
   imageUrl: string;
   name: string;
+  imageClassname?: string;
 }
 
-export function NavigationItem({ id, imageUrl, name }: NavigationItemProps) {
+export function NavigationItem({
+  id,
+  imageUrl,
+  name,
+  imageClassname,
+}: NavigationItemProps) {
   const params = useParams();
   const router = useRouter();
 
@@ -21,24 +27,30 @@ export function NavigationItem({ id, imageUrl, name }: NavigationItemProps) {
   };
 
   return (
-    <Hint side="right" align="center" label={name}>
-      <button onClick={onClick} className="group relative flex items-center">
-        <div
-          className={cn(
-            'absolute left-0 bg-primary rounded-full transition-all w-1',
-            params?.serverId !== id && 'group-hover:h-5',
-            params?.serverId === id ? 'h-9' : 'h-2',
-          )}
-        />
-        <div
-          className={cn(
-            'relative group flex mx-3 h-12 w-12 rounded-3xl group-hover:rounded-lg transition-all overflow-hidden',
-            params?.serverId === id && 'bg-primary/10 text-primary rounded-lg',
-          )}
-        >
-          <Image fill src={imageUrl} alt="Channel" />
-        </div>
-      </button>
+    <Hint side="right" align="center" label={name} sideOffset={-8}>
+      <div className="flex items-center justify-center">
+        <button onClick={onClick} className="group relative flex items-center">
+          <div
+            className={cn(
+              'absolute left-0 bg-primary rounded-full transition-all w-1',
+              params?.serverId !== id && 'group-hover:h-5',
+              params?.serverId === id ? 'h-9' : 'h-2',
+            )}
+          />
+          <div
+            className={cn(
+              'relative group flex mx-3 size-10 md:size-11 rounded-lg transition-all overflow-hidden',
+            )}
+          >
+            <Image
+              fill
+              src={imageUrl}
+              alt="Channel"
+              className={cn('object-cover', imageClassname)}
+            />
+          </div>
+        </button>
+      </div>
     </Hint>
   );
 }

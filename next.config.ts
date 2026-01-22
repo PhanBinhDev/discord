@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'whimsical-goldfish-942.convex.cloud',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

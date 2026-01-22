@@ -4,6 +4,7 @@ import landing from './landing.json';
 import notifications from './notifications.json';
 import onboarding from './onboarding.json';
 import servers from './servers.json';
+import settings from './settings.json';
 
 const vi = {
   ...common,
@@ -12,6 +13,7 @@ const vi = {
   ...notifications,
   ...onboarding,
   ...servers,
+  ...settings,
 };
 
 export default vi;
