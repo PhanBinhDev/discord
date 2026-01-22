@@ -1,7 +1,12 @@
 'use client';
 
 const DashboardPage = () => {
-  return <div className="space-y-6"></div>;
+  return (
+    <>
+      <nav className="space-y-6">NAV</nav>
+      <section className="space-y-6">CONTENT</section>
+    </>
+  );
 };
 
 export default DashboardPage;
