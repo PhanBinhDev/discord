@@ -217,14 +217,17 @@ export function NotificationBell({ size }: NotificationBellProps) {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-96">
+      <DropdownMenuContent
+        align="end"
+        className="w-96 bg-muted border-muted-foreground/20"
+      >
         <div className="p-3">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-base">
+            <h3 className="font-semibold text-base text-foreground">
               <TranslateText value="notifications.title" />
             </h3>
             {unreadCount > 0 && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-foreground/60">
                 {unreadCount} mới
               </span>
             )}
