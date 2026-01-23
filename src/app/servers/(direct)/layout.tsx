@@ -2,14 +2,26 @@
 
 import TranslateText from '@/components/shared/translate/translate-text';
 import { Button } from '@/components/ui/button';
+import { Hint } from '@/components/ui/hint';
 import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { Separator } from '@/components/ui/separator';
+import { useClientDictionary } from '@/hooks/use-client-dictionary';
+import useModal from '@/hooks/use-modal';
 import { cn } from '@/lib/utils';
-import { IconBuildingStore, IconTrophy, IconUsers } from '@tabler/icons-react';
+import {
+  IconBuildingStore,
+  IconPlus,
+  IconTrophy,
+  IconUsers,
+} from '@tabler/icons-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const DirectLayout = ({ children }: IChildren) => {
   const pathname = usePathname();
+  const { dict } = useClientDictionary();
+  const { openModal } = useModal();
+  // const {} =
 
   return (
     <ResizablePanelGroup orientation="horizontal" className="w-full rounded-lg">
@@ -68,6 +80,27 @@ const DirectLayout = ({ children }: IChildren) => {
               <TranslateText value="servers.nav.quests" />
             </Button>
           </Link>
+        </div>
+        <Separator className="w-[94%]! mx-auto" />
+        <div className="flex items-center justify-between px-3 pt-1.5">
+          <h3 className="text-xs font-semibold text-muted-foreground tracking-wide">
+            <TranslateText value="servers.directMessage.title" />
+          </h3>
+
+          <Hint
+            label={dict?.servers.directMessage.create}
+            side="top"
+            align="center"
+          >
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              className="p-1 hover:text-foreground text-muted-foreground transition-colors"
+              onClick={() => openModal('ModalCreateDirectMessage', {})}
+            >
+              <IconPlus className="size-4" />
+            </Button>
+          </Hint>
         </div>
       </ResizablePanel>
       <ResizablePanel>{children}</ResizablePanel>

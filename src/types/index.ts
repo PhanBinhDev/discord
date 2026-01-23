@@ -10,7 +10,7 @@ export type NavItem = {
   exactMatch?: boolean;
 };
 
-export type ModalType = 'ModalCreateServer';
+export type ModalType = 'ModalCreateServer' | 'ModalCreateDirectMessage';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
 

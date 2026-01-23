@@ -18,12 +18,7 @@ import {
 import { api } from '@/convex/_generated/api';
 import { getInitials } from '@/utils';
 import { useAuth } from '@clerk/nextjs';
-import {
-  IconClock,
-  IconLayoutDashboard,
-  IconLogout,
-  IconSettings,
-} from '@tabler/icons-react';
+import { IconClock, IconLogout, IconSettings } from '@tabler/icons-react';
 import { useQuery } from 'convex/react';
 import Link from 'next/link';
 import TranslateText from './translate/translate-text';
@@ -44,7 +39,7 @@ export function UserMenu() {
               src={user.avatarUrl}
               alt={user.displayName || user.username}
             />
-            <AvatarFallback className="bg-[var(--accent-color)]/10 text-[var(--accent-color)] font-semibold">
+            <AvatarFallback className="bg-(--accent-color)/10 text-(--accent-color) font-semibold">
               {getInitials(user.displayName || user.username || user.email)}
             </AvatarFallback>
           </Avatar>
@@ -60,7 +55,7 @@ export function UserMenu() {
                   src={user.avatarUrl}
                   alt={user.displayName || user.username}
                 />
-                <AvatarFallback className="bg-[var(--accent-color)]/10 text-[var(--accent-color)] text-sm">
+                <AvatarFallback className="bg-(--accent-color)/10 text-(--accent-color) text-sm">
                   {getInitials(user.displayName || user.username || user.email)}
                 </AvatarFallback>
               </Avatar>
@@ -117,13 +112,6 @@ export function UserMenu() {
 
         <DropdownMenuSeparator />
 
-        {/* Menu Items */}
-        <DropdownMenuItem asChild>
-          <Link href="/servers" className="cursor-pointer">
-            <IconLayoutDashboard className="h-4 w-4" stroke={1.5} />
-            <TranslateText value="nav.dashboard" />
-          </Link>
-        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/servers/settings" className="cursor-pointer">
             <IconSettings className="h-4 w-4" stroke={1.5} />

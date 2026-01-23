@@ -1,6 +1,9 @@
 {
   "servers": {
-    "directMessage": "Direct Message",
+    "directMessage": {
+      "title": "Direct Messages",
+      "create": "Create DM"
+    },
     "noServers": "No servers yet",
     "createOrJoin": "Create or join a server to get started",
     "createServer": "Create Server",
@@ -36,7 +39,7 @@
       "friends": "Friends",
       "store": "Store",
       "quests": "Quests",
-      "findOrStart": ""
+      "findOrStart": "Find or start a conversation"
     }
   }
 }

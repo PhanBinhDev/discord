@@ -73,7 +73,7 @@ export const upsertFromClerk = internalMutation({
           sounds: true,
         },
         privacy: {
-          allowDMs: true,
+          dmPermission: 'server_members',
           allowFriendRequests: true,
           showOnlineStatus: true,
         },
@@ -211,7 +211,14 @@ export const updateUserSettings = mutation({
     ),
     privacy: v.optional(
       v.object({
-        allowDMs: v.boolean(),
+        dmPermission: v.optional(
+          v.union(
+            v.literal('everyone'),
+            v.literal('friends'),
+            v.literal('server_members'),
+            v.literal('none'),
+          ),
+        ),
         allowFriendRequests: v.boolean(),
         showOnlineStatus: v.boolean(),
       }),

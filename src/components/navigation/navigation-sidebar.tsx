@@ -25,7 +25,7 @@ export function NavigationSidebar() {
         <Hint
           side="right"
           align="center"
-          label={dict?.servers.directMessage}
+          label={dict?.servers.directMessage.title}
           sideOffset={4}
         >
           <div className="group relative flex items-center">

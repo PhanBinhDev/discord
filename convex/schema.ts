@@ -47,6 +47,13 @@ export const FriendRequestStatus = v.union(
   v.literal('blocked'),
 );
 
+export const DMPermission = v.union(
+  v.literal('everyone'),
+  v.literal('friends'),
+  v.literal('server_members'),
+  v.literal('none'),
+);
+
 // ==================== TYPES ====================
 
 export type UserStatus = typeof UserStatus.type;
@@ -55,6 +62,7 @@ export type MessageType = typeof MessageType.type;
 export type MemberRole = typeof MemberRole.type;
 export type InviteStatus = typeof InviteStatus.type;
 export type FriendRequestStatus = typeof FriendRequestStatus.type;
+export type DMPermission = typeof DMPermission.type;
 
 // ==================== TABLES ====================
 
@@ -371,7 +379,12 @@ const userSettings = defineTable({
     sounds: v.boolean(),
   }),
   privacy: v.object({
-    allowDMs: v.boolean(),
+    dmPermission: v.optional(v.union(
+      v.literal('everyone'),
+      v.literal('friends'),
+      v.literal('server_members'),
+      v.literal('none'),
+    )),
     allowFriendRequests: v.boolean(),
     showOnlineStatus: v.boolean(),
   }),

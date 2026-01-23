@@ -1,6 +1,9 @@
 { 
   "servers": {
-    "directMessage": "Tin nhắn trực tiếp",
+    "directMessage": {
+      "title": "Tin nhắn trực tiếp",
+      "create": "Tạo DM"
+    },
     "noServers": "Chưa có máy chủ nào",
     "createOrJoin": "Tạo hoặc tham gia máy chủ để bắt đầu",
     "createServer": "Tạo máy chủ",

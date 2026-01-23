@@ -55,22 +55,22 @@ export function useUpdatePresence() {
 
   return {
     setOnline: () =>
-      updatePresence({ status: 'online', statusMessage: undefined }),
+      updatePresence({ status: 'online', customStatus: undefined }),
     setAway: (message?: string) =>
       updatePresence({
         status: 'away',
-        statusMessage: message || 'Away',
+        customStatus: message || 'Away',
       }),
     setBusy: (message?: string) => {
       updatePresence({
         status: 'busy',
-        statusMessage: message || 'Busy',
+        customStatus: message || 'Busy',
       });
     },
     setOffline: (message?: string) =>
       updatePresence({
         status: 'offline',
-        statusMessage: message || 'Offline',
+        customStatus: message || 'Offline',
       }),
     status: data?.status || 'offline',
   };
