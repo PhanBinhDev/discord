@@ -13,3 +13,5 @@ export const OPTIONS_LIMIT = [
   DEFAULT_LIMIT * 5,
   DEFAULT_LIMIT * 10,
 ];
+
+export const DEFAULT_PANNEL_LEFT_MIN_WIDTH = 300;

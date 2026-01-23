@@ -5,15 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Hint } from '@/components/ui/hint';
 import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Separator } from '@/components/ui/separator';
+import { DEFAULT_PANNEL_LEFT_MIN_WIDTH } from '@/constants/app';
+import { api } from '@/convex/_generated/api';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import useModal from '@/hooks/use-modal';
+import { useSidebarWidth } from '@/hooks/use-sidebar-width';
 import { cn } from '@/lib/utils';
+import { convexQuery } from '@convex-dev/react-query';
 import {
   IconBuildingStore,
   IconPlus,
   IconTrophy,
   IconUsers,
 } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -21,15 +26,19 @@ const DirectLayout = ({ children }: IChildren) => {
   const pathname = usePathname();
   const { dict } = useClientDictionary();
   const { openModal } = useModal();
-  // const {} =
+  const { setWidth } = useSidebarWidth();
+  const { data: hasFriends, isLoading: isCheckingFriends } = useQuery(
+    convexQuery(api.friends.hasFriends),
+  );
 
   return (
     <ResizablePanelGroup orientation="horizontal" className="w-full rounded-lg">
       <ResizablePanel
         minSize={200}
         maxSize={350}
-        defaultSize={300}
-        className="border-r border-border bg-background/50"
+        defaultSize={DEFAULT_PANNEL_LEFT_MIN_WIDTH}
+        className="border-r border-border bg-background/50 max-h-[calc(100%-56px)]!"
+        onResize={size => setWidth(size.inPixels)}
       >
         <div className="p-2 border-border border-b">
           <Button
@@ -96,7 +105,12 @@ const DirectLayout = ({ children }: IChildren) => {
               size="icon-sm"
               variant="ghost"
               className="p-1 hover:text-foreground text-muted-foreground transition-colors"
-              onClick={() => openModal('ModalCreateDirectMessage', {})}
+              onClick={() =>
+                openModal('ModalCreateDirectMessage', {
+                  hasFriends: !!hasFriends,
+                })
+              }
+              disabled={isCheckingFriends}
             >
               <IconPlus className="size-4" />
             </Button>

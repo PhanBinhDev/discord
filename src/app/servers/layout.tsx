@@ -3,6 +3,7 @@
 import { NavigationSidebar } from '@/components/navigation/navigation-sidebar';
 import { usePresence } from '@/hooks/use-presence';
 import TopHeader from './_components/top-header';
+import UserCard from './_components/user-card';
 
 const DashboardLayout = ({ children }: IChildren) => {
   usePresence();
@@ -10,13 +11,15 @@ const DashboardLayout = ({ children }: IChildren) => {
   return (
     <div className="h-screen">
       <TopHeader />
-      <main className="h-full flex">
+      <main className="h-full flex ralative">
         <NavigationSidebar />
-        <div className="flex-1 overflow-hidden p-3 pt-0 pl-0">
-          <div className="rounded-lg flex border border-border h-full bg-muted/20">
+        <div className="flex-1 overflow-hidden">
+          <div className="rounded-tl-lg flex border border-border h-full bg-muted/20">
             {children}
           </div>
         </div>
+
+        <UserCard />
       </main>
     </div>
   );

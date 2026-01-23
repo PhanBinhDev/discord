@@ -368,8 +368,8 @@ const reports = defineTable({
 // User Settings Table
 const userSettings = defineTable({
   userId: v.id('users'),
-  theme: v.string(), // 'dark', 'light', 'system'
-  accentColor: v.optional(v.string()), // 'blue', 'green', 'purple', 'pink', 'orange'
+  theme: v.string(),
+  accentColor: v.optional(v.string()),
   language: v.string(),
   notifications: v.object({
     messages: v.boolean(),
@@ -379,12 +379,14 @@ const userSettings = defineTable({
     sounds: v.boolean(),
   }),
   privacy: v.object({
-    dmPermission: v.optional(v.union(
-      v.literal('everyone'),
-      v.literal('friends'),
-      v.literal('server_members'),
-      v.literal('none'),
-    )),
+    dmPermission: v.optional(
+      v.union(
+        v.literal('everyone'),
+        v.literal('friends'),
+        v.literal('server_members'),
+        v.literal('none'),
+      ),
+    ),
     allowFriendRequests: v.boolean(),
     showOnlineStatus: v.boolean(),
   }),
@@ -394,6 +396,14 @@ const userSettings = defineTable({
     showReactions: v.boolean(),
     animateEmojis: v.boolean(),
   }),
+  voice: v.optional(
+    v.object({
+      defaultMuted: v.boolean(),
+      defaultDeafened: v.boolean(),
+      inputVolume: v.optional(v.number()),
+      outputVolume: v.optional(v.number()),
+    }),
+  ),
 }).index('by_user', ['userId']);
 
 // Webhooks Table

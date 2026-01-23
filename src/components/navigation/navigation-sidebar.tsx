@@ -21,7 +21,7 @@ export function NavigationSidebar() {
 
   return (
     <div className="flex w-[72px] flex-col h-full items-center text-primary bg-background pb-3">
-      <div className="border-b border-border pb-2 mb-2">
+      <div className="border-b border-border pb-[9px] mb-2">
         <Hint
           side="right"
           align="center"
@@ -51,7 +51,7 @@ export function NavigationSidebar() {
           data &&
           data.length > 0 &&
           data.map(server => (
-            <div key={server?._id} className="mb-4">
+            <div key={server?._id} className="mb-2">
               <NavigationItem
                 id={server?._id}
                 imageUrl={server?.iconUrl || '/icons/icon1.png'}

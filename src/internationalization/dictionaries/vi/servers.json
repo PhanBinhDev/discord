@@ -2,7 +2,11 @@
   "servers": {
     "directMessage": {
       "title": "Tin nhắn trực tiếp",
-      "create": "Tạo DM"
+      "create": "Tạo DM",
+      "selectFriend": "Chọn Bạn Bè",
+      "noFriends": "Bạn không có bạn bè nào để thêm vào!",
+      "addFriend": "Thêm Bạn",
+      "friends": "Bạn bè"
     },
     "noServers": "Chưa có máy chủ nào",
     "createOrJoin": "Tạo hoặc tham gia máy chủ để bắt đầu",
@@ -40,6 +44,29 @@
       "store": "Cửa hàng",
       "quests": "Nhiệm vụ",
       "findOrStart": "Tìm hoặc bắt đầu cuộc trò chuyện"
+    },
+    "settings": {
+      "title": "Cài đặt người dùng",
+      "disabledSound": "Tắt tiếng",
+      "enabledSound": "Bỏ tắt tiếng",
+      "disabledMicrophone": "Tắt âm",
+      "enabledMicrophone": "Bỏ tắt âm",
+      "outputDevice": "Thiết bị đầu ra",
+      "inputDevice": "Thiết bị đầu vào",
+      "outputVolume": "Âm lượng đầu ra",
+      "noOutputDevices": "Không có thiết bị đầu ra",
+      "inputVolume": "Âm lượng đầu vào",
+      "noInputDevices": "Không có thiết bị đầu vào",
+      "errors": {
+        "browserNotSupported": "Trình duyệt của bạn không hỗ trợ truy cập microphone",
+        "audioDeviceNotSupported": "Trình duyệt của bạn không hỗ trợ phát hiện thiết bị âm thanh",
+        "microphoneNotFound": "Không tìm thấy thiết bị microphone",
+        "audioOutputNotFound": "Không tìm thấy thiết bị đầu ra âm thanh. Vui lòng kết nối tai nghe hoặc loa.",
+        "permissionDenied": "Quyền truy cập microphone bị từ chối. Vui lòng cho phép trong cài đặt trình duyệt.",
+        "microphoneConnectRequired": "Không tìm thấy thiết bị microphone. Vui lòng kết nối microphone.",
+        "microphoneAccessFailed": "Không thể truy cập microphone",
+        "audioDeviceCheckFailed": "Không thể kiểm tra thiết bị âm thanh"
+      }
     }
   }
 }

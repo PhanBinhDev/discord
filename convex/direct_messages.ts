@@ -9,7 +9,6 @@ async function canSendDM(
   senderId: Id<'users'>,
   receiverId: Id<'users'>,
 ): Promise<{ canSend: boolean; reason?: string }> {
-  // Get receiver's settings
   const receiverSettings = await ctx.db
     .query('userSettings')
     .withIndex('by_user', q => q.eq('userId', receiverId))
@@ -18,17 +17,14 @@ async function canSendDM(
   const dmPermission =
     receiverSettings?.privacy?.dmPermission || 'server_members';
 
-  // If receiver allows everyone
   if (dmPermission === 'everyone') {
     return { canSend: true };
   }
 
-  // If receiver doesn't allow anyone
   if (dmPermission === 'none') {
     return { canSend: false, reason: 'User is not accepting direct messages' };
   }
 
-  // Check if blocked
   const blocked = await ctx.db
     .query('friends')
     .withIndex('by_users', q =>
@@ -51,7 +47,6 @@ async function canSendDM(
     return { canSend: false, reason: 'You have blocked this user' };
   }
 
-  // Check if friends
   const friendship1 = await ctx.db
     .query('friends')
     .withIndex('by_users', q =>
@@ -110,7 +105,6 @@ async function canSendDMQuery(
   senderId: Id<'users'>,
   receiverId: Id<'users'>,
 ): Promise<{ canSend: boolean; reason?: string }> {
-  // Get receiver's settings
   const receiverSettings = await ctx.db
     .query('userSettings')
     .withIndex('by_user', q => q.eq('userId', receiverId))
@@ -119,17 +113,14 @@ async function canSendDMQuery(
   const dmPermission =
     receiverSettings?.privacy?.dmPermission || 'server_members';
 
-  // If receiver allows everyone
   if (dmPermission === 'everyone') {
     return { canSend: true };
   }
 
-  // If receiver doesn't allow anyone
   if (dmPermission === 'none') {
     return { canSend: false, reason: 'User is not accepting direct messages' };
   }
 
-  // Check if blocked
   const blocked = await ctx.db
     .query('friends')
     .withIndex('by_users', q =>
@@ -152,7 +143,6 @@ async function canSendDMQuery(
     return { canSend: false, reason: 'You have blocked this user' };
   }
 
-  // Check if friends
   const friendship1 = await ctx.db
     .query('friends')
     .withIndex('by_users', q =>
@@ -177,8 +167,6 @@ async function canSendDMQuery(
     return { canSend: false, reason: 'You must be friends to send a message' };
   }
 
-  // dmPermission === 'server_members'
-  // Check if they share a server
   const senderMemberships = await ctx.db
     .query('serverMembers')
     .withIndex('by_user', q => q.eq('userId', senderId))
@@ -206,7 +194,6 @@ async function canSendDMQuery(
   };
 }
 
-// Send a direct message
 export const sendDirectMessage = mutation({
   args: {
     receiverId: v.id('users'),
@@ -271,7 +258,6 @@ export const sendDirectMessage = mutation({
   },
 });
 
-// Get conversation with a specific user
 export const getConversation = query({
   args: {
     userId: v.id('users'),

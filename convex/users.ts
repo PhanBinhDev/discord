@@ -83,6 +83,12 @@ export const upsertFromClerk = internalMutation({
           showReactions: true,
           animateEmojis: true,
         },
+        voice: {
+          defaultMuted: false,
+          defaultDeafened: false,
+          inputVolume: 100,
+          outputVolume: 100,
+        },
       });
     }
   },
@@ -231,6 +237,14 @@ export const updateUserSettings = mutation({
         animateEmojis: v.boolean(),
       }),
     ),
+    voice: v.optional(
+      v.object({
+        defaultMuted: v.boolean(),
+        defaultDeafened: v.boolean(),
+        inputVolume: v.optional(v.number()),
+        outputVolume: v.optional(v.number()),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -259,6 +273,7 @@ export const updateUserSettings = mutation({
       updates.notifications = args.notifications;
     if (args.privacy !== undefined) updates.privacy = args.privacy;
     if (args.appearance !== undefined) updates.appearance = args.appearance;
+    if (args.voice !== undefined) updates.voice = args.voice;
 
     await ctx.db.patch(settings._id, updates);
 

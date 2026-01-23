@@ -2,7 +2,11 @@
   "servers": {
     "directMessage": {
       "title": "Direct Messages",
-      "create": "Create DM"
+      "create": "Create DM",
+      "selectFriend": "Select Friends",
+      "noFriends": "You don't have any friends to add!",
+      "addFriend": "Add Friend",
+      "friends": "Friends"
     },
     "noServers": "No servers yet",
     "createOrJoin": "Create or join a server to get started",
@@ -40,6 +44,29 @@
       "store": "Store",
       "quests": "Quests",
       "findOrStart": "Find or start a conversation"
+    },
+    "settings": {
+      "title": "User Settings",
+      "disabledSound": "Sound Off",
+      "enabledSound": "Sound On",
+      "disabledMicrophone": "Microphone Off",
+      "enabledMicrophone": "Microphone On",
+      "outputDevice": "Output Device",
+      "inputDevice": "Input Device",
+      "outputVolume": "Output Volume",
+      "noOutputDevices": "No Output Devices",
+      "inputVolume": "Input Volume",
+      "noInputDevices": "No Input Devices",
+      "errors": {
+        "browserNotSupported": "Your browser does not support microphone access",
+        "audioDeviceNotSupported": "Your browser does not support audio device detection",
+        "microphoneNotFound": "Microphone device not found",
+        "audioOutputNotFound": "Audio output device not found. Please connect headphones or speakers.",
+        "permissionDenied": "Microphone access permission denied. Please allow it in your browser settings.",
+        "microphoneConnectRequired": "Microphone device not found. Please connect a microphone.",
+        "microphoneAccessFailed": "Failed to access microphone",
+        "audioDeviceCheckFailed": "Failed to check audio devices"
+      }
     }
   }
 }

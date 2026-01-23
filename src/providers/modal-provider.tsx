@@ -1,5 +1,6 @@
 'use client';
 
+import ModalCreateDirectMessage from '@/components/modals/modal-create-direct-message';
 import { ModalCreateServer } from '@/components/modals/modal-create-server';
 import useModal from '@/hooks/use-modal';
 import { useEffect, useState } from 'react';
@@ -14,7 +15,12 @@ const ModalsProvider = () => {
 
   if (!isMounted) return null;
 
-  return <>{isModalOpen('ModalCreateServer') && <ModalCreateServer />}</>;
+  return (
+    <>
+      {isModalOpen('ModalCreateServer') && <ModalCreateServer />}
+      {isModalOpen('ModalCreateDirectMessage') && <ModalCreateDirectMessage />}
+    </>
+  );
 };
 
 export default ModalsProvider;

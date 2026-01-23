@@ -302,7 +302,6 @@ export const unblockUser = mutation({
   },
 });
 
-// Get all friends
 export const getFriends = query({
   args: {},
   handler: async ctx => {
@@ -316,14 +315,12 @@ export const getFriends = query({
 
     if (!user) return [];
 
-    // Get friendships where user is userId1
     const friendships1 = await ctx.db
       .query('friends')
       .withIndex('by_user1', q => q.eq('userId1', user._id))
       .filter(q => q.eq(q.field('status'), 'accepted'))
       .collect();
 
-    // Get friendships where user is userId2
     const friendships2 = await ctx.db
       .query('friends')
       .withIndex('by_user2', q => q.eq('userId2', user._id))
@@ -332,7 +329,6 @@ export const getFriends = query({
 
     const allFriendships = [...friendships1, ...friendships2];
 
-    // Get friend user details
     const friends = await Promise.all(
       allFriendships.map(async friendship => {
         const friendId =
@@ -364,7 +360,6 @@ export const getFriends = query({
   },
 });
 
-// Get pending friend requests (received)
 export const getPendingRequests = query({
   args: {},
   handler: async ctx => {
@@ -378,14 +373,12 @@ export const getPendingRequests = query({
 
     if (!user) return [];
 
-    // Get requests sent to user
     const requests = await ctx.db
       .query('friends')
       .withIndex('by_user2', q => q.eq('userId2', user._id))
       .filter(q => q.eq(q.field('status'), 'pending'))
       .collect();
 
-    // Get sender details
     const requestsWithUsers = await Promise.all(
       requests.map(async request => {
         const sender = await ctx.db.get(request.userId1);
@@ -411,7 +404,6 @@ export const getPendingRequests = query({
   },
 });
 
-// Get sent friend requests
 export const getSentRequests = query({
   args: {},
   handler: async ctx => {
@@ -458,7 +450,6 @@ export const getSentRequests = query({
   },
 });
 
-// Get blocked users
 export const getBlockedUsers = query({
   args: {},
   handler: async ctx => {
@@ -502,7 +493,6 @@ export const getBlockedUsers = query({
   },
 });
 
-// Check friendship status between two users
 export const getFriendshipStatus = query({
   args: { targetUserId: v.id('users') },
   handler: async (ctx, args) => {
@@ -545,5 +535,36 @@ export const getFriendshipStatus = query({
       canCancel:
         relation.status === 'pending' && relation.requestedBy === user._id,
     };
+  },
+});
+
+export const hasFriends = query({
+  args: {},
+  handler: async ctx => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) return false;
+
+    const friendship1 = await ctx.db
+      .query('friends')
+      .withIndex('by_user1', q => q.eq('userId1', user._id))
+      .filter(q => q.eq(q.field('status'), 'accepted'))
+      .first();
+
+    if (friendship1) return true;
+
+    const friendship2 = await ctx.db
+      .query('friends')
+      .withIndex('by_user2', q => q.eq('userId2', user._id))
+      .filter(q => q.eq(q.field('status'), 'accepted'))
+      .first();
+
+    return !!friendship2;
   },
 });
