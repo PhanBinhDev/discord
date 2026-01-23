@@ -17,7 +17,7 @@ import { convexQuery } from '@convex-dev/react-query';
 import { IconHeadset, IconHeadsetOff, IconSettings } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, ChevronUp } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useDebounceCallback } from 'usehooks-ts';
 
@@ -115,18 +115,25 @@ const Headset = () => {
     });
   };
 
-  const debouncedVolumeUpdate = useDebounceCallback((newVolume: number) => {
-    if (!userSettings) return;
-
-    updateSettings({
-      voice: {
-        defaultMuted: userSettings.voice?.defaultMuted ?? false,
-        defaultDeafened: userSettings.voice?.defaultDeafened ?? false,
-        inputVolume: userSettings.voice?.inputVolume,
-        outputVolume: newVolume,
+  const debouncedVolumeUpdate = useDebounceCallback(
+    useCallback(
+      (newVolume: number) => {
+        if (!userSettings) return;
+        updateSettings({
+          voice: {
+            defaultMuted: userSettings.voice?.defaultMuted ?? false,
+            defaultDeafened: userSettings.voice?.defaultDeafened ?? false,
+            inputVolume: userSettings.voice?.inputVolume,
+            outputVolume: newVolume,
+          },
+        });
+        console.log('Updating volume to', newVolume);
       },
-    });
-  }, 500);
+      [userSettings, updateSettings],
+    ),
+    500,
+    { leading: false, trailing: true },
+  );
 
   const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];
@@ -176,7 +183,7 @@ const Headset = () => {
           <PopoverContent
             side="top"
             align="end"
-            className="w-60 p-3 bg-muted border-muted-foreground/20 rounded-lg shadow-lg"
+            className="w-70 p-2 bg-muted border-muted-foreground/20 rounded-lg shadow-lg"
           >
             <div className="space-y-3">
               {/* Output Device */}
@@ -191,7 +198,7 @@ const Headset = () => {
                         <div className="text-xs font-semibold text-foreground/60 mb-0.5">
                           {dict?.servers.settings.outputDevice}
                         </div>
-                        <div className="text-sm text-foreground">
+                        <div className="text-sm text-foreground truncate overflow-hidden max-w-[220px]">
                           {audioOutputDevices.find(
                             d => d.deviceId === selectedDeviceId,
                           )?.label ||
@@ -220,7 +227,7 @@ const Headset = () => {
                               {selectedDeviceId === device.deviceId && (
                                 <div className="size-2 rounded-full bg-(--accent-color)" />
                               )}
-                              <span className="truncate text-foreground">
+                              <span className="truncate overflow-hidden max-w-[180px] text-foreground">
                                 {device.label}
                               </span>
                             </div>
