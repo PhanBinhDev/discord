@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Hint } from '@/components/ui/hint';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
@@ -9,6 +10,7 @@ import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import { convexQuery } from '@convex-dev/react-query';
 import { IconMicrophone, IconMicrophoneOff } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
+import { ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Microphone = () => {
@@ -67,11 +69,10 @@ const Microphone = () => {
   };
 
   const handleToggle = async () => {
-    // If enabling microphone (unmuting), check permission first
     if (isMuted) {
       const hasPermission = await checkMicrophonePermission();
       if (!hasPermission) {
-        return; // Don't update settings if permission denied
+        return;
       }
     }
 
@@ -96,19 +97,28 @@ const Microphone = () => {
       align="center"
       alignOffset={0}
     >
-      <Button
-        size={'icon'}
-        className={isMuted ? '' : 'hover:bg-muted-foreground/10'}
-        onClick={handleToggle}
-        disabled={pending}
-        variant={isMuted ? 'destructive' : 'ghost'}
-      >
-        {isMuted ? (
-          <IconMicrophoneOff className="size-5" />
-        ) : (
-          <IconMicrophone className="size-5" />
-        )}
-      </Button>
+      <ButtonGroup>
+        <Button
+          size={'icon'}
+          className={isMuted ? '' : 'hover:bg-muted-foreground/10'}
+          onClick={handleToggle}
+          disabled={pending}
+          variant={isMuted ? 'destructive' : 'ghost'}
+        >
+          {isMuted ? (
+            <IconMicrophoneOff className="size-5" />
+          ) : (
+            <IconMicrophone className="size-5" />
+          )}
+        </Button>
+        <Button
+          size={'icon'}
+          className="px-0 w-4 hover:bg-muted-foreground/10"
+          variant={'ghost'}
+        >
+          <ChevronUp className="size-4" />
+        </Button>
+      </ButtonGroup>
     </Hint>
   );
 };

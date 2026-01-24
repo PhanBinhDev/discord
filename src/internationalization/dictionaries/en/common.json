@@ -10,7 +10,6 @@
     "profile": "Profile",
     "notifications": "Notifications",
     "general": "General",
-    "logout": "Logout",
     "createServer": "Create Server"
   },
   "common": {
@@ -80,6 +79,12 @@
       "toggleColumns": "Toggle columns"
     },
     "searchPlaceholder": "Type to search...",
-    "upload": "Upload"
+    "upload": "Upload",
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "busy": "Busy",
+      "away": "Away"
+    }
   }
 }

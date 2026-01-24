@@ -46,6 +46,8 @@
       "findOrStart": "Find or start a conversation"
     },
     "settings": {
+      "editProfile": "Edit Profile",
+      "changeAccount": "Change Account",
       "title": "User Settings",
       "disabledSound": "Sound Off",
       "enabledSound": "Sound On",
@@ -67,6 +69,22 @@
         "microphoneAccessFailed": "Failed to access microphone",
         "audioDeviceCheckFailed": "Failed to check audio devices"
       }
+    },
+    "userStatus": {
+      "setStatus": "Set Status",
+      "description": "Choose your status to let others know if you're available, busy, or away.",
+      "time": {
+        "label": "Choose time",
+        "title": "Set time for status expiration",
+        "never": "Never",
+        "15_minutes": "15 Minutes",
+        "1_hour": "1 Hour",
+        "8_hours": "8 Hours",
+        "24_hours": "24 Hours",
+        "3_days": "3 Days"
+      },
+      "updateSuccess": "User status updated successfully!",
+      "updateFailed": "Failed to update user status. Please try again."
     }
   }
 }

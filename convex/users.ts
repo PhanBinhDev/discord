@@ -42,10 +42,36 @@ export const upsertFromClerk = internalMutation({
       existingUser?.discriminator ||
       Math.floor(1000 + Math.random() * 9000).toString();
 
+    const generateUsername = (base: string) => {
+      const username = base;
+      let suffix = 1;
+
+      return async () => {
+        let uniqueUsername = username;
+        while (true) {
+          const userWithSameUsername = await ctx.db
+            .query('users')
+            .withIndex('by_username', q => q.eq('username', uniqueUsername))
+            .first();
+
+          if (!userWithSameUsername) {
+            return uniqueUsername;
+          }
+
+          uniqueUsername = `${username}${suffix}`;
+          suffix += 1;
+        }
+      };
+    };
+
+    const usernameGenerator = generateUsername(
+      data.username || displayName.replace(/\s+/g, '').toLowerCase() || 'user',
+    );
+
     const userData = {
       clerkId: data.id,
       email: primaryEmail?.email_address ?? '',
-      username: data.username ?? '',
+      username: await usernameGenerator(),
       displayName,
       discriminator,
       avatarUrl: data.image_url,
@@ -100,6 +126,7 @@ export const updateUser = mutation({
     username: v.optional(v.string()),
     bio: v.optional(v.string()),
     status: v.optional(UserStatus),
+    statusExpiration: v.optional(v.number()),
     customStatus: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
     avatarStorageId: v.optional(v.id('_storage')),
@@ -294,13 +321,20 @@ export const heartbeat = mutation({
 
     if (!user) return;
 
+    const now = Date.now();
     const isManualOffline = user.status === 'offline' && user.customStatus;
+    const isStatusExpired = user.statusExpiredAt && user.statusExpiredAt < now;
     const shouldUpdateToOnline =
-      !user.status || (user.status === 'offline' && !isManualOffline);
+      !user.status ||
+      (user.status === 'offline' && !isManualOffline) ||
+      isStatusExpired;
 
     await ctx.db.patch(user._id, {
-      ...(shouldUpdateToOnline && { status: 'online' }),
-      lastSeen: Date.now(),
+      ...(shouldUpdateToOnline && {
+        status: 'online',
+        statusExpiredAt: undefined,
+      }),
+      lastSeen: now,
     });
   },
 });

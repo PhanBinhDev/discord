@@ -19,7 +19,7 @@ export default function NotFound() {
         <TranslateText value="common.artist" /> ビン
       </p>
       <Link
-        href="/servers"
+        href="/"
         className="px-6 py-2 rounded-md bg-gray-900 text-white font-medium hover:bg-gray-800 transition"
       >
         <TranslateText value="common.goHome" />

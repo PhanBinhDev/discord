@@ -9,7 +9,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useReadLocalStorage } from 'usehooks-ts';
 import { ChangeLanguage } from './change-language';
-import { ToggleTheme } from './toggle-theme';
 import TranslateText from './translate/translate-text';
 import { UserMenu } from './user-menu';
 
@@ -89,8 +88,6 @@ export default function Header() {
           <div className="flex items-center gap-2">
             <ChangeLanguage />
 
-            <ToggleTheme />
-
             <Unauthenticated>
               <SignInButton mode="modal" fallbackRedirectUrl={redirectUrl}>
                 <Button variant="gradient" className="rounded-xl">
@@ -107,7 +104,6 @@ export default function Header() {
         {/* Mobile navigation */}
         <div className="flex md:hidden items-center gap-1.5">
           <ChangeLanguage mode="toggle" />
-          <ToggleTheme />
           <Unauthenticated>
             <SignInButton mode="modal" fallbackRedirectUrl={redirectUrl}>
               <Button size="sm" variant="gradient">

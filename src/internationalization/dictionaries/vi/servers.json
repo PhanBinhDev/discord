@@ -46,6 +46,8 @@
       "findOrStart": "Tìm hoặc bắt đầu cuộc trò chuyện"
     },
     "settings": {
+      "editProfile": "Chỉnh sửa hồ sơ",
+      "changeAccount": "Đổi tài khoản",
       "title": "Cài đặt người dùng",
       "disabledSound": "Tắt tiếng",
       "enabledSound": "Bỏ tắt tiếng",
@@ -67,6 +69,22 @@
         "microphoneAccessFailed": "Không thể truy cập microphone",
         "audioDeviceCheckFailed": "Không thể kiểm tra thiết bị âm thanh"
       }
+    },
+    "userStatus": {
+      "setStatus": "Đặt trạng thái",
+      "description": "Chọn trạng thái của bạn để cho người khác biết bạn có sẵn sàng, bận hay vắng mặt.",
+      "time": {
+        "label": "Lựa chọn thời gian",
+        "title": "Hết hạn trạng thái sau",
+        "never": "Không bao giờ",
+        "15_minutes": "15 Phút",
+        "1_hour": "1 Giờ",
+        "8_hours": "8 Giờ",
+        "24_hours": "24 Giờ",
+        "3_days": "3 Ngày"
+      },
+      "updateSuccess": "Cập nhật trạng thái thành công!",
+      "updateFailed": "Cập nhật trạng thái thất bại. Vui lòng thử lại."
     }
   }
 }

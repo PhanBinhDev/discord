@@ -23,7 +23,7 @@ export function NavigationItem({
   const router = useRouter();
 
   const onClick = () => {
-    router.push(`/servers/channels/${id}`);
+    router.push(`/servers/${id}`);
   };
 
   return (

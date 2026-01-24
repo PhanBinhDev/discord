@@ -9,7 +9,6 @@
     "settings": "Cài đặt",
     "profile": "Hồ sơ",
     "notifications": "Thông báo",
-    "logout": "Đăng xuất",
     "createServer": "Tạo máy chủ"
   },
   "notifications": {
@@ -85,6 +84,12 @@
       "toggleColumns": "Chuyển đổi cột"
     },
     "searchPlaceholder": "Nhập để tìm kiếm...",
-    "upload": "Tải lên"
+    "upload": "Tải lên",
+    "status": {
+      "online": "Trực tuyến",
+      "offline": "Ngoại tuyến",
+      "busy": "Bận",
+      "away": "Vắng mặt"
+    }
   }
 }

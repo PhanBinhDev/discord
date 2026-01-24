@@ -79,6 +79,7 @@ const users = defineTable({
   bannerStorageId: v.optional(v.id('_storage')),
   bio: v.optional(v.string()),
   status: v.optional(UserStatus),
+  statusExpiredAt: v.optional(v.number()),
   customStatus: v.optional(v.string()),
   lastSeen: v.optional(v.number()),
   emailVerified: v.boolean(),

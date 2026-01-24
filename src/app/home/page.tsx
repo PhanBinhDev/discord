@@ -97,7 +97,7 @@ export default function LandingPage() {
             </Unauthenticated>
 
             <Authenticated>
-              <Link href="/servers">
+              <Link href="/">
                 <div className="relative group">
                   {/* Glow effect */}
                   <div className="absolute -inset-1 bg-(--accent-color) rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300 animate-pulse" />

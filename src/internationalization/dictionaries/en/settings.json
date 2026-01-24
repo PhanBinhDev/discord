@@ -2,32 +2,6 @@
   "settings": {
     "title": "Settings",
     "description": "Manage your account settings and preferences",
-    "theme": {
-      "title": "Theme",
-      "light": "Light",
-      "dark": "Dark",
-      "system": "System"
-    },
-    "accentColor": {
-      "title": "Accent Color",
-      "selected": "Selected Color",
-      "blurple": "Blurple",
-      "green": "Green",
-      "yellow": "Yellow",
-      "fuchsia": "Fuchsia",
-      "red": "Red",
-      "aqua": "Aqua",
-      "orange": "Orange",
-      "purple": "Purple",
-      "upgradeTitle": "Upgrade to Premium",
-      "upgradeDescription": "Unlock custom accent colors and more features with a premium subscription."
-    },
-    "notifications": {
-      "themeUpdated": "Theme updated",
-      "themeUpdateFailed": "Failed to update theme",
-      "accentColorUpdated": "Accent color updated",
-      "accentColorUpdateFailed": "Failed to update accent color",
-      "subscriptionRequired": "Premium subscription required for custom colors"
-    }
+    "logout": "Logout"
   }
 }

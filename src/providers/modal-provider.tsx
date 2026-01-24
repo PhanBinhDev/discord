@@ -2,6 +2,7 @@
 
 import ModalCreateDirectMessage from '@/components/modals/modal-create-direct-message';
 import { ModalCreateServer } from '@/components/modals/modal-create-server';
+import ModalSetUserStatus from '@/components/modals/modal-set-user-status';
 import useModal from '@/hooks/use-modal';
 import { useEffect, useState } from 'react';
 
@@ -19,6 +20,7 @@ const ModalsProvider = () => {
     <>
       {isModalOpen('ModalCreateServer') && <ModalCreateServer />}
       {isModalOpen('ModalCreateDirectMessage') && <ModalCreateDirectMessage />}
+      {isModalOpen('ModalSetUserStatus') && <ModalSetUserStatus />}
     </>
   );
 };

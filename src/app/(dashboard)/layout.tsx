@@ -18,7 +18,6 @@ const DashboardLayout = ({ children }: IChildren) => {
             {children}
           </div>
         </div>
-
         <UserCard />
       </main>
     </div>

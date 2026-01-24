@@ -32,12 +32,15 @@ const DirectLayout = ({ children }: IChildren) => {
   );
 
   return (
-    <ResizablePanelGroup orientation="horizontal" className="w-full rounded-lg">
+    <ResizablePanelGroup
+      orientation="horizontal"
+      className="w-full rounded-l-lg border-none"
+    >
       <ResizablePanel
         minSize={200}
         maxSize={350}
         defaultSize={DEFAULT_PANNEL_LEFT_MIN_WIDTH}
-        className="border-r border-border bg-background/50 max-h-[calc(100%-56px)]!"
+        className="bg-background/50"
         onResize={size => setWidth(size.inPixels)}
       >
         <div className="p-2 border-border border-b">
@@ -51,12 +54,12 @@ const DirectLayout = ({ children }: IChildren) => {
           </Button>
         </div>
         <div className="flex flex-col gap-1 p-2">
-          <Link href="/servers">
+          <Link href="/">
             <Button
               variant="ghost"
               className={cn(
                 'w-full justify-start gap-3 px-2 text-sm',
-                pathname === '/servers' && 'bg-muted text-foreground',
+                pathname === '/' && 'bg-muted text-foreground',
               )}
             >
               <IconUsers className="h-5 w-5" />
@@ -64,12 +67,12 @@ const DirectLayout = ({ children }: IChildren) => {
             </Button>
           </Link>
 
-          <Link href="/servers/store">
+          <Link href="/store">
             <Button
               variant="ghost"
               className={cn(
                 'w-full justify-start gap-3 px-2 text-sm',
-                pathname === '/servers/store' && 'bg-muted text-foreground',
+                pathname === '/store' && 'bg-muted text-foreground',
               )}
             >
               <IconBuildingStore className="h-5 w-5" />
@@ -77,12 +80,12 @@ const DirectLayout = ({ children }: IChildren) => {
             </Button>
           </Link>
 
-          <Link href="/servers/quests">
+          <Link href="/quests">
             <Button
               variant="ghost"
               className={cn(
                 'w-full justify-start gap-3 px-2 text-sm',
-                pathname === '/servers/quests' && 'bg-muted text-foreground',
+                pathname === '/quests' && 'bg-muted text-foreground',
               )}
             >
               <IconTrophy className="h-5 w-5" />

@@ -10,17 +10,7 @@ export const config = {
   ],
 };
 
-// Routes that require authentication
-const isProtectedRoute = createRouteMatcher([
-  '/servers(.*)',
-  '/calls(.*)',
-  '/meetings(.*)',
-  '/chat(.*)',
-  '/contacts(.*)',
-]);
-
-// Public routes (only for non-authenticated users)
-const isPublicOnlyRoute = createRouteMatcher(['/']);
+const isPublicRoute = createRouteMatcher(['/home']);
 
 export default clerkMiddleware(async (auth, req) => {
   const localizationResponse = localizationMiddleware(req);
@@ -31,13 +21,13 @@ export default clerkMiddleware(async (auth, req) => {
 
   const { userId } = await auth();
 
-  if (userId && isPublicOnlyRoute(req)) {
-    const dashboardUrl = new URL('/servers', req.url);
+  if (userId && isPublicRoute(req)) {
+    const dashboardUrl = new URL('/', req.url);
     return NextResponse.redirect(dashboardUrl);
   }
 
-  if (!userId && isProtectedRoute(req)) {
-    const homeUrl = new URL('/', req.url);
+  if (!userId && !isPublicRoute(req)) {
+    const homeUrl = new URL('/home', req.url);
     homeUrl.searchParams.set('sign-in', 'true');
     homeUrl.searchParams.set('redirect', req.nextUrl.pathname);
     return NextResponse.redirect(homeUrl);

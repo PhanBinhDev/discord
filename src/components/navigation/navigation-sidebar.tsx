@@ -36,7 +36,7 @@ export function NavigationSidebar() {
                 !params?.serverId ? 'h-9' : 'h-2',
               )}
             />
-            <Link href="/servers">
+            <Link href="/">
               <Button className="bg-(--accent-color) rounded-lg size-10 md:size-11 p-2 mx-3 hover:bg-(--accent-color)">
                 <IconBrandDiscordFilled className="size-7" />
               </Button>

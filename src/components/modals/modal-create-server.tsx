@@ -71,7 +71,7 @@ export const ModalCreateServer = () => {
       await createServer({
         ...values,
         iconStorageId: result.storageId,
-        iconUrl: result.url,
+        iconUrl: result.url || '',
       });
       toast.success(dict?.servers.serverCreated);
       handleClose();
