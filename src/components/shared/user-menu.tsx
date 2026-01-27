@@ -113,7 +113,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem asChild>
-          <Link href="/settings" className="cursor-pointer">
+          <Link href="/" className="cursor-pointer">
             <IconSettings className="h-4 w-4" stroke={1.5} />
             <TranslateText value="nav.settings" />
           </Link>

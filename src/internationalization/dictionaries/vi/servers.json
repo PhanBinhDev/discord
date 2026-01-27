@@ -70,6 +70,18 @@
         "audioDeviceCheckFailed": "Không thể kiểm tra thiết bị âm thanh"
       }
     },
+     "menu": {
+      "settings": "Cài đặt",
+      "invite": "Mời mọi người",
+      "createEvent": "Tạo sự kiện",
+      "leaveServer": "Rời khỏi máy chủ",
+      "general": "Chung",
+      "management": "Quản lý",
+      "danger": "Khu vực nguy hiểm",
+      "transferOwner": "Chuyển quyền sở hữu",
+      "createChannel": "Tạo kênh",
+      "createCategory": "Tạo danh mục"
+    },
     "userStatus": {
       "setStatus": "Đặt trạng thái",
       "description": "Chọn trạng thái của bạn để cho người khác biết bạn có sẵn sàng, bận hay vắng mặt.",
@@ -85,6 +97,15 @@
       },
       "updateSuccess": "Cập nhật trạng thái thành công!",
       "updateFailed": "Cập nhật trạng thái thất bại. Vui lòng thử lại."
+    },
+    "invite": {
+      "title": "Mời mọi người đến máy chủ của bạn",
+      "description": "Người nhận sẽ đến #{{channel}}",
+      "copyLink": "Sao chép liên kết mời",
+      "placeholder": "Nhập tên người dùng hoặc email",
+      "noUsersFound": "Không tìm thấy người dùng",
+      "inviteSuccess": "Lời mời đã được gửi thành công!",
+      "inviteFailed": "Gửi lời mời thất bại. Vui lòng thử lại."
     }
   }
 }

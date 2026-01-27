@@ -83,14 +83,14 @@ const users = defineTable({
   customStatus: v.optional(v.string()),
   lastSeen: v.optional(v.number()),
   emailVerified: v.boolean(),
+  searchText: v.string(),
 })
   .index('by_clerk_id', ['clerkId'])
   .index('by_email', ['email'])
   .index('by_username', ['username'])
   .index('by_status', ['status'])
-  .searchIndex('search_users', {
-    searchField: 'username',
-    filterFields: ['username', 'displayName'],
+  .searchIndex('searchText', {
+    searchField: 'searchText',
   });
 
 // Friends Table
@@ -297,7 +297,6 @@ const serverInvites = defineTable({
   temporary: v.boolean(),
   status: InviteStatus,
   expiresAt: v.optional(v.number()),
-  createdAt: v.number(),
 })
   .index('by_code', ['code'])
   .index('by_server', ['serverId'])
@@ -435,6 +434,30 @@ const eventLogs = defineTable({
   .index('by_server', ['serverId'])
   .index('by_timestamp', ['timestamp']);
 
+const channelPermissions = defineTable({
+  channelId: v.id('channels'),
+  roleId: v.optional(v.id('roles')), // null = everyone
+  userId: v.optional(v.id('users')), // cho phép user cụ thể
+  canView: v.boolean(),
+  canSend: v.boolean(),
+  createdAt: v.number(),
+})
+  .index('by_channel', ['channelId'])
+  .index('by_role', ['roleId'])
+  .index('by_user', ['userId'])
+  .index('by_channel_role', ['channelId', 'roleId']);
+
+// User Last Viewed Channels - lưu channel cuối cùng user xem ở mỗi server
+const userLastViewedChannels = defineTable({
+  userId: v.id('users'),
+  serverId: v.id('servers'),
+  channelId: v.id('channels'),
+  lastViewedAt: v.number(),
+})
+  .index('by_user', ['userId'])
+  .index('by_server', ['serverId'])
+  .index('by_user_server', ['userId', 'serverId']);
+
 // ==================== SCHEMA EXPORT ====================
 
 const schema = defineSchema({
@@ -473,6 +496,9 @@ const schema = defineSchema({
   eventLogs,
 
   notifications,
+
+  channelPermissions,
+  userLastViewedChannels,
 });
 
 export default schema;

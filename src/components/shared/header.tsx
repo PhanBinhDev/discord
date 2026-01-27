@@ -54,7 +54,7 @@ export default function Header() {
             height={32}
             className="rounded-lg"
           />
-          <div className="absolute -inset-1 bg-[var(--accent-color)] rounded-lg blur opacity-20 group-hover:opacity-30 transition-opacity -z-10" />
+          <div className="absolute -inset-1 bg-(--accent-color) rounded-lg blur opacity-20 group-hover:opacity-30 transition-opacity -z-10" />
         </div>
         <span className="hidden md:block text-foreground font-semibold">
           <TranslateText value="app.name" />
@@ -67,18 +67,18 @@ export default function Header() {
           <Button
             variant="ghost"
             asChild
-            className="text-foreground hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-xl"
+            className="text-foreground hover:text-(--accent-color) hover:bg-(--accent-color)/10 rounded-xl"
           >
-            <Link href="/features">
+            <Link href="/home">
               <TranslateText value="nav.features" />
             </Link>
           </Button>
           <Button
             variant="ghost"
             asChild
-            className="text-foreground hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-xl"
+            className="text-foreground hover:text-(--accent-color) hover:bg-(--accent-color)/10 rounded-xl"
           >
-            <Link href="/apps">
+            <Link href="/home">
               <TranslateText value="nav.app" />
             </Link>
           </Button>

@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as direct_messages from "../direct_messages.js";
 import type * as events from "../events.js";
 import type * as friends from "../friends.js";
+import type * as functions from "../functions.js";
 import type * as http from "../http.js";
 import type * as notifications from "../notifications.js";
 import type * as servers from "../servers.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   direct_messages: typeof direct_messages;
   events: typeof events;
   friends: typeof friends;
+  functions: typeof functions;
   http: typeof http;
   notifications: typeof notifications;
   servers: typeof servers;

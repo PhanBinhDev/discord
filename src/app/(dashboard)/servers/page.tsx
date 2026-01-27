@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 const ServerPage = () => {
-  return redirect('/servers');
+  redirect('/');
 };
 
 export default ServerPage;

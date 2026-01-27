@@ -85,6 +85,7 @@
       "offline": "Offline",
       "busy": "Busy",
       "away": "Away"
-    }
+    },
+    "invite": "Invite"
   }
 }

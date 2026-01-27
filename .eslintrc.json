@@ -24,6 +24,18 @@
           "params": false
         }
       }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["*/_generated/server"],
+            "importNames": ["query", "mutation", "action"],
+            "message": "Use functions.ts for query, mutation, action"
+          }
+        ]
+      }
     ]
   },
   "overrides": [

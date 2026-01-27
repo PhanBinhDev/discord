@@ -43,15 +43,6 @@ const handleClerkWebhook = httpAction(async (ctx, request) => {
       console.log(`User ${clerkId} soft deleted successfully`);
       break;
     }
-
-    case 'organization.deleted': {
-      console.log('Clerk webhook event:', event.type, event.data);
-      break;
-    }
-
-    default: {
-      console.log('Ignored Clerk webhook event:', event.type);
-    }
   }
 
   return new Response(null, {

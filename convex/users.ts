@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAuthUserId } from '@convex-dev/auth/server';
+import { GenericMutationCtx } from 'convex/server';
 import { v } from 'convex/values';
-import { internalMutation, mutation, query } from './_generated/server';
+import removeAccents from 'remove-accents';
+import { DataModel, Id } from './_generated/dataModel';
+import { query } from './_generated/server';
+import { internalMutation, mutation } from './functions';
 import { UserStatus } from './schema';
 
 export const currentUser = query({
@@ -68,6 +72,8 @@ export const upsertFromClerk = internalMutation({
       data.username || displayName.replace(/\s+/g, '').toLowerCase() || 'user',
     );
 
+    const searchText = `${displayName} ${data.username} ${discriminator} ${primaryEmail?.email_address}`;
+
     const userData = {
       clerkId: data.id,
       email: primaryEmail?.email_address ?? '',
@@ -78,6 +84,7 @@ export const upsertFromClerk = internalMutation({
       emailVerified: primaryEmail?.verification?.status === 'verified',
       status: 'online' as UserStatus,
       lastSeen: Date.now(),
+      searchText: removeAccents(searchText),
       ...existingUser,
     };
 
@@ -172,39 +179,397 @@ export const deleteUser = internalMutation({
       .withIndex('by_clerk_id', q => q.eq('clerkId', clerkId))
       .first();
 
-    if (user) {
-      const settings = await ctx.db
-        .query('userSettings')
-        .withIndex('by_user', q => q.eq('userId', user._id))
+    if (!user) {
+      console.log(`User with clerkId ${clerkId} not found`);
+      return;
+    }
+
+    console.log(`Starting deletion process for user ${user.email}`);
+
+    const deletedUser = await getOrCreateDeletedUser(ctx);
+
+    const settings = await ctx.db
+      .query('userSettings')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .first();
+    if (settings) {
+      await ctx.db.delete(settings._id);
+    }
+
+    const ownedServers = await ctx.db
+      .query('servers')
+      .withIndex('by_owner', q => q.eq('ownerId', user._id))
+      .collect();
+
+    for (const server of ownedServers) {
+      const firstAdmin = await ctx.db
+        .query('serverMembers')
+        .withIndex('by_server', q => q.eq('serverId', server._id))
+        .filter(q =>
+          q.and(
+            q.eq(q.field('role'), 'admin'),
+            q.neq(q.field('userId'), user._id),
+          ),
+        )
         .first();
 
-      if (settings) {
-        await ctx.db.delete(settings._id);
-      }
+      if (firstAdmin) {
+        await ctx.db.patch(server._id, { ownerId: firstAdmin.userId });
+      } else {
+        const firstModerator = await ctx.db
+          .query('serverMembers')
+          .withIndex('by_server', q => q.eq('serverId', server._id))
+          .filter(q =>
+            q.and(
+              q.eq(q.field('role'), 'moderator'),
+              q.neq(q.field('userId'), user._id),
+            ),
+          )
+          .first();
 
-      if (user.avatarStorageId) {
-        try {
-          await ctx.storage.delete(user.avatarStorageId);
-          console.log(`Deleted avatar for user ${user.email}`);
-        } catch (error) {
-          console.error('Failed to delete avatar:', error);
+        if (firstModerator) {
+          await ctx.db.patch(firstModerator._id, { role: 'admin' });
+          await ctx.db.patch(server._id, { ownerId: firstModerator.userId });
+        } else {
+          await deleteServerCascade(ctx, server._id);
         }
       }
-
-      if (user.bannerStorageId) {
-        try {
-          await ctx.storage.delete(user.bannerStorageId);
-          console.log(`Deleted banner for user ${user.email}`);
-        } catch (error) {
-          console.error('Failed to delete banner:', error);
-        }
-      }
-
-      await ctx.db.delete(user._id);
-      console.log(`User ${user.email} permanently deleted`);
     }
+
+    const memberships = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .collect();
+
+    for (const membership of memberships) {
+      await ctx.db.delete(membership._id);
+
+      const server = await ctx.db.get(membership.serverId);
+      if (server) {
+        await ctx.db.patch(server._id, {
+          memberCount: Math.max(0, server.memberCount - 1),
+        });
+      }
+    }
+
+    const userRoles = await ctx.db
+      .query('userRoles')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .collect();
+
+    for (const userRole of userRoles) {
+      await ctx.db.delete(userRole._id);
+    }
+
+    const messages = await ctx.db
+      .query('messages')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .collect();
+
+    for (const message of messages) {
+      if (message.attachments) {
+        for (const attachment of message.attachments) {
+          if (attachment.storageId) {
+            try {
+              await ctx.storage.delete(attachment.storageId);
+            } catch (error) {
+              console.error('Failed to delete message attachment:', error);
+            }
+          }
+        }
+      }
+
+      await ctx.db.patch(message._id, {
+        userId: deletedUser._id,
+        attachments: undefined,
+      });
+    }
+
+    const sentDMs = await ctx.db
+      .query('directMessages')
+      .withIndex('by_sender', q => q.eq('senderId', user._id))
+      .collect();
+
+    const receivedDMs = await ctx.db
+      .query('directMessages')
+      .withIndex('by_receiver', q => q.eq('receiverId', user._id))
+      .collect();
+
+    for (const dm of sentDMs) {
+      if (dm.attachments) {
+        for (const attachment of dm.attachments) {
+          if (attachment.storageId) {
+            try {
+              await ctx.storage.delete(attachment.storageId);
+            } catch (error) {
+              console.error('Failed to delete DM attachment:', error);
+            }
+          }
+        }
+      }
+
+      await ctx.db.patch(dm._id, {
+        senderId: deletedUser._id,
+        attachments: undefined,
+      });
+    }
+
+    for (const dm of receivedDMs) {
+      await ctx.db.patch(dm._id, {
+        receiverId: deletedUser._id,
+      });
+    }
+
+    const reactions = await ctx.db
+      .query('reactions')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .collect();
+
+    for (const reaction of reactions) {
+      await ctx.db.delete(reaction._id);
+    }
+
+    const friendships1 = await ctx.db
+      .query('friends')
+      .withIndex('by_user1', q => q.eq('userId1', user._id))
+      .collect();
+
+    const friendships2 = await ctx.db
+      .query('friends')
+      .withIndex('by_user2', q => q.eq('userId2', user._id))
+      .collect();
+
+    for (const friendship of [...friendships1, ...friendships2]) {
+      await ctx.db.delete(friendship._id);
+    }
+
+    const notifications = await ctx.db
+      .query('notifications')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .collect();
+
+    for (const notification of notifications) {
+      await ctx.db.delete(notification._id);
+    }
+
+    const voiceStates = await ctx.db
+      .query('voiceChannelStates')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .collect();
+
+    for (const voiceState of voiceStates) {
+      await ctx.db.delete(voiceState._id);
+    }
+
+    const invites = await ctx.db
+      .query('serverInvites')
+      .withIndex('by_inviter', q => q.eq('inviterId', user._id))
+      .collect();
+
+    for (const invite of invites) {
+      await ctx.db.patch(invite._id, {
+        status: 'revoked',
+      });
+    }
+
+    const boosts = await ctx.db
+      .query('serverBoosts')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .collect();
+
+    for (const boost of boosts) {
+      await ctx.db.delete(boost._id);
+    }
+
+    const webhooks = await ctx.db.query('webhooks').collect();
+
+    for (const webhook of webhooks) {
+      if (webhook.creatorId === user._id) {
+        await ctx.db.patch(webhook._id, {
+          creatorId: deletedUser._id,
+        });
+      }
+    }
+
+    const eventLogs = await ctx.db
+      .query('eventLogs')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .collect();
+
+    for (const log of eventLogs) {
+      await ctx.db.patch(log._id, {
+        userId: deletedUser._id,
+      });
+    }
+
+    const reportsMade = await ctx.db
+      .query('reports')
+      .withIndex('by_reporter', q => q.eq('reportedBy', user._id))
+      .collect();
+
+    const reportsReceived = await ctx.db
+      .query('reports')
+      .withIndex('by_reported_user', q => q.eq('reportedUserId', user._id))
+      .collect();
+
+    for (const report of reportsMade) {
+      await ctx.db.patch(report._id, {
+        reportedBy: deletedUser._id,
+      });
+    }
+
+    for (const report of reportsReceived) {
+      await ctx.db.patch(report._id, {
+        reportedUserId: deletedUser._id,
+      });
+    }
+
+    const lastViewedChannels = await ctx.db
+      .query('userLastViewedChannels')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .collect();
+
+    for (const record of lastViewedChannels) {
+      await ctx.db.delete(record._id);
+    }
+
+    if (user.avatarStorageId) {
+      try {
+        await ctx.storage.delete(user.avatarStorageId);
+      } catch (error) {
+        console.error('Failed to delete avatar:', error);
+      }
+    }
+
+    if (user.bannerStorageId) {
+      try {
+        await ctx.storage.delete(user.bannerStorageId);
+      } catch (error) {
+        console.error('Failed to delete banner:', error);
+      }
+    }
+
+    await ctx.db.delete(user._id);
+    console.log(`User ${user.email} deleted, data anonymized`);
   },
 });
+
+async function deleteServerCascade(
+  ctx: GenericMutationCtx<DataModel>,
+  serverId: Id<'servers'>,
+) {
+  const channels = await ctx.db
+    .query('channels')
+    .withIndex('by_server', q => q.eq('serverId', serverId))
+    .collect();
+
+  for (const channel of channels) {
+    const permissions = await ctx.db
+      .query('channelPermissions')
+      .withIndex('by_channel', q => q.eq('channelId', channel._id))
+      .collect();
+
+    for (const permission of permissions) {
+      await ctx.db.delete(permission._id);
+    }
+
+    const messages = await ctx.db
+      .query('messages')
+      .withIndex('by_channel', q => q.eq('channelId', channel._id))
+      .collect();
+
+    for (const message of messages) {
+      if (message.attachments) {
+        for (const attachment of message.attachments) {
+          if (attachment.storageId) {
+            try {
+              await ctx.storage.delete(attachment.storageId);
+            } catch (error) {
+              console.error('Failed to delete attachment:', error);
+            }
+          }
+        }
+      }
+      await ctx.db.delete(message._id);
+    }
+
+    await ctx.db.delete(channel._id);
+  }
+
+  const categories = await ctx.db
+    .query('channelCategories')
+    .withIndex('by_server', q => q.eq('serverId', serverId))
+    .collect();
+
+  for (const category of categories) {
+    await ctx.db.delete(category._id);
+  }
+
+  const roles = await ctx.db
+    .query('roles')
+    .withIndex('by_server', q => q.eq('serverId', serverId))
+    .collect();
+
+  for (const role of roles) {
+    await ctx.db.delete(role._id);
+  }
+
+  const members = await ctx.db
+    .query('serverMembers')
+    .withIndex('by_server', q => q.eq('serverId', serverId))
+    .collect();
+
+  for (const member of members) {
+    await ctx.db.delete(member._id);
+  }
+
+  const server = await ctx.db.get(serverId);
+  if (server) {
+    if (server.iconStorageId) {
+      try {
+        await ctx.storage.delete(server.iconStorageId);
+      } catch (error) {
+        console.error('Failed to delete server icon:', error);
+      }
+    }
+
+    if (server.bannerStorageId) {
+      try {
+        await ctx.storage.delete(server.bannerStorageId);
+      } catch (error) {
+        console.error('Failed to delete server banner:', error);
+      }
+    }
+  }
+
+  await ctx.db.delete(serverId);
+}
+
+async function getOrCreateDeletedUser(ctx: GenericMutationCtx<DataModel>) {
+  const DELETED_USER_CLERK_ID = 'deleted_user_placeholder';
+
+  let deletedUser = await ctx.db
+    .query('users')
+    .withIndex('by_clerk_id', q => q.eq('clerkId', DELETED_USER_CLERK_ID))
+    .first();
+
+  if (!deletedUser) {
+    const deletedUserId = await ctx.db.insert('users', {
+      clerkId: DELETED_USER_CLERK_ID,
+      email: 'deleted@system.local',
+      username: 'DeletedUser',
+      displayName: 'Deleted User',
+      discriminator: '0000',
+      emailVerified: true,
+      status: 'offline',
+      searchText: '',
+    });
+
+    deletedUser = await ctx.db.get(deletedUserId);
+  }
+
+  return deletedUser!;
+}
 
 export const getUserSettings = query({
   args: {},
@@ -312,6 +677,7 @@ export const heartbeat = mutation({
   args: {},
   handler: async ctx => {
     const userId = await getAuthUserId(ctx);
+
     if (!userId) return;
 
     const user = await ctx.db
@@ -329,13 +695,15 @@ export const heartbeat = mutation({
       (user.status === 'offline' && !isManualOffline) ||
       isStatusExpired;
 
-    await ctx.db.patch(user._id, {
-      ...(shouldUpdateToOnline && {
+    if (shouldUpdateToOnline) {
+      await ctx.db.patch(user._id, {
         status: 'online',
         statusExpiredAt: undefined,
-      }),
-      lastSeen: now,
-    });
+        lastSeen: now,
+      });
+    }
+
+    return { success: true };
   },
 });
 
@@ -443,5 +811,39 @@ export const getUserByUsername = query({
       .query('users')
       .withIndex('by_username', q => q.eq('username', args.username))
       .first();
+  },
+});
+
+export const searchUsers = query({
+  args: {
+    query: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+
+    if (!userId) return [];
+
+    const currentUser = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!currentUser) return [];
+
+    const limit = args.limit || 10;
+
+    const searchResults = await ctx.db
+      .query('users')
+      .withSearchIndex('searchText', q =>
+        q.search('searchText', removeAccents(args.query)),
+      )
+      .take(limit);
+
+    const filteredResults = searchResults.filter(
+      user => user._id !== currentUser._id,
+    );
+
+    return filteredResults;
   },
 });

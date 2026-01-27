@@ -17,6 +17,8 @@ export const NotificationType = v.union(
   v.literal('call_incoming'),
   v.literal('call_missed'),
   v.literal('system'),
+  v.literal('server_invite_request'),
+  v.literal('server_invite_pending'),
 );
 
 export const NotificationFilter = v.union(

@@ -1,6 +1,536 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
+import { GenericQueryCtx } from 'convex/server';
 import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
+import { DataModel, Doc, Id } from './_generated/dataModel';
+import { query } from './_generated/server';
+import { mutation } from './functions';
+
+const EXPIRED_TIME = 7 * 24 * 60 * 60 * 1000;
+
+async function canUserAccessChannel(
+  ctx: GenericQueryCtx<DataModel>,
+  userId: Id<'users'>,
+  channelId: Id<'channels'>,
+  serverId: Id<'servers'>,
+): Promise<boolean> {
+  const channel = await ctx.db.get(channelId);
+  if (!channel) return false;
+
+  if (!channel.isPrivate) return true;
+
+  const membership = await ctx.db
+    .query('serverMembers')
+    .withIndex('by_server_user', q =>
+      q.eq('serverId', serverId).eq('userId', userId),
+    )
+    .first();
+
+  if (!membership || membership.isBanned) return false;
+
+  if (membership.role === 'owner' || membership.role === 'admin') {
+    return true;
+  }
+
+  const userPermission = await ctx.db
+    .query('channelPermissions')
+    .withIndex('by_channel', q => q.eq('channelId', channelId))
+    .filter(q => q.eq(q.field('userId'), userId))
+    .first();
+
+  if (userPermission) {
+    return userPermission.canView;
+  }
+
+  const userRoles = await ctx.db
+    .query('userRoles')
+    .withIndex('by_user_server', q =>
+      q.eq('userId', userId).eq('serverId', serverId),
+    )
+    .collect();
+
+  if (userRoles.length === 0) return false;
+
+  const rolePermissions = await ctx.db
+    .query('channelPermissions')
+    .withIndex('by_channel', q => q.eq('channelId', channelId))
+    .collect();
+
+  for (const userRole of userRoles) {
+    const permission = rolePermissions.find(p => p.roleId === userRole.roleId);
+    if (permission && permission.canView) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export const inviteUserToServer = mutation({
+  args: {
+    serverId: v.id('servers'),
+    targetUserId: v.id('users'),
+    inviteMessage: v.optional(v.string()),
+    options: v.optional(
+      v.object({
+        expiresAt: v.optional(v.number()),
+        maxUses: v.optional(v.number()),
+        temporary: v.optional(v.boolean()),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const currentUser = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!currentUser) throw new Error('User not found');
+
+    const inviteMembership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', currentUser._id),
+      )
+      .first();
+
+    if (!inviteMembership) {
+      throw new Error('You are not a member of the server');
+    }
+
+    const targetMembership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', args.targetUserId),
+      )
+      .first();
+
+    if (targetMembership) {
+      throw new Error('User is already a member of the server');
+    }
+
+    const server = await ctx.db.get(args.serverId);
+
+    if (!server) throw new Error('Server not found');
+
+    const targetUser = await ctx.db.get(args.targetUserId);
+
+    if (!targetUser) throw new Error('Target user not found');
+
+    const friendship = await ctx.db
+      .query('friends')
+      .withIndex('by_users', q =>
+        q.eq('userId1', currentUser._id).eq('userId2', args.targetUserId),
+      )
+      .first();
+
+    const reverseFriendship = await ctx.db
+      .query('friends')
+      .withIndex('by_users', q =>
+        q.eq('userId1', args.targetUserId).eq('userId2', currentUser._id),
+      )
+      .first();
+
+    const areFriends =
+      friendship?.status === 'accepted' ||
+      reverseFriendship?.status === 'accepted';
+
+    const targetSettings = await ctx.db
+      .query('userSettings')
+      .withIndex('by_user', q => q.eq('userId', args.targetUserId))
+      .first();
+
+    const inviteCode = generateInviteCode();
+
+    const channels = await ctx.db
+      .query('channels')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .collect();
+
+    await ctx.db.insert('serverInvites', {
+      serverId: args.serverId,
+      channelId: channels[0]._id,
+      inviterId: currentUser._id,
+      code: inviteCode,
+      uses: 0,
+      maxUses: args.options?.maxUses || 1,
+      temporary: args.options?.temporary || false,
+      status: 'active',
+      expiresAt: args.options?.expiresAt || Date.now() + EXPIRED_TIME,
+    });
+
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${inviteCode}`;
+
+    if (areFriends) {
+      await ctx.db.insert('directMessages', {
+        senderId: currentUser._id,
+        receiverId: args.targetUserId,
+        content:
+          args.inviteMessage ||
+          `Hey! Join me on **${server.name}**!\n\n${inviteLink}`,
+        type: 'text',
+        isRead: false,
+        createdAt: Date.now(),
+      });
+
+      // Send notification
+      await ctx.db.insert('notifications', {
+        userId: args.targetUserId,
+        type: 'server_invite',
+        title: 'Server Invitation',
+        message: `${currentUser.displayName} invited you to join ${server.name}`,
+        metadata: {
+          serverId: args.serverId,
+          inviteCode,
+          inviterId: currentUser._id,
+        },
+        read: false,
+      });
+
+      return {
+        success: true,
+        method: 'direct_message',
+        inviteCode,
+      };
+    }
+
+    const canSendDM =
+      targetSettings?.privacy?.dmPermission === 'everyone' ||
+      (targetSettings?.privacy?.dmPermission === 'server_members' &&
+        (await areInSameServer(ctx, currentUser._id, args.targetUserId)));
+
+    if (canSendDM) {
+      await ctx.db.insert('directMessages', {
+        senderId: currentUser._id,
+        receiverId: args.targetUserId,
+        content:
+          args.inviteMessage ||
+          `Hey! Join me on **${server.name}**!\n\n${inviteLink}`,
+        type: 'text',
+        isRead: false,
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert('notifications', {
+        userId: args.targetUserId,
+        type: 'server_invite_request',
+        title: 'Server Invitation Request',
+        message: `${currentUser.displayName} sent you a server invitation`,
+        metadata: {
+          serverId: args.serverId,
+          inviteCode,
+          inviterId: currentUser._id,
+        },
+        read: false,
+      });
+
+      return {
+        success: true,
+        method: 'message_request',
+        inviteCode,
+      };
+    }
+
+    await ctx.db.insert('notifications', {
+      userId: args.targetUserId,
+      type: 'server_invite_pending',
+      title: 'Pending Server Invitation',
+      message: `${currentUser.displayName} wants to invite you to ${server.name}`,
+      metadata: {
+        serverId: args.serverId,
+        inviteCode,
+        inviterId: currentUser._id,
+      },
+      read: false,
+    });
+
+    return {
+      success: true,
+      method: 'notification_only',
+      inviteCode,
+      message: 'Invitation sent. User will see it in their notifications.',
+    };
+  },
+});
+
+async function areInSameServer(
+  ctx: GenericQueryCtx<DataModel>,
+  userId1: Id<'users'>,
+  userId2: Id<'users'>,
+) {
+  const user1Servers = await ctx.db
+    .query('serverMembers')
+    .withIndex('by_user', q => q.eq('userId', userId1))
+    .collect();
+
+  const user2Servers = await ctx.db
+    .query('serverMembers')
+    .withIndex('by_user', q => q.eq('userId', userId2))
+    .collect();
+
+  const user1ServerIds = new Set(user1Servers.map(m => m.serverId));
+
+  return user2Servers.some(m => user1ServerIds.has(m.serverId));
+}
+
+function generateInviteCode(): string {
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+export const getAccessibleChannels = query({
+  args: { serverId: v.id('servers') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) return null;
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) return null;
+
+    const allChannels = await ctx.db
+      .query('channels')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .order('asc')
+      .collect();
+
+    const accessibleChannels: Doc<'channels'>[] = [];
+    for (const channel of allChannels) {
+      const hasAccess = await canUserAccessChannel(
+        ctx,
+        user._id,
+        channel._id,
+        args.serverId,
+      );
+      if (hasAccess) {
+        accessibleChannels.push(channel);
+      }
+    }
+
+    if (accessibleChannels.length === 0) return null;
+
+    // Lấy channel cuối cùng user xem
+    const lastViewed = await ctx.db
+      .query('userLastViewedChannels')
+      .withIndex('by_user_server', q =>
+        q.eq('userId', user._id).eq('serverId', args.serverId),
+      )
+      .first();
+
+    let defaultChannel: Doc<'channels'> | null = null;
+
+    if (lastViewed) {
+      const lastViewedChannel = accessibleChannels.find(
+        ch => ch._id === lastViewed.channelId,
+      );
+      if (lastViewedChannel) {
+        defaultChannel = lastViewedChannel;
+      }
+    }
+
+    if (!defaultChannel) {
+      defaultChannel =
+        accessibleChannels.find(
+          ch => ch.name.toLowerCase() === 'general' && ch.type === 'text',
+        ) || accessibleChannels[0];
+    }
+
+    return {
+      channels: accessibleChannels,
+      defaultChannelId: defaultChannel._id,
+    };
+  },
+});
+
+export const updateLastViewedChannel = mutation({
+  args: {
+    serverId: v.id('servers'),
+    channelId: v.id('channels'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const hasAccess = await canUserAccessChannel(
+      ctx,
+      user._id,
+      args.channelId,
+      args.serverId,
+    );
+
+    if (!hasAccess) {
+      throw new Error('No access to this channel');
+    }
+
+    // Tìm record hiện tại
+    const existing = await ctx.db
+      .query('userLastViewedChannels')
+      .withIndex('by_user_server', q =>
+        q.eq('userId', user._id).eq('serverId', args.serverId),
+      )
+      .first();
+
+    if (existing) {
+      // Update
+      await ctx.db.patch(existing._id, {
+        channelId: args.channelId,
+        lastViewedAt: Date.now(),
+      });
+    } else {
+      // Insert
+      await ctx.db.insert('userLastViewedChannels', {
+        userId: user._id,
+        serverId: args.serverId,
+        channelId: args.channelId,
+        lastViewedAt: Date.now(),
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+export const setChannelPermission = mutation({
+  args: {
+    channelId: v.id('channels'),
+    roleId: v.optional(v.id('roles')),
+    userId: v.optional(v.id('users')),
+    canView: v.boolean(),
+    canSend: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const authUserId = await getAuthUserId(ctx);
+    if (!authUserId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', authUserId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) throw new Error('Channel not found');
+
+    // Kiểm tra quyền admin
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    // Tìm permission hiện tại
+    let existingPermission;
+    if (args.roleId) {
+      existingPermission = await ctx.db
+        .query('channelPermissions')
+        .withIndex('by_channel_role', q =>
+          q.eq('channelId', args.channelId).eq('roleId', args.roleId),
+        )
+        .first();
+    } else if (args.userId) {
+      existingPermission = await ctx.db
+        .query('channelPermissions')
+        .withIndex('by_channel', q => q.eq('channelId', args.channelId))
+        .filter(q => q.eq(q.field('userId'), args.userId))
+        .first();
+    }
+
+    if (existingPermission) {
+      await ctx.db.patch(existingPermission._id, {
+        canView: args.canView,
+        canSend: args.canSend,
+      });
+    } else {
+      await ctx.db.insert('channelPermissions', {
+        channelId: args.channelId,
+        roleId: args.roleId,
+        userId: args.userId,
+        canView: args.canView,
+        canSend: args.canSend,
+        createdAt: Date.now(),
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+export const removeChannelPermission = mutation({
+  args: {
+    permissionId: v.id('channelPermissions'),
+  },
+  handler: async (ctx, args) => {
+    const authUserId = await getAuthUserId(ctx);
+    if (!authUserId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', authUserId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const permission = await ctx.db.get(args.permissionId);
+    if (!permission) throw new Error('Permission not found');
+
+    const channel = await ctx.db.get(permission.channelId);
+    if (!channel) throw new Error('Channel not found');
+
+    // Kiểm tra quyền admin
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    await ctx.db.delete(args.permissionId);
+
+    return { success: true };
+  },
+});
 
 export const getUserServers = query({
   args: {},
@@ -40,7 +570,6 @@ export const getUserServers = query({
   },
 });
 
-// Get server by ID with member check
 export const getServerById = query({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
@@ -67,15 +596,20 @@ export const getServerById = query({
 
     if (!membership || membership.isBanned) return null;
 
+    const channels = await ctx.db
+      .query('channels')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .collect();
+
     return {
       ...server,
       role: membership.role,
       nickname: membership.nickname,
+      channels,
     };
   },
 });
 
-// Get server members
 export const getServerMembers = query({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
@@ -133,7 +667,6 @@ export const getServerMembers = query({
   },
 });
 
-// Create a new server
 export const createServer = mutation({
   args: {
     name: v.string(),
@@ -408,7 +941,6 @@ export const deleteServer = mutation({
   },
 });
 
-// Join server by invite code
 export const joinServer = mutation({
   args: { inviteCode: v.string() },
   handler: async (ctx, args) => {
@@ -467,7 +999,6 @@ export const joinServer = mutation({
   },
 });
 
-// Leave server
 export const leaveServer = mutation({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
@@ -513,7 +1044,6 @@ export const leaveServer = mutation({
   },
 });
 
-// Regenerate invite code
 export const regenerateInviteCode = mutation({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {

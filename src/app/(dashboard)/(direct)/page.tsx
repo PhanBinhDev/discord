@@ -19,7 +19,7 @@ const DashboardPage = () => {
 
         <Dot size={35} />
 
-        <Link href="/servers/direct-messages/new">
+        <Link href="/">
           <Button
             variant="ghost"
             className="pr-2 pl-3 text-sm justify-center bg-(--accent-color)/80 hover:bg-(--accent-color) truncate"

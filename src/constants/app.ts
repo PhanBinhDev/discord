@@ -1,4 +1,13 @@
-import { StatusExpiredOption, StatusMapping } from '@/types';
+import { ServerMenu, StatusExpiredOption, StatusMapping } from '@/types';
+import {
+  IconCalendarEvent,
+  IconCirclePlusFilled,
+  IconFolderPlus,
+  IconInbox,
+  IconLogout2,
+  IconSettings,
+} from '@tabler/icons-react';
+import { ArrowLeftRight } from 'lucide-react';
 
 export const INTERVAL = 60; // seconds
 export const MAX_USERS_SHOW = 2;
@@ -65,3 +74,55 @@ export const StatusExpiredOptions: StatusExpiredOption[] = [
     value: 'never',
   },
 ];
+
+export const ServerMenusItems: ServerMenu[] = [
+  {
+    label: 'servers.menu.invite',
+    icon: IconInbox,
+    group: 'general',
+    owner: false,
+    modal: 'ModalInvitePeople',
+  },
+  {
+    label: 'servers.menu.settings',
+    icon: IconSettings,
+    group: 'general',
+    owner: true,
+    modal: 'ModalServerSettings',
+  },
+  {
+    label: 'servers.menu.createChannel',
+    icon: IconCirclePlusFilled,
+    group: 'management',
+    owner: true,
+    modal: 'ModalCreateChannel',
+  },
+  {
+    label: 'servers.menu.createCategory',
+    icon: IconFolderPlus,
+    group: 'management',
+    owner: true,
+    modal: 'ModalCreateCategory',
+  },
+  {
+    label: 'servers.menu.createEvent',
+    icon: IconCalendarEvent,
+    group: 'management',
+    owner: false,
+    modal: 'ModalCreateEvent',
+  },
+  {
+    label: 'servers.menu.leaveServer',
+    icon: IconLogout2,
+    group: 'danger',
+    owner: false,
+    modal: null,
+  },
+  {
+    label: 'servers.menu.transferOwner',
+    icon: ArrowLeftRight,
+    group: 'management',
+    owner: true,
+    modal: null,
+  },
+] as const;

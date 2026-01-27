@@ -45,6 +45,18 @@
       "quests": "Quests",
       "findOrStart": "Find or start a conversation"
     },
+    "menu": {
+      "settings": "Settings",
+      "invite": "Invite People",
+      "createEvent": "Create Event",
+      "leaveServer": "Leave Server",
+      "general": "General",
+      "management": "Management",
+      "danger": "Danger Zone",
+      "transferOwner": "Transfer Ownership",
+      "createChannel": "Create Channel",
+      "createCategory": "Create Category"
+    },
     "settings": {
       "editProfile": "Edit Profile",
       "changeAccount": "Change Account",
@@ -85,6 +97,15 @@
       },
       "updateSuccess": "User status updated successfully!",
       "updateFailed": "Failed to update user status. Please try again."
+    },
+    "invite": {
+      "title": "Invite people to your server",
+      "description": "Recipients will arrive at #{{channel}}",
+      "copyLink": "Copy invite link",
+      "placeholder": "Enter username or email",
+      "noUsersFound": "No users found",
+      "inviteSuccess": "Invitation sent successfully!",
+      "inviteFailed": "Failed to send invitation. Please try again."
     }
   }
 }

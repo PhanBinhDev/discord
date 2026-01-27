@@ -87,12 +87,12 @@ export default async function RootLayout({ children }: Readonly<IChildren>) {
                         },
                         classNames: {
                           success:
-                            '!border-[var(--accent-color)]/20 !bg-[var(--accent-color)]/10 !text-[var(--accent-color)]',
+                            '!border-[var(--accent-color)]/20 !bg-muted !text-[var(--accent-color)]',
                           error:
-                            '!border-red-500/20 !bg-red-500/10 !text-red-600 dark:!text-red-500',
+                            '!border-red-500/20 !bg-muted !text-red-600 dark:!text-red-500',
                           warning:
-                            '!border-yellow-500/20 !bg-yellow-500/10 !text-yellow-600 dark:!text-yellow-500',
-                          info: '!border-blue-500/20 !bg-blue-500/10 !text-blue-600 dark:!text-blue-500',
+                            '!border-yellow-500/20 !bg-muted !text-yellow-600 dark:!text-yellow-500',
+                          info: '!border-blue-500/20 !bg-muted !text-blue-600 dark:!text-blue-500',
                         },
                       }}
                     />
