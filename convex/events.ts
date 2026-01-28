@@ -29,7 +29,6 @@ export const sendMessage = mutation({
       channelId: args.channelId,
       userId: userId.subject as Id<'users'>,
       content: args.content,
-      createdAt: Date.now(),
       type: 'text',
       mentionEveryone: false,
       isPinned: false,

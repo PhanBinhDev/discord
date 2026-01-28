@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { GenericQueryCtx } from 'convex/server';
 import { v } from 'convex/values';
 import { DataModel, Doc, Id } from './_generated/dataModel';
 import { query } from './_generated/server';
 import { mutation } from './functions';
+import { ChannelType } from './schema';
 
 const EXPIRED_TIME = 7 * 24 * 60 * 60 * 1000;
 
@@ -172,7 +174,6 @@ export const inviteUserToServer = mutation({
           `Hey! Join me on **${server.name}**!\n\n${inviteLink}`,
         type: 'text',
         isRead: false,
-        createdAt: Date.now(),
       });
 
       // Send notification
@@ -210,7 +211,6 @@ export const inviteUserToServer = mutation({
           `Hey! Join me on **${server.name}**!\n\n${inviteLink}`,
         type: 'text',
         isRead: false,
-        createdAt: Date.now(),
       });
 
       await ctx.db.insert('notifications', {
@@ -307,13 +307,25 @@ export const getAccessibleChannels = query({
 
     if (!membership || membership.isBanned) return null;
 
+    // Get all categories for mapping
+    const categories = await ctx.db
+      .query('channelCategories')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .collect();
+
+    const categoryMap = new Map(categories.map(cat => [cat._id, cat]));
+
+    // Get all channels
     const allChannels = await ctx.db
       .query('channels')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
-      .order('asc')
       .collect();
 
-    const accessibleChannels: Doc<'channels'>[] = [];
+    // Filter accessible channels with permission check
+    const accessibleChannels: (Doc<'channels'> & {
+      category: Doc<'channelCategories'> | null;
+    })[] = [];
+
     for (const channel of allChannels) {
       const hasAccess = await canUserAccessChannel(
         ctx,
@@ -321,14 +333,18 @@ export const getAccessibleChannels = query({
         channel._id,
         args.serverId,
       );
+
       if (hasAccess) {
-        accessibleChannels.push(channel);
+        const category = channel.categoryId
+          ? categoryMap.get(channel.categoryId) || null
+          : null;
+        accessibleChannels.push({ ...channel, category });
       }
     }
 
     if (accessibleChannels.length === 0) return null;
 
-    // Lấy channel cuối cùng user xem
+    // Get last viewed channel
     const lastViewed = await ctx.db
       .query('userLastViewedChannels')
       .withIndex('by_user_server', q =>
@@ -336,7 +352,9 @@ export const getAccessibleChannels = query({
       )
       .first();
 
-    let defaultChannel: Doc<'channels'> | null = null;
+    let defaultChannel:
+      | (Doc<'channels'> & { category: Doc<'channelCategories'> | null })
+      | null = null;
 
     if (lastViewed) {
       const lastViewedChannel = accessibleChannels.find(
@@ -482,7 +500,6 @@ export const setChannelPermission = mutation({
         userId: args.userId,
         canView: args.canView,
         canSend: args.canSend,
-        createdAt: Date.now(),
       });
     }
 
@@ -596,16 +613,33 @@ export const getServerById = query({
 
     if (!membership || membership.isBanned) return null;
 
+    // Get all categories for this server
+    const categories = await ctx.db
+      .query('channelCategories')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .collect();
+
+    // Get all channels for this server
     const channels = await ctx.db
       .query('channels')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
+    // Map category into each channel
+    const channelsWithCategory = channels.map(channel => {
+      const category =
+        categories.find(cat => cat._id === channel.categoryId) || null;
+      return {
+        ...channel,
+        category,
+      };
+    });
+
     return {
       ...server,
       role: membership.role,
       nickname: membership.nickname,
-      channels,
+      channels: channelsWithCategory,
     };
   },
 });
@@ -704,7 +738,6 @@ export const createServer = mutation({
       inviteCode,
       isPublic: args.isPublic ?? false,
       memberCount: 1,
-      createdAt: Date.now(),
       updatedAt: Date.now(),
     });
 
@@ -719,12 +752,16 @@ export const createServer = mutation({
       isBanned: false,
     });
 
-    // Create default channels
     const generalCategoryId = await ctx.db.insert('channelCategories', {
       serverId,
-      name: 'General',
+      name: 'Text Channels',
       position: 0,
-      createdAt: Date.now(),
+    });
+
+    const voiceCategoryId = await ctx.db.insert('channelCategories', {
+      serverId,
+      name: 'Voice Channels',
+      position: 1,
     });
 
     await ctx.db.insert('channels', {
@@ -735,19 +772,17 @@ export const createServer = mutation({
       position: 0,
       isPrivate: false,
       isNsfw: false,
-      createdAt: Date.now(),
       updatedAt: Date.now(),
     });
 
     await ctx.db.insert('channels', {
       serverId,
-      categoryId: generalCategoryId,
+      categoryId: voiceCategoryId,
       name: 'General',
       type: 'voice',
       position: 1,
       isPrivate: false,
       isNsfw: false,
-      createdAt: Date.now(),
       updatedAt: Date.now(),
     });
 
@@ -1086,5 +1121,905 @@ export const regenerateInviteCode = mutation({
     });
 
     return { inviteCode: newInviteCode };
+  },
+});
+
+// ==================== CHANNEL CATEGORY APIs ====================
+
+// Create category
+export const createCategory = mutation({
+  args: {
+    serverId: v.id('servers'),
+    name: v.string(),
+    position: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    // Get current max position if not provided
+    let position = args.position;
+    if (position === undefined) {
+      const categories = await ctx.db
+        .query('channelCategories')
+        .withIndex('by_server', q => q.eq('serverId', args.serverId))
+        .collect();
+      position = categories.length;
+    }
+
+    const categoryId = await ctx.db.insert('channelCategories', {
+      serverId: args.serverId,
+      name: args.name,
+      position,
+    });
+
+    return { categoryId };
+  },
+});
+
+// Update category
+export const updateCategory = mutation({
+  args: {
+    categoryId: v.id('channelCategories'),
+    name: v.optional(v.string()),
+    position: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const category = await ctx.db.get(args.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    const updates: any = {};
+    if (args.name !== undefined) updates.name = args.name;
+    if (args.position !== undefined) updates.position = args.position;
+
+    await ctx.db.patch(args.categoryId, updates);
+
+    return { success: true };
+  },
+});
+
+// Delete category
+export const deleteCategory = mutation({
+  args: {
+    categoryId: v.id('channelCategories'),
+    deleteChannels: v.optional(v.boolean()), // true = delete channels, false = move to uncategorized
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const category = await ctx.db.get(args.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    // Get channels in this category
+    const channels = await ctx.db
+      .query('channels')
+      .withIndex('by_category', q => q.eq('categoryId', args.categoryId))
+      .collect();
+
+    if (args.deleteChannels) {
+      // Delete all channels in category
+      for (const channel of channels) {
+        // Delete messages first
+        const messages = await ctx.db
+          .query('messages')
+          .withIndex('by_channel', q => q.eq('channelId', channel._id))
+          .collect();
+
+        await Promise.all(messages.map(msg => ctx.db.delete(msg._id)));
+        await ctx.db.delete(channel._id);
+      }
+    } else {
+      // Move channels to uncategorized
+      await Promise.all(
+        channels.map(channel =>
+          ctx.db.patch(channel._id, { categoryId: undefined }),
+        ),
+      );
+    }
+
+    await ctx.db.delete(args.categoryId);
+
+    return { success: true };
+  },
+});
+
+// Reorder categories
+export const reorderCategories = mutation({
+  args: {
+    serverId: v.id('servers'),
+    categoryOrders: v.array(
+      v.object({
+        categoryId: v.id('channelCategories'),
+        position: v.number(),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    // Update positions
+    await Promise.all(
+      args.categoryOrders.map(({ categoryId, position }) =>
+        ctx.db.patch(categoryId, { position }),
+      ),
+    );
+
+    return { success: true };
+  },
+});
+
+// ==================== CHANNEL APIs ====================
+
+// Create channel
+export const createChannel = mutation({
+  args: {
+    serverId: v.id('servers'),
+    categoryId: v.optional(v.id('channelCategories')),
+    name: v.string(),
+    type: ChannelType,
+    topic: v.optional(v.string()),
+    isPrivate: v.optional(v.boolean()),
+    isNsfw: v.optional(v.boolean()),
+    position: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    // Get current max position if not provided
+    let position = args.position;
+    if (position === undefined) {
+      const channels = await ctx.db
+        .query('channels')
+        .withIndex('by_server', q => q.eq('serverId', args.serverId))
+        .collect();
+      position = channels.length;
+    }
+
+    const channelId = await ctx.db.insert('channels', {
+      serverId: args.serverId,
+      categoryId: args.categoryId,
+      name: args.name,
+      type: args.type,
+      topic: args.topic,
+      position,
+      isPrivate: args.isPrivate ?? false,
+      isNsfw: args.isNsfw ?? false,
+      updatedAt: Date.now(),
+    });
+
+    return { channelId };
+  },
+});
+
+// Update channel
+export const updateChannel = mutation({
+  args: {
+    channelId: v.id('channels'),
+    name: v.optional(v.string()),
+    topic: v.optional(v.string()),
+    categoryId: v.optional(v.union(v.id('channelCategories'), v.null())),
+    position: v.optional(v.number()),
+    isPrivate: v.optional(v.boolean()),
+    isNsfw: v.optional(v.boolean()),
+    slowMode: v.optional(v.number()),
+    userLimit: v.optional(v.number()),
+    bitrate: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) throw new Error('Channel not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    const { channelId, ...updates } = args;
+    const finalUpdates: any = { updatedAt: Date.now() };
+
+    if (updates.name !== undefined) finalUpdates.name = updates.name;
+    if (updates.topic !== undefined) finalUpdates.topic = updates.topic;
+    if (updates.categoryId !== undefined) {
+      finalUpdates.categoryId =
+        updates.categoryId === null ? undefined : updates.categoryId;
+    }
+    if (updates.position !== undefined)
+      finalUpdates.position = updates.position;
+    if (updates.isPrivate !== undefined)
+      finalUpdates.isPrivate = updates.isPrivate;
+    if (updates.isNsfw !== undefined) finalUpdates.isNsfw = updates.isNsfw;
+    if (updates.slowMode !== undefined)
+      finalUpdates.slowMode = updates.slowMode;
+    if (updates.userLimit !== undefined)
+      finalUpdates.userLimit = updates.userLimit;
+    if (updates.bitrate !== undefined) finalUpdates.bitrate = updates.bitrate;
+
+    await ctx.db.patch(channelId, finalUpdates);
+
+    return { success: true };
+  },
+});
+
+// Delete channel
+export const deleteChannel = mutation({
+  args: { channelId: v.id('channels') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) throw new Error('Channel not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    // Delete all messages in channel
+    const messages = await ctx.db
+      .query('messages')
+      .withIndex('by_channel', q => q.eq('channelId', args.channelId))
+      .collect();
+
+    await Promise.all(messages.map(msg => ctx.db.delete(msg._id)));
+
+    // Delete channel permissions
+    const permissions = await ctx.db
+      .query('channelPermissions')
+      .withIndex('by_channel', q => q.eq('channelId', args.channelId))
+      .collect();
+
+    await Promise.all(permissions.map(perm => ctx.db.delete(perm._id)));
+
+    // Delete channel
+    await ctx.db.delete(args.channelId);
+
+    return { success: true };
+  },
+});
+
+// Reorder channels (batch update - for complete reorder)
+export const reorderChannels = mutation({
+  args: {
+    serverId: v.id('servers'),
+    channelOrders: v.array(
+      v.object({
+        channelId: v.id('channels'),
+        position: v.number(),
+        categoryId: v.optional(v.union(v.id('channelCategories'), v.null())),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    // Update positions and categories
+    await Promise.all(
+      args.channelOrders.map(({ channelId, position, categoryId }) => {
+        const updates: any = { position, updatedAt: Date.now() };
+        if (categoryId !== undefined) {
+          updates.categoryId = categoryId === null ? undefined : categoryId;
+        }
+        return ctx.db.patch(channelId, updates);
+      }),
+    );
+
+    return { success: true };
+  },
+});
+
+// Move single channel (optimized for drag & drop)
+export const moveChannel = mutation({
+  args: {
+    channelId: v.id('channels'),
+    newCategoryId: v.union(v.id('channelCategories'), v.null()),
+    newPosition: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) throw new Error('Channel not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    const oldCategoryId = channel.categoryId;
+    const newCategoryId =
+      args.newCategoryId === null ? undefined : args.newCategoryId;
+
+    // Get all channels in the target category
+    const targetChannels = await ctx.db
+      .query('channels')
+      .withIndex('by_server', q => q.eq('serverId', channel.serverId))
+      .collect();
+
+    const channelsInTargetCategory = targetChannels
+      .filter(ch => {
+        if (newCategoryId === undefined) {
+          return ch.categoryId === undefined && ch._id !== args.channelId;
+        }
+        return ch.categoryId === newCategoryId && ch._id !== args.channelId;
+      })
+      .sort((a, b) => a.position - b.position);
+
+    // Reposition channels in target category
+    const updates: Array<Promise<any>> = [];
+
+    // Update moved channel
+    updates.push(
+      ctx.db.patch(args.channelId, {
+        categoryId: newCategoryId,
+        position: args.newPosition,
+        updatedAt: Date.now(),
+      }),
+    );
+
+    // Shift channels in target category
+    for (let i = 0; i < channelsInTargetCategory.length; i++) {
+      const ch = channelsInTargetCategory[i];
+      let newPos = i;
+
+      if (i >= args.newPosition) {
+        newPos = i + 1;
+      }
+
+      if (ch.position !== newPos) {
+        updates.push(
+          ctx.db.patch(ch._id, {
+            position: newPos,
+            updatedAt: Date.now(),
+          }),
+        );
+      }
+    }
+
+    // If moved to different category, reposition old category channels
+    if (oldCategoryId !== newCategoryId) {
+      const channelsInOldCategory = targetChannels
+        .filter(ch => {
+          if (oldCategoryId === undefined) {
+            return ch.categoryId === undefined && ch._id !== args.channelId;
+          }
+          return ch.categoryId === oldCategoryId && ch._id !== args.channelId;
+        })
+        .sort((a, b) => a.position - b.position);
+
+      channelsInOldCategory.forEach((ch, idx) => {
+        if (ch.position !== idx) {
+          updates.push(
+            ctx.db.patch(ch._id, {
+              position: idx,
+              updatedAt: Date.now(),
+            }),
+          );
+        }
+      });
+    }
+
+    await Promise.all(updates);
+
+    return { success: true };
+  },
+});
+
+// Move single category (optimized for drag & drop)
+export const moveCategory = mutation({
+  args: {
+    categoryId: v.id('channelCategories'),
+    newPosition: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const category = await ctx.db.get(args.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    // Check permissions
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    // Get all categories
+    const allCategories = await ctx.db
+      .query('channelCategories')
+      .withIndex('by_server', q => q.eq('serverId', category.serverId))
+      .collect();
+
+    const otherCategories = allCategories
+      .filter(c => c._id !== args.categoryId)
+      .sort((a, b) => a.position - b.position);
+
+    const updates: Array<Promise<any>> = [];
+
+    // Update moved category
+    updates.push(
+      ctx.db.patch(args.categoryId, {
+        position: args.newPosition,
+      }),
+    );
+
+    // Reposition other categories
+    for (let i = 0; i < otherCategories.length; i++) {
+      const cat = otherCategories[i];
+      let newPos = i;
+
+      if (i >= args.newPosition) {
+        newPos = i + 1;
+      }
+
+      if (cat.position !== newPos) {
+        updates.push(
+          ctx.db.patch(cat._id, {
+            position: newPos,
+          }),
+        );
+      }
+    }
+
+    await Promise.all(updates);
+
+    return { success: true };
+  },
+});
+
+// Get channel by ID with permissions check
+export const getChannelById = query({
+  args: { channelId: v.id('channels') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) return null;
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) return null;
+
+    // Check membership
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) return null;
+
+    // Check channel access
+    if (channel.isPrivate) {
+      // Owner/Admin always have access
+      if (membership.role !== 'owner' && membership.role !== 'admin') {
+        // Check specific permissions
+        const hasPermission = await ctx.db
+          .query('channelPermissions')
+          .withIndex('by_channel', q => q.eq('channelId', args.channelId))
+          .filter(q => q.eq(q.field('userId'), user._id))
+          .first();
+
+        if (!hasPermission || !hasPermission.canView) {
+          // Check role permissions
+          const userRoles = await ctx.db
+            .query('userRoles')
+            .withIndex('by_user_server', q =>
+              q.eq('userId', user._id).eq('serverId', channel.serverId),
+            )
+            .collect();
+
+          const rolePermissions = await ctx.db
+            .query('channelPermissions')
+            .withIndex('by_channel', q => q.eq('channelId', args.channelId))
+            .collect();
+
+          const hasRolePermission = userRoles.some(userRole =>
+            rolePermissions.some(
+              perm => perm.roleId === userRole.roleId && perm.canView,
+            ),
+          );
+
+          if (!hasRolePermission) return null;
+        }
+      }
+    }
+
+    // Get category if exists
+    const category = channel.categoryId
+      ? await ctx.db.get(channel.categoryId)
+      : null;
+
+    return {
+      ...channel,
+      category,
+    };
+  },
+});
+
+// Get all categories with channels for a server
+export const getServerChannelsGrouped = query({
+  args: { serverId: v.id('servers') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) return null;
+
+    // Check membership
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) return null;
+
+    // Get all categories
+    const categories = await ctx.db
+      .query('channelCategories')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .collect();
+
+    // Get all channels
+    const allChannels = await ctx.db
+      .query('channels')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .collect();
+
+    // Group channels by category
+    const result = categories.map(category => {
+      const categoryChannels = allChannels
+        .filter(ch => ch.categoryId === category._id)
+        .sort((a, b) => a.position - b.position);
+
+      return {
+        ...category,
+        channels: categoryChannels,
+      };
+    });
+
+    // Add uncategorized channels
+    const uncategorizedChannels = allChannels
+      .filter(ch => !ch.categoryId)
+      .sort((a, b) => a.position - b.position);
+
+    if (uncategorizedChannels.length > 0) {
+      result.push({
+        _id: 'uncategorized' as Id<'channelCategories'>,
+        serverId: args.serverId,
+        name: 'Uncategorized',
+        position: 999,
+        channels: uncategorizedChannels,
+        _creationTime: new Date().getTime(),
+      });
+    }
+
+    return result.sort((a, b) => a.position - b.position);
+  },
+});
+
+export const getServerCategories = query({
+  args: { serverId: v.id('servers') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) return null;
+
+    // Check membership
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) return null;
+
+    // Get all categories sorted by position
+    const categories = await ctx.db
+      .query('channelCategories')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .collect();
+
+    return categories.sort((a, b) => a.position - b.position);
+  },
+});
+
+export const getChannelsByCategories = query({
+  args: { serverId: v.id('servers') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+      .first();
+
+    if (!user) return null;
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) return null;
+
+    const allChannels = await ctx.db
+      .query('channels')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .collect();
+
+    // Filter accessible channels
+    const accessibleChannels: Doc<'channels'>[] = [];
+    for (const channel of allChannels) {
+      const hasAccess = await canUserAccessChannel(
+        ctx,
+        user._id,
+        channel._id,
+        args.serverId,
+      );
+      if (hasAccess) {
+        accessibleChannels.push(channel);
+      }
+    }
+
+    // Group by category
+    const grouped: Record<string, Doc<'channels'>[]> = {};
+    const uncategorized: Doc<'channels'>[] = [];
+
+    accessibleChannels.forEach(channel => {
+      if (channel.categoryId) {
+        const catId = channel.categoryId;
+        if (!grouped[catId]) {
+          grouped[catId] = [];
+        }
+        grouped[catId].push(channel);
+      } else {
+        uncategorized.push(channel);
+      }
+    });
+
+    // Sort channels within each category
+    Object.keys(grouped).forEach(catId => {
+      grouped[catId].sort((a, b) => a.position - b.position);
+    });
+
+    uncategorized.sort((a, b) => a.position - b.position);
+
+    return {
+      categorized: grouped,
+      uncategorized,
+    };
   },
 });

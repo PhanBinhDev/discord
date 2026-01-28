@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { UserStatus } from '@/convex/schema';
+import { api } from '@/convex/_generated/api';
+import { ChannelType, UserStatus } from '@/convex/schema';
 import { DictKey } from '@/internationalization/get-dictionaries';
 import { TablerIcon } from '@tabler/icons-react';
 import { FunctionReference } from 'convex/server';
@@ -62,4 +63,36 @@ export type ServerMenu = {
   group: ServerMenuGroup;
   owner: boolean;
   modal: ModalType | null;
+};
+
+export type ChannelWithCategory = NonNullable<
+  ApiReturn<typeof api.servers.getServerById>
+>['channels'][number];
+
+export type RenderItem =
+  | {
+      type: 'category';
+      category: NonNullable<ChannelWithCategory['category']>;
+      channels: ChannelWithCategory[];
+      position: number;
+    }
+  | {
+      type: 'channel';
+      channel: ChannelWithCategory;
+      position: number;
+    };
+
+type ChannelTypeOptions = {
+  isPrivate: boolean;
+  isActive?: boolean;
+  hasChatFeature?: boolean;
+};
+
+export type ChannelIconType = {
+  [key in ChannelType]: (
+    options: ChannelTypeOptions,
+  ) =>
+    | LucideIcon
+    | TablerIcon
+    | React.ComponentType<React.SVGProps<SVGSVGElement>>;
 };

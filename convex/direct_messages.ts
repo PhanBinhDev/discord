@@ -251,7 +251,6 @@ export const sendDirectMessage = mutation({
       type: args.type || 'text',
       attachments: args.attachments,
       isRead: false,
-      createdAt: Date.now(),
     });
 
     return { success: true, messageId };
@@ -285,8 +284,8 @@ export const getConversation = query({
       )
       .filter(q =>
         args.before
-          ? q.lt(q.field('createdAt'), args.before)
-          : q.gt(q.field('createdAt'), 0),
+          ? q.lt(q.field('_creationTime'), args.before)
+          : q.gt(q.field('_creationTime'), 0),
       )
       .order('desc')
       .take(limit);
@@ -298,15 +297,15 @@ export const getConversation = query({
       )
       .filter(q =>
         args.before
-          ? q.lt(q.field('createdAt'), args.before)
-          : q.gt(q.field('createdAt'), 0),
+          ? q.lt(q.field('_creationTime'), args.before)
+          : q.gt(q.field('_creationTime'), 0),
       )
       .order('desc')
       .take(limit);
 
     // Combine and sort by timestamp
     const allMessages = [...messages1, ...messages2]
-      .sort((a, b) => b.createdAt - a.createdAt)
+      .sort((a, b) => b._creationTime - a._creationTime)
       .slice(0, limit);
 
     // Get sender details for each message
@@ -376,7 +375,7 @@ export const getConversations = query({
         msg.senderId === user._id ? msg.receiverId : msg.senderId;
       const existing = conversationMap.get(otherUserId);
 
-      if (!existing || msg.createdAt > existing.lastMessage.createdAt) {
+      if (!existing || msg._creationTime > existing.lastMessage._creationTime) {
         const unreadCount =
           msg.receiverId === user._id && !msg.isRead
             ? (existing?.unreadCount || 0) + 1
@@ -410,7 +409,7 @@ export const getConversations = query({
           lastMessage: {
             content: conv.lastMessage.content,
             type: conv.lastMessage.type,
-            createdAt: conv.lastMessage.createdAt,
+            _creationTime: conv.lastMessage._creationTime,
             senderId: conv.lastMessage.senderId,
             senderName:
               lastMessageSender?.displayName || lastMessageSender?.username,
@@ -423,7 +422,9 @@ export const getConversations = query({
     // Sort by last message time
     return conversations
       .filter((conv): conv is NonNullable<typeof conv> => conv !== null)
-      .sort((a, b) => b.lastMessage.createdAt - a.lastMessage.createdAt);
+      .sort(
+        (a, b) => b.lastMessage._creationTime - a.lastMessage._creationTime,
+      );
   },
 });
 

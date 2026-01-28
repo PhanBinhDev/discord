@@ -43,7 +43,9 @@
       "friends": "Bạn bè",
       "store": "Cửa hàng",
       "quests": "Nhiệm vụ",
-      "findOrStart": "Tìm hoặc bắt đầu cuộc trò chuyện"
+      "findOrStart": "Tìm hoặc bắt đầu cuộc trò chuyện",
+      "event": "Sự kiện",
+      "boots": "Boots máy chủ của bạn"
     },
     "settings": {
       "editProfile": "Chỉnh sửa hồ sơ",

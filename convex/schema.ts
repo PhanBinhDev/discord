@@ -99,7 +99,6 @@ const friends = defineTable({
   userId2: v.id('users'),
   status: FriendRequestStatus,
   requestedBy: v.id('users'),
-  createdAt: v.number(),
   acceptedAt: v.optional(v.number()),
 })
   .index('by_user1', ['userId1'])
@@ -120,7 +119,6 @@ const servers = defineTable({
   isPublic: v.boolean(),
   memberCount: v.number(),
   vanityUrl: v.optional(v.string()),
-  createdAt: v.number(),
   updatedAt: v.number(),
 })
   .index('by_owner', ['ownerId'])
@@ -159,7 +157,6 @@ const roles = defineTable({
   isHoisted: v.boolean(),
   isMentionable: v.boolean(),
   isDefault: v.boolean(),
-  createdAt: v.number(),
 })
   .index('by_server', ['serverId'])
   .index('by_position', ['serverId', 'position']);
@@ -181,7 +178,6 @@ const channelCategories = defineTable({
   serverId: v.id('servers'),
   name: v.string(),
   position: v.number(),
-  createdAt: v.number(),
 })
   .index('by_server', ['serverId'])
   .index('by_position', ['serverId', 'position']);
@@ -199,7 +195,6 @@ const channels = defineTable({
   slowMode: v.optional(v.number()), // seconds
   userLimit: v.optional(v.number()), // for voice channels
   bitrate: v.optional(v.number()), // for voice channels
-  createdAt: v.number(),
   updatedAt: v.number(),
 })
   .index('by_server', ['serverId'])
@@ -233,12 +228,10 @@ const messages = defineTable({
   replyToId: v.optional(v.id('messages')),
   editedAt: v.optional(v.number()),
   deletedAt: v.optional(v.number()),
-  createdAt: v.number(),
 })
   .index('by_channel', ['channelId'])
   .index('by_user', ['userId'])
   .index('by_server', ['serverId'])
-  .index('by_created', ['channelId', 'createdAt'])
   .searchIndex('search_messages', {
     searchField: 'content',
     filterFields: ['channelId', 'userId'],
@@ -265,27 +258,22 @@ const directMessages = defineTable({
   readAt: v.optional(v.number()),
   editedAt: v.optional(v.number()),
   deletedAt: v.optional(v.number()),
-  createdAt: v.number(),
 })
   .index('by_sender', ['senderId'])
   .index('by_receiver', ['receiverId'])
-  .index('by_conversation', ['senderId', 'receiverId'])
-  .index('by_created', ['createdAt']);
+  .index('by_conversation', ['senderId', 'receiverId']);
 
-// Reactions Table
 const reactions = defineTable({
   messageId: v.id('messages'),
   userId: v.id('users'),
   emoji: v.string(),
   isCustomEmoji: v.boolean(),
   emojiId: v.optional(v.string()),
-  createdAt: v.number(),
 })
   .index('by_message', ['messageId'])
   .index('by_user', ['userId'])
   .index('by_message_emoji', ['messageId', 'emoji']);
 
-// Server Invites Table
 const serverInvites = defineTable({
   serverId: v.id('servers'),
   channelId: v.id('channels'),
@@ -303,7 +291,6 @@ const serverInvites = defineTable({
   .index('by_inviter', ['inviterId'])
   .index('by_status', ['status']);
 
-// Server Categories (for discovery)
 const serverCategories = defineTable({
   name: v.string(),
   description: v.optional(v.string()),
@@ -311,7 +298,6 @@ const serverCategories = defineTable({
   position: v.number(),
 }).index('by_position', ['position']);
 
-// Server-Category Mapping
 const serverCategoryMapping = defineTable({
   serverId: v.id('servers'),
   categoryId: v.id('serverCategories'),
@@ -358,7 +344,6 @@ const reports = defineTable({
   ),
   resolvedBy: v.optional(v.id('users')),
   resolvedAt: v.optional(v.number()),
-  createdAt: v.number(),
 })
   .index('by_reported_user', ['reportedUserId'])
   .index('by_reporter', ['reportedBy'])
@@ -415,7 +400,6 @@ const webhooks = defineTable({
   avatarUrl: v.optional(v.string()),
   token: v.string(),
   isActive: v.boolean(),
-  createdAt: v.number(),
 })
   .index('by_channel', ['channelId'])
   .index('by_server', ['serverId'])
@@ -440,7 +424,6 @@ const channelPermissions = defineTable({
   userId: v.optional(v.id('users')), // cho phép user cụ thể
   canView: v.boolean(),
   canSend: v.boolean(),
-  createdAt: v.number(),
 })
   .index('by_channel', ['channelId'])
   .index('by_role', ['roleId'])

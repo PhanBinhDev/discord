@@ -67,7 +67,6 @@ export const sendFriendRequest = mutation({
       userId2: args.targetUserId,
       status: 'pending',
       requestedBy: user._id,
-      createdAt: Date.now(),
     });
 
     return { success: true, friendRequestId };
@@ -253,7 +252,6 @@ export const blockUser = mutation({
         userId2: args.targetUserId,
         status: 'blocked',
         requestedBy: user._id,
-        createdAt: Date.now(),
       });
     } else {
       // Create new blocked relation
@@ -262,7 +260,6 @@ export const blockUser = mutation({
         userId2: args.targetUserId,
         status: 'blocked',
         requestedBy: user._id,
-        createdAt: Date.now(),
       });
     }
 
@@ -349,7 +346,7 @@ export const getFriends = query({
             status: friend.status,
             customStatus: friend.customStatus,
           },
-          since: friendship.acceptedAt || friendship.createdAt,
+          since: friendship.acceptedAt || friendship._creationTime,
         };
       }),
     );
@@ -393,7 +390,7 @@ export const getPendingRequests = query({
             discriminator: sender.discriminator,
             avatarUrl: sender.avatarUrl,
           },
-          createdAt: request.createdAt,
+          _creationTime: request._creationTime,
         };
       }),
     );
@@ -439,7 +436,7 @@ export const getSentRequests = query({
             discriminator: receiver.discriminator,
             avatarUrl: receiver.avatarUrl,
           },
-          createdAt: request.createdAt,
+          _creationTime: request._creationTime,
         };
       }),
     );

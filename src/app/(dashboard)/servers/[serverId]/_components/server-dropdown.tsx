@@ -60,7 +60,7 @@ const ServerDropdown = ({ server }: ServerDropdownProps) => {
           />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="p-2 w-56">
+      <PopoverContent align="start" className="p-2 min-w-24">
         {Object.entries(groupedMenus)
           .map(([group, menus]) => {
             const visibleMenus = menus.filter(menu => {

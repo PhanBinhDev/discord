@@ -1,4 +1,17 @@
-import { ServerMenu, StatusExpiredOption, StatusMapping } from '@/types';
+import IconTextChannel from '@/components/icons/text-channel';
+import IconTextChatChannel from '@/components/icons/text-chat-channel';
+import IconTextPrivateChannel from '@/components/icons/text-private-channel';
+import TextPrivateChatChannel from '@/components/icons/text-private-chat-channel';
+import IconVoiceActiveChannel from '@/components/icons/voice-active-channel';
+import IconVoiceChannel from '@/components/icons/voice-channel';
+import IconVoicePrivateActiveChannel from '@/components/icons/voice-private-active-channel';
+import IconVoicePrivateChannel from '@/components/icons/voice-private-channel';
+import {
+  ChannelIconType,
+  ServerMenu,
+  StatusExpiredOption,
+  StatusMapping,
+} from '@/types';
 import {
   IconCalendarEvent,
   IconCirclePlusFilled,
@@ -9,6 +22,7 @@ import {
 } from '@tabler/icons-react';
 import { ArrowLeftRight } from 'lucide-react';
 
+export const CHANNEL_CATEGORY_UNCATEGORIZED = 'uncategorized';
 export const INTERVAL = 60; // seconds
 export const MAX_USERS_SHOW = 2;
 export const MAX_LAYERS = 1000;
@@ -126,3 +140,21 @@ export const ServerMenusItems: ServerMenu[] = [
     modal: null,
   },
 ] as const;
+
+export const ChannelIconTypeMapping: ChannelIconType = {
+  text: ({ isPrivate, hasChatFeature }) => {
+    if (hasChatFeature && isPrivate) return TextPrivateChatChannel;
+    if (!hasChatFeature && isPrivate) return IconTextPrivateChannel;
+    if (!isPrivate && hasChatFeature) return IconTextChatChannel;
+
+    return IconTextChannel;
+  },
+  voice: ({ isPrivate, isActive }) => {
+    if (isPrivate && isActive) return IconVoicePrivateActiveChannel;
+    if (isPrivate && !isActive) return IconVoicePrivateChannel;
+    if (!isPrivate && isActive) return IconVoiceActiveChannel;
+    return IconVoiceChannel;
+  },
+  announcement: () => IconTextChannel,
+  video: () => IconVoiceChannel,
+};

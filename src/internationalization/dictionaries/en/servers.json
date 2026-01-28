@@ -43,7 +43,9 @@
       "friends": "Friends",
       "store": "Store",
       "quests": "Quests",
-      "findOrStart": "Find or start a conversation"
+      "findOrStart": "Find or start a conversation",
+      "event": "Event",
+      "boots": "Boots your server"
     },
     "menu": {
       "settings": "Settings",
