@@ -155,7 +155,7 @@ export const ModalCreateServer = () => {
                 <FormItem>
                   <FormLabel>
                     <TranslateText value="servers.serverName" />{' '}
-                    <span className="text-red-500">*</span>
+                    <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
                     <Input placeholder={dict?.servers.serverName} {...field} />

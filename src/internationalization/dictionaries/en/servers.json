@@ -139,7 +139,7 @@
         "announcement": "e.g., announcements"
       },
       "privateChannel": "Private Channel",
-      "privateChannelDescription": "Only selected members can access this channel.",
+      "privateChannelDescription": "Only selected members and roles will be able to view this channel.",
       "channelNameRequired": "Channel name is required",
       "channelNameMinLength": "Channel name must be at least {{min}} character",
       "channelNameMaxLength": "Channel name must be at most {{max}} characters"

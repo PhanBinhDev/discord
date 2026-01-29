@@ -1,5 +1,6 @@
 'use client';
 
+import SelectEmoji from '@/components/shared/select-emoji';
 import TranslateText from '@/components/shared/translate/translate-text';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,8 +25,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@/components/ui/input-group';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { ChannelTypeOptionsList } from '@/constants/app';
 import { Doc } from '@/convex/_generated/dataModel';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
@@ -35,8 +41,8 @@ import {
   createChannelSchema,
 } from '@/validations/server';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { IconShieldLockFilled } from '@tabler/icons-react';
 import { useForm } from 'react-hook-form';
-import { Switch } from '../ui/switch';
 
 const ModalCreateChannel = () => {
   const { isModalOpen, closeModal, getModalData } = useModal();
@@ -67,7 +73,7 @@ const ModalCreateChannel = () => {
       onOpenChange={() => closeModal('ModalCreateChannel')}
       open={isModalOpen('ModalCreateChannel')}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             <TranslateText value="servers.channel.title" />
@@ -104,7 +110,7 @@ const ModalCreateChannel = () => {
                       <RadioGroup
                         value={field.value}
                         onValueChange={field.onChange}
-                        className="max-w-md"
+                        className="max-w-lg"
                       >
                         {ChannelTypeOptionsList.map(option => {
                           const Icon = option.icon(!!isPrivate);
@@ -146,17 +152,32 @@ const ModalCreateChannel = () => {
                   <FormItem>
                     <FormLabel>
                       <TranslateText value="servers.channel.channelName" />{' '}
-                      <span className="text-red-500">*</span>
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder={
-                          dict?.servers.channel.channelNamePlaceholder[
-                            channelType
-                          ]
-                        }
-                        {...field}
-                      />
+                      <InputGroup>
+                        <InputGroupInput
+                          placeholder={
+                            dict?.servers.channel.channelNamePlaceholder[
+                              channelType
+                            ]
+                          }
+                          {...field}
+                        />
+                        <InputGroupAddon>
+                          {(() => {
+                            const IconComponent = ChannelTypeOptionsList.find(
+                              option => option.value === channelType,
+                            )?.icon(!!isPrivate);
+                            return IconComponent ? (
+                              <IconComponent className="size-4 text-muted-foreground" />
+                            ) : null;
+                          })()}
+                        </InputGroupAddon>
+                        <InputGroupAddon align="inline-end">
+                          <SelectEmoji />
+                        </InputGroupAddon>
+                      </InputGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -167,9 +188,10 @@ const ModalCreateChannel = () => {
                 control={createChannelForm.control}
                 name="isPrivate"
                 render={({ field }) => (
-                  <FormItem className="flex items-center justify-between rounded-lg border border-border p-4 bg-background/60 dark:bg-black/20">
+                  <FormItem className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">
+                      <FormLabel className="text-base flex items-center gap-1">
+                        <IconShieldLockFilled className="size-4 inline-block" />
                         <TranslateText value="servers.channel.privateChannel" />
                       </FormLabel>
                       <p className="text-sm text-muted-foreground">
@@ -178,6 +200,7 @@ const ModalCreateChannel = () => {
                     </div>
                     <FormControl>
                       <Switch
+                        className="self-start mt-1.5 cursor-pointer"
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
@@ -189,7 +212,7 @@ const ModalCreateChannel = () => {
           </Form>
         </div>
 
-        <div className="justify-between flex items-center gap-2">
+        <div className="justify-between flex items-center gap-2 mt-3">
           <Button
             className="w-1/2 bg-muted-foreground/5 hover:bg-accent-foreground/5"
             variant={'ghost'}
