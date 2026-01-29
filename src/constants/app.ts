@@ -1,3 +1,7 @@
+import IconAnnouncementChannel from '@/components/icons/announcement-channel';
+import IconAnnouncementChatChannel from '@/components/icons/announcement-chat-channel';
+import IconAnnouncementChatPrivateChannel from '@/components/icons/announcement-chat-private-channel';
+import IconAnnouncementPrivateChannel from '@/components/icons/announcement-private-channel';
 import IconTextChannel from '@/components/icons/text-channel';
 import IconTextChatChannel from '@/components/icons/text-chat-channel';
 import IconTextPrivateChannel from '@/components/icons/text-private-channel';
@@ -8,6 +12,7 @@ import IconVoicePrivateActiveChannel from '@/components/icons/voice-private-acti
 import IconVoicePrivateChannel from '@/components/icons/voice-private-channel';
 import {
   ChannelIconType,
+  ChannelTypeItem,
   ServerMenu,
   StatusExpiredOption,
   StatusMapping,
@@ -22,6 +27,9 @@ import {
 } from '@tabler/icons-react';
 import { ArrowLeftRight } from 'lucide-react';
 
+export const MIN_LENGTH_CHANNEL_NAME = 1;
+export const MAX_LENGTH_CHANNEL_NAME = 100;
+export const DROPPABLE_CATEGORY = 'category-droppable';
 export const CHANNEL_CATEGORY_UNCATEGORIZED = 'uncategorized';
 export const INTERVAL = 60; // seconds
 export const MAX_USERS_SHOW = 2;
@@ -38,6 +46,15 @@ export const OPTIONS_LIMIT = [
   DEFAULT_LIMIT * 5,
   DEFAULT_LIMIT * 10,
 ];
+
+export const DragType = {
+  CHANNEL: 'channel',
+  CATEGORY: 'category',
+} as const;
+
+export const DropType = {
+  CATEGORY: 'category-droppable',
+} as const;
 
 export const DEFAULT_PANNEL_LEFT_MIN_WIDTH = 300; // in px
 export const CUSTOM_USER_PROFILE_BANNER_HEIGHT = 105; // in px
@@ -155,6 +172,40 @@ export const ChannelIconTypeMapping: ChannelIconType = {
     if (!isPrivate && isActive) return IconVoiceActiveChannel;
     return IconVoiceChannel;
   },
-  announcement: () => IconTextChannel,
-  video: () => IconVoiceChannel,
+  announcement: ({ isPrivate, hasChatFeature }) => {
+    if (hasChatFeature && isPrivate) return IconAnnouncementChatPrivateChannel;
+    if (!hasChatFeature && isPrivate) return IconAnnouncementPrivateChannel;
+    if (!isPrivate && hasChatFeature) return IconAnnouncementChatChannel;
+    return IconAnnouncementChannel;
+  },
 };
+
+export const ChannelTypeOptionsList: ChannelTypeItem[] = [
+  {
+    label: 'servers.channel.type.text.label',
+    desc: 'servers.channel.type.text.desc',
+    value: 'text',
+    icon: (isPrivate: boolean) => {
+      if (isPrivate) return IconTextPrivateChannel;
+      return IconTextChannel;
+    },
+  },
+  {
+    label: 'servers.channel.type.voice.label',
+    desc: 'servers.channel.type.voice.desc',
+    value: 'voice',
+    icon: (isPrivate: boolean) => {
+      if (isPrivate) return IconVoicePrivateChannel;
+      return IconVoiceChannel;
+    },
+  },
+  {
+    label: 'servers.channel.type.announcement.label',
+    desc: 'servers.channel.type.announcement.desc',
+    value: 'announcement',
+    icon: (isPrivate: boolean) => {
+      if (isPrivate) return IconAnnouncementPrivateChannel;
+      return IconAnnouncementChannel;
+    },
+  },
+];

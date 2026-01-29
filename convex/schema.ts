@@ -14,7 +14,6 @@ export const UserStatus = v.union(
 export const ChannelType = v.union(
   v.literal('text'),
   v.literal('voice'),
-  v.literal('video'),
   v.literal('announcement'),
 );
 

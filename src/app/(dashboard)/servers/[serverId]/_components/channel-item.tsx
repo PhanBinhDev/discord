@@ -1,45 +1,14 @@
 import { ChannelIconTypeMapping } from '@/constants/app';
-import { Id } from '@/convex/_generated/dataModel';
 import { cn } from '@/lib/utils';
 import { ChannelWithCategory } from '@/types';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import Link from 'next/link';
 
 interface ChannelItemProps {
   channel: ChannelWithCategory;
-  position: number;
-  categoryId: Id<'channelCategories'> | null;
   isActive: boolean;
 }
 
-const ChannelItem = ({
-  channel,
-  position,
-  categoryId,
-  isActive,
-}: ChannelItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: channel._id,
-    data: {
-      type: 'channel',
-      position,
-      categoryId,
-    },
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
+const ChannelItem = ({ channel, isActive }: ChannelItemProps) => {
   const Icon = ChannelIconTypeMapping[channel.type]({
     isPrivate: channel.isPrivate,
     isActive,
@@ -49,24 +18,20 @@ const ChannelItem = ({
   return (
     <Link
       href={`/servers/${channel.serverId}/channels/${channel._id}`}
-      passHref
+      className={cn(
+        'flex items-center gap-2 px-2 py-1.5 mx-1 text-sm rounded-md transition-colors group',
+        'hover:bg-accent hover:text-accent-foreground',
+        isActive && 'bg-accent text-accent-foreground font-medium',
+        !isActive && 'text-muted-foreground',
+      )}
     >
-      <div
-        ref={setNodeRef}
-        style={style}
-        className={cn(
-          'w-full flex items-center gap-2 p-2 text-sm rounded-lg hover:bg-accent cursor-pointer group',
-          isActive && 'bg-accent/70',
-          isDragging && 'opacity-50',
-        )}
-        {...attributes}
-        {...listeners}
-      >
-        <Icon className="size-4 text-muted-foreground" />
-        <span className="flex-1">{channel.name}</span>
+      <Icon className={cn('size-4 shrink-0', isActive && 'text-foreground')} />
+      <span className="flex-1 truncate">{channel.name}</span>
 
-        <></>
-      </div>
+      {/* Optional: Add indicators */}
+      {channel.isPrivate && (
+        <div className="size-1 rounded-full bg-yellow-500 shrink-0" />
+      )}
     </Link>
   );
 };

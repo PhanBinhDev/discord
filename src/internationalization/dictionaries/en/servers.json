@@ -39,6 +39,7 @@
     "publicServerDescription": "Anyone can find and join this server",
     "nameRequired": "Server name is required",
     "nameMaxLength": "Server name must be at most 100 characters",
+    "noChannels": "No channels",
     "nav": {
       "friends": "Friends",
       "store": "Store",
@@ -108,6 +109,40 @@
       "noUsersFound": "No users found",
       "inviteSuccess": "Invitation sent successfully!",
       "inviteFailed": "Failed to send invitation. Please try again."
+    },
+    "channel": {
+      "create": "Create Channel",
+      "createError": "Channel creation failed. Please try again.",
+      "channelCreated": "Channel created successfully!",
+      "title": "Create a new channel",
+      "description": "Channels are where your members communicate. Create different channels for different topics.",
+      "inCategory": "in {{category}}",
+      "channelType": "Channel Type",
+      "type": {
+        "text": {
+          "label": "Text Channel",
+          "desc": "Send messages, images, GIFs, emojis, thoughts, and play with words"
+        },
+        "voice": {
+          "label": "Voice Channel",
+          "desc": "Meet via voice calls, video, and screen sharing"
+        },
+        "announcement": {
+          "label": "Announcement Channel",
+          "desc": "Create a space for organized discussions"
+        }
+      },
+      "channelName": "Channel Name",
+      "channelNamePlaceholder": {
+        "text": "e.g., general chat",
+        "voice": "e.g., general voice",
+        "announcement": "e.g., announcements"
+      },
+      "privateChannel": "Private Channel",
+      "privateChannelDescription": "Only selected members can access this channel.",
+      "channelNameRequired": "Channel name is required",
+      "channelNameMinLength": "Channel name must be at least {{min}} character",
+      "channelNameMaxLength": "Channel name must be at most {{max}} characters"
     }
   }
 }

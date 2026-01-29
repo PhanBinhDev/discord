@@ -1,29 +1,14 @@
 'use client';
 
+import { DragType } from '@/constants/app';
 import { LOCAL_STORAGE_KEY } from '@/constants/key';
 import { api } from '@/convex/_generated/api';
-import { Id, TableNames } from '@/convex/_generated/dataModel';
-import { useApiMutation } from '@/hooks/use-api-mutation';
+import { Id } from '@/convex/_generated/dataModel';
 import { ApiReturn, ChannelWithCategory, RenderItem } from '@/types';
 import { convexQuery } from '@convex-dev/react-query';
-import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import { memo, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { memo, useCallback, useMemo } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import CategoryItem from './category-item';
 import ChannelItem from './channel-item';
@@ -33,7 +18,6 @@ interface ServerChannelsProps {
 }
 
 const ServerChannels = memo(({ server }: ServerChannelsProps) => {
-  const [activeId, setActiveId] = useState<Id<TableNames> | null>(null);
   const [collapsedCategoriesArray, setCollapsedCategoriesArray] =
     useLocalStorage<string[]>(
       LOCAL_STORAGE_KEY.SERVER_CHANNELS_COLLAPSED_CATEGORIES,
@@ -43,31 +27,22 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
   const params = useParams();
   const channelId = params?.channelId as Id<'channels'> | undefined;
 
-  const { mutate: moveChannel } = useApiMutation(api.servers.moveChannel);
-  const { mutate: moveCategory } = useApiMutation(api.servers.moveCategory);
-
-  const { data: channels } = useQuery(
-    convexQuery(api.servers.getAccessibleChannels, {
-      serverId: server?._id as Id<'servers'>,
-    }),
-  );
-
+  // Fetch categories (always show all categories by position)
   const { data: categories } = useQuery(
     convexQuery(api.servers.getServerCategories, {
       serverId: server?._id as Id<'servers'>,
     }),
   );
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+  // Fetch accessible channels
+  const { data: channelsData } = useQuery(
+    convexQuery(api.servers.getAccessibleChannels, {
+      serverId: server?._id as Id<'servers'>,
     }),
   );
 
   const sortedItems = useMemo((): RenderItem[] => {
-    if (!categories || !channels) return [];
+    if (!categories || !channelsData?.channels) return [];
 
     const items: RenderItem[] = [];
 
@@ -75,7 +50,7 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
     const channelsByCategory = new Map<string, ChannelWithCategory[]>();
     const uncategorizedChannels: ChannelWithCategory[] = [];
 
-    channels.channels.forEach(channel => {
+    channelsData.channels.forEach(channel => {
       if (channel.category) {
         const categoryId = channel.category._id;
         if (!channelsByCategory.has(categoryId)) {
@@ -87,15 +62,15 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
       }
     });
 
-    // Sort channels within each category
+    // Sort channels within each category by position
     channelsByCategory.forEach(chans => {
       chans.sort((a, b) => a.position - b.position);
     });
 
+    // Sort uncategorized channels by position
     uncategorizedChannels.sort((a, b) => a.position - b.position);
 
-    // ✅ Merge categories and uncategorized channels by position
-    // IMPORTANT: All categories are always shown, even if empty
+    // Merge categories and uncategorized channels by position
     let categoryIndex = 0;
     let channelIndex = 0;
 
@@ -110,16 +85,18 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
       const channelPos = currentChannel?.position ?? Infinity;
 
       if (categoryPos < channelPos) {
+        // Add category (even if empty)
         items.push({
-          type: 'category',
+          type: DragType.CATEGORY,
           category: currentCategory,
           channels: channelsByCategory.get(currentCategory._id) || [],
           position: currentCategory.position,
         });
         categoryIndex++;
       } else if (currentChannel) {
+        // Add uncategorized channel
         items.push({
-          type: 'channel',
+          type: DragType.CHANNEL,
           channel: currentChannel,
           position: currentChannel.position,
         });
@@ -128,135 +105,62 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
     }
 
     return items;
-  }, [categories, channels]);
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as Id<TableNames>);
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-
-    if (!over || active.id === over.id) return;
-
-    const activeData = active.data.current;
-    const overData = over.data.current;
-
-    if (activeData?.type === 'channel') {
-      const newPosition = overData?.position ?? 0;
-      const newCategoryId = overData?.categoryId;
-
-      await moveChannel({
-        channelId: active.id as Id<'channels'>,
-        newCategoryId: newCategoryId || null,
-        newPosition,
-      });
-    } else if (activeData?.type === 'category') {
-      const newPosition = overData?.position ?? 0;
-
-      await moveCategory({
-        categoryId: active.id as Id<'channelCategories'>,
-        newPosition,
-      });
-    }
-  };
+  }, [categories, channelsData?.channels]);
 
   const collapsedCategories = useMemo(
     () => new Set(collapsedCategoriesArray),
     [collapsedCategoriesArray],
   );
 
-  const toggleCategory = (categoryId: string) => {
-    setCollapsedCategoriesArray(prev => {
-      const set = new Set(prev);
-      if (set.has(categoryId)) {
-        set.delete(categoryId);
-      } else {
-        set.add(categoryId);
-      }
-      return Array.from(set);
-    });
-  };
+  const toggleCategory = useCallback(
+    (categoryId: string) => {
+      setCollapsedCategoriesArray(prev => {
+        const set = new Set(prev);
+        if (set.has(categoryId)) {
+          set.delete(categoryId);
+        } else {
+          set.add(categoryId);
+        }
+        return Array.from(set);
+      });
+    },
+    [setCollapsedCategoriesArray],
+  );
+
+  if (!server) {
+    return (
+      <div className="flex items-center justify-center h-full text-muted-foreground">
+        Select a server
+      </div>
+    );
+  }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex flex-col gap-0.5 py-2 flex-1">
-        <SortableContext
-          items={sortedItems.map(item =>
-            item.type === 'category' ? item.category._id : item.channel._id,
-          )}
-          strategy={verticalListSortingStrategy}
-        >
-          {sortedItems.map(item => {
-            if (item.type === 'category') {
-              const isCollapsed = collapsedCategories?.has(item.category._id);
+    <div className="flex flex-col gap-1 py-2 flex-1 overflow-y-auto">
+      {sortedItems.map(item => {
+        if (item.type === DragType.CATEGORY) {
+          const isCollapsed = collapsedCategories?.has(item.category._id);
 
-              return (
-                <CategoryItem
-                  key={item.category._id}
-                  category={item.category}
-                  channels={item.channels}
-                  position={item.position}
-                  isCollapsed={isCollapsed}
-                  onToggle={() => toggleCategory(item.category._id)}
-                />
-              );
-            } else {
-              return (
-                <ChannelItem
-                  key={item.channel._id}
-                  channel={item.channel}
-                  position={item.position}
-                  categoryId={null}
-                  isActive={item.channel._id === channelId}
-                />
-              );
-            }
-          })}
-        </SortableContext>
-      </div>
-      {createPortal(
-        <DragOverlay>
-          {activeId &&
-            (() => {
-              const activeItem = sortedItems.find(item =>
-                item.type === 'category'
-                  ? item.category._id === activeId
-                  : item.channel._id === activeId,
-              );
-              if (!activeItem) return null;
-
-              if (activeItem.type === 'category') {
-                return (
-                  <CategoryItem
-                    category={activeItem.category}
-                    channels={activeItem.channels}
-                    position={activeItem.position}
-                    isCollapsed={false}
-                    onToggle={() => {}}
-                  />
-                );
-              } else {
-                return (
-                  <ChannelItem
-                    channel={activeItem.channel}
-                    position={activeItem.position}
-                    categoryId={null}
-                    isActive={false}
-                  />
-                );
-              }
-            })()}
-        </DragOverlay>,
-        document.body,
-      )}
-    </DndContext>
+          return (
+            <CategoryItem
+              key={item.category._id}
+              category={item.category}
+              channels={item.channels}
+              isCollapsed={isCollapsed}
+              onToggle={() => toggleCategory(item.category._id)}
+            />
+          );
+        } else {
+          return (
+            <ChannelItem
+              key={item.channel._id}
+              channel={item.channel}
+              isActive={item.channel._id === channelId}
+            />
+          );
+        }
+      })}
+    </div>
   );
 });
 

@@ -39,6 +39,7 @@
     "publicServerDescription": "Bất kỳ ai cũng có thể tìm và tham gia máy chủ này",
     "nameRequired": "Tên máy chủ là bắt buộc",
     "nameMaxLength": "Tên máy chủ tối đa 100 ký tự",
+    "noChannels": "Chưa có kênh nào",
     "nav": {
       "friends": "Bạn bè",
       "store": "Cửa hàng",
@@ -108,6 +109,40 @@
       "noUsersFound": "Không tìm thấy người dùng",
       "inviteSuccess": "Lời mời đã được gửi thành công!",
       "inviteFailed": "Gửi lời mời thất bại. Vui lòng thử lại."
+    },
+    "channel": {
+      "create": "Tạo kênh",
+      "createError": "Tạo kênh thất bại. Vui lòng thử lại.",
+      "channelCreated": "Tạo kênh thành công!",
+      "title": "Tạo kênh mới",
+      "description": "Kênh là nơi các thành viên của bạn giao tiếp. Tạo các kênh khác nhau cho các chủ đề khác nhau.",
+      "inCategory": "trong {{category}}",
+      "channelType": "Loại kênh",
+      "type" : {
+        "text": {
+          "label": "Văn bản",
+          "desc": "Gửi tin nhắn, hình ảnh, ảnh GIF, emoji, ý kiến, và chơi chữ"
+        },
+        "voice": {
+          "label": "Giọng nói",
+          "desc": "Cùng gặp mặt bằng gọi thoại, video, và chia sẻ màn hình"
+        },
+        "announcement": {
+          "label": "Diễn đàn",
+          "desc": "Tạo không gian cho những cuộc thảo luận có tổ chức"
+        }
+      },
+      "channelName": "Tên kênh",
+      "channelNamePlaceholder": {
+        "text": "ví dụ, trò chuyện",
+        "voice": "ví dụ, giọng nói",
+        "announcement": "ví dụ, diễn đàn"
+      },
+      "privateChannel": "Kênh riêng tư",
+      "privateChannelDescription": "Chỉ những thành viên được chọn mới có thể truy cập kênh này.",
+      "channelNameRequired": "Tên kênh là bắt buộc",
+      "channelNameMinLength": "Tên kênh phải có ít nhất {{min}} ký tự",
+      "channelNameMaxLength": "Tên kênh phải có tối đa {{max}} ký tự"
     }
   }
 }

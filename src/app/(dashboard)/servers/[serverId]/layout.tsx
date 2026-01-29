@@ -1,6 +1,7 @@
 'use client';
 
 import TranslateText from '@/components/shared/translate/translate-text';
+import ServerCategorySkeleton from '@/components/skeletons/server-category';
 import { Button } from '@/components/ui/button';
 import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Separator } from '@/components/ui/separator';
@@ -86,7 +87,11 @@ const ServerLayout = ({ children, params }: ServerLayoutProps) => {
         </div>
         <Separator className="w-[94%]! mx-auto" />
         <div className="flex items-center justify-between px-3 pt-1.5">
-          <ServerChannels server={server} />
+          {isLoadingServer ? (
+            <ServerCategorySkeleton />
+          ) : (
+            <ServerChannels server={server} />
+          )}
         </div>
       </ResizablePanel>
       <ResizablePanel>{children}</ResizablePanel>

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { api } from '@/convex/_generated/api';
+import { Doc, Id, TableNames } from '@/convex/_generated/dataModel';
 import { ChannelType, UserStatus } from '@/convex/schema';
 import { DictKey } from '@/internationalization/get-dictionaries';
 import { TablerIcon } from '@tabler/icons-react';
@@ -82,7 +83,7 @@ export type RenderItem =
       position: number;
     };
 
-type ChannelTypeOptions = {
+export type ChannelTypeOptions = {
   isPrivate: boolean;
   isActive?: boolean;
   hasChatFeature?: boolean;
@@ -91,6 +92,32 @@ type ChannelTypeOptions = {
 export type ChannelIconType = {
   [key in ChannelType]: (
     options: ChannelTypeOptions,
+  ) =>
+    | LucideIcon
+    | TablerIcon
+    | React.ComponentType<React.SVGProps<SVGSVGElement>>;
+};
+
+export type TreeItem = {
+  id: Id<TableNames>;
+  type: 'category' | 'channel';
+  data: Doc<'channelCategories'> | ChannelWithCategory;
+  children?: TreeItem[];
+  position: number;
+  parentId?: Id<TableNames>;
+};
+
+export type FlattenedItem = TreeItem & {
+  depth: number;
+  index: number;
+};
+
+export type ChannelTypeItem = {
+  label: DictKey;
+  desc: DictKey;
+  value: ChannelType;
+  icon: (
+    isPrivate: boolean,
   ) =>
     | LucideIcon
     | TablerIcon
