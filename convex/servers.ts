@@ -18,8 +18,6 @@ async function canUserAccessChannel(
   const channel = await ctx.db.get(channelId);
   if (!channel) return false;
 
-  if (!channel.isPrivate) return true;
-
   const membership = await ctx.db
     .query('serverMembers')
     .withIndex('by_server_user', q =>
@@ -29,10 +27,54 @@ async function canUserAccessChannel(
 
   if (!membership || membership.isBanned) return false;
 
+  // Owner và admin có full access
   if (membership.role === 'owner' || membership.role === 'admin') {
     return true;
   }
 
+  // Nếu channel thuộc category, kiểm tra category permissions trước
+  if (channel.categoryId) {
+    const category = await ctx.db.get(channel.categoryId);
+
+    if (category && category.isPrivate) {
+      // Category private → phải check permissions
+      const userRoles = await ctx.db
+        .query('userRoles')
+        .withIndex('by_user_server', q =>
+          q.eq('userId', userId).eq('serverId', serverId),
+        )
+        .collect();
+
+      // Lấy @everyone role
+      const everyoneRole = await ctx.db
+        .query('roles')
+        .withIndex('by_server', q => q.eq('serverId', serverId))
+        .filter(q => q.eq(q.field('isDefault'), true))
+        .first();
+
+      const allUserRoleIds = [
+        ...userRoles.map(ur => ur.roleId),
+        ...(everyoneRole ? [everyoneRole._id] : []),
+      ];
+
+      // Check category permissions
+      const categoryPermissions = await ctx.db
+        .query('categoryPermissions')
+        .withIndex('by_category', q => q.eq('categoryId', channel.categoryId!))
+        .collect();
+
+      const hasAccessToCategory = categoryPermissions.some(
+        perm => allUserRoleIds.includes(perm.roleId) && perm.canView,
+      );
+
+      if (!hasAccessToCategory) return false;
+    }
+  }
+
+  // Nếu channel không private, và đã pass category check → OK
+  if (!channel.isPrivate) return true;
+
+  // Channel private → kiểm tra channel permissions
   const userPermission = await ctx.db
     .query('channelPermissions')
     .withIndex('by_channel', q => q.eq('channelId', channelId))
@@ -339,7 +381,6 @@ export const getAccessibleChannels = query({
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
-    // Build accessible channels with permissions
     const accessibleChannels: Array<
       Doc<'channels'> & {
         category: Doc<'channelCategories'> | null;
@@ -375,7 +416,6 @@ export const getAccessibleChannels = query({
 
     if (accessibleChannels.length === 0) return null;
 
-    // Get last viewed channel
     const lastViewed = await ctx.db
       .query('userLastViewedChannels')
       .withIndex('by_user_server', q =>
@@ -514,6 +554,31 @@ export const setChannelPermission = mutation({
       throw new Error('Insufficient permissions');
     }
 
+    // Nếu channel thuộc category private, kiểm tra xem role có được phép ở category không
+    if (channel.categoryId && args.roleId) {
+      const category = await ctx.db.get(channel.categoryId);
+
+      if (category && category.isPrivate) {
+        const categoryPerms = await ctx.db
+          .query('categoryPermissions')
+          .withIndex('by_category', q =>
+            q.eq('categoryId', channel.categoryId!),
+          )
+          .collect();
+
+        const roleHasAccessToCategory = categoryPerms.some(
+          perm => perm.roleId === args.roleId && perm.canView,
+        );
+
+        // Không cho phép thêm role vào channel nếu role đó không có quyền ở category
+        if (!roleHasAccessToCategory) {
+          throw new Error(
+            'Cannot grant channel access to role that does not have access to the parent category',
+          );
+        }
+      }
+    }
+
     // Tìm permission hiện tại
     let existingPermission;
     if (args.roleId) {
@@ -576,6 +641,107 @@ export const removeChannelPermission = mutation({
       .query('serverMembers')
       .withIndex('by_server_user', q =>
         q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    await ctx.db.delete(args.permissionId);
+
+    return { success: true };
+  },
+});
+
+export const setCategoryPermission = mutation({
+  args: {
+    categoryId: v.id('channelCategories'),
+    roleId: v.id('roles'),
+    canView: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const authUserId = await getAuthUserId(ctx);
+    if (!authUserId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', authUserId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const category = await ctx.db.get(args.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    // Kiểm tra quyền admin
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    // Tìm permission hiện tại
+    const existingPermission = await ctx.db
+      .query('categoryPermissions')
+      .withIndex('by_category_role', q =>
+        q.eq('categoryId', args.categoryId).eq('roleId', args.roleId),
+      )
+      .first();
+
+    if (existingPermission) {
+      await ctx.db.patch(existingPermission._id, {
+        canView: args.canView,
+      });
+    } else {
+      await ctx.db.insert('categoryPermissions', {
+        categoryId: args.categoryId,
+        roleId: args.roleId,
+        canView: args.canView,
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+export const removeCategoryPermission = mutation({
+  args: {
+    permissionId: v.id('categoryPermissions'),
+  },
+  handler: async (ctx, args) => {
+    const authUserId = await getAuthUserId(ctx);
+    if (!authUserId) throw new Error('Unauthorized');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', q => q.eq('clerkId', authUserId))
+      .first();
+
+    if (!user) throw new Error('User not found');
+
+    const permission = await ctx.db.get(args.permissionId);
+    if (!permission) throw new Error('Permission not found');
+
+    const category = await ctx.db.get(permission.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    // Kiểm tra quyền admin
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', user._id),
       )
       .first();
 
@@ -795,16 +961,43 @@ export const createServer = mutation({
       isBanned: false,
     });
 
+    // Create default @everyone role
+    const everyoneRoleId = await ctx.db.insert('roles', {
+      serverId,
+      name: '@everyone',
+      color: undefined,
+      position: 0,
+      permissions: 0, // No special permissions
+      isHoisted: false,
+      isMentionable: false,
+      isDefault: true,
+    });
+
     const generalCategoryId = await ctx.db.insert('channelCategories', {
       serverId,
       name: 'Text Channels',
       position: 0,
+      isPrivate: false,
     });
 
     const voiceCategoryId = await ctx.db.insert('channelCategories', {
       serverId,
       name: 'Voice Channels',
       position: 1,
+      isPrivate: false,
+    });
+
+    // Grant @everyone access to both categories
+    await ctx.db.insert('categoryPermissions', {
+      categoryId: generalCategoryId,
+      roleId: everyoneRoleId,
+      canView: true,
+    });
+
+    await ctx.db.insert('categoryPermissions', {
+      categoryId: voiceCategoryId,
+      roleId: everyoneRoleId,
+      canView: true,
     });
 
     await ctx.db.insert('channels', {
@@ -1172,6 +1365,8 @@ export const createCategory = mutation({
     serverId: v.id('servers'),
     name: v.string(),
     position: v.optional(v.number()),
+    isPrivate: v.optional(v.boolean()),
+    roleIds: v.optional(v.array(v.id('roles'))), // Roles được phép truy cập nếu private
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -1211,7 +1406,38 @@ export const createCategory = mutation({
       serverId: args.serverId,
       name: args.name,
       position,
+      isPrivate: args.isPrivate ?? false,
     });
+
+    // Nếu category là private và có roleIds, tạo permissions
+    if (args.isPrivate && args.roleIds && args.roleIds.length > 0) {
+      await Promise.all(
+        args.roleIds.map(roleId =>
+          ctx.db.insert('categoryPermissions', {
+            categoryId,
+            roleId,
+            canView: true,
+          }),
+        ),
+      );
+    }
+
+    // Nếu category là public, gán cho @everyone role
+    if (!args.isPrivate) {
+      const everyoneRole = await ctx.db
+        .query('roles')
+        .withIndex('by_server', q => q.eq('serverId', args.serverId))
+        .filter(q => q.eq(q.field('isDefault'), true))
+        .first();
+
+      if (everyoneRole) {
+        await ctx.db.insert('categoryPermissions', {
+          categoryId,
+          roleId: everyoneRole._id,
+          canView: true,
+        });
+      }
+    }
 
     return { categoryId };
   },
@@ -1415,6 +1641,15 @@ export const createChannel = mutation({
       position = channels.length;
     }
 
+    // Nếu channel được tạo trong category private, channel phải là private
+    let isPrivate = args.isPrivate ?? false;
+    if (args.categoryId) {
+      const category = await ctx.db.get(args.categoryId);
+      if (category && category.isPrivate) {
+        isPrivate = true; // Force private nếu category là private
+      }
+    }
+
     const channelId = await ctx.db.insert('channels', {
       serverId: args.serverId,
       categoryId: args.categoryId,
@@ -1422,10 +1657,31 @@ export const createChannel = mutation({
       type: args.type,
       topic: args.topic,
       position,
-      isPrivate: args.isPrivate ?? false,
+      isPrivate,
       isNsfw: args.isNsfw ?? false,
       updatedAt: Date.now(),
     });
+
+    // Nếu category private, kế thừa permissions từ category
+    if (args.categoryId && isPrivate) {
+      const categoryPerms = await ctx.db
+        .query('categoryPermissions')
+        .withIndex('by_category', q => q.eq('categoryId', args.categoryId!))
+        .collect();
+
+      // Tạo channel permissions tương ứng
+      await Promise.all(
+        categoryPerms.map(perm =>
+          ctx.db.insert('channelPermissions', {
+            channelId,
+            roleId: perm.roleId,
+            userId: undefined,
+            canView: perm.canView,
+            canSend: true, // Mặc định cho phép gửi tin nhắn nếu được xem
+          }),
+        ),
+      );
+    }
 
     return { channelId };
   },
@@ -1902,7 +2158,6 @@ export const getServerChannelsGrouped = query({
       };
     });
 
-    // Add uncategorized channels
     const uncategorizedChannels = allChannels
       .filter(ch => !ch.categoryId)
       .sort((a, b) => a.position - b.position);
@@ -1913,6 +2168,7 @@ export const getServerChannelsGrouped = query({
         serverId: args.serverId,
         name: 'Uncategorized',
         position: 999,
+        isPrivate: false,
         channels: uncategorizedChannels,
         _creationTime: new Date().getTime(),
       });
@@ -2124,3 +2380,72 @@ async function getUserChannelPermissions(
     canDelete: false,
   };
 }
+
+// ==================== ADMIN UTILITIES ====================
+
+export const clearAllData = mutation({
+  args: {
+    confirmationCode: v.string(), // Yêu cầu "DELETE_ALL_DATA" để xác nhận
+  },
+  handler: async (ctx, args) => {
+    // Bảo vệ: chỉ cho phép nếu nhập đúng confirmation code
+    if (args.confirmationCode !== 'DELETE_ALL_DATA') {
+      throw new Error('Invalid confirmation code');
+    }
+
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error('Unauthorized - Must be logged in');
+    }
+
+    console.log('🗑️  Starting database clear operation...');
+
+    // Xóa theo thứ tự để tránh foreign key issues
+    const tables = [
+      'categoryPermissions',
+      'channelPermissions',
+      'userLastViewedChannels',
+      'voiceChannelStates',
+      'reactions',
+      'messages',
+      'directMessages',
+      'channels',
+      'channelCategories',
+      'serverInvites',
+      'serverBoosts',
+      'serverCategoryMapping',
+      'userRoles',
+      'roles',
+      'serverMembers',
+      'servers',
+      'reports',
+      'webhooks',
+      'eventLogs',
+      'notifications',
+      'friends',
+      'userSettings',
+      // Không xóa users để giữ authentication
+    ];
+
+    let totalDeleted = 0;
+
+    for (const tableName of tables) {
+      try {
+        const records = await ctx.db.query(tableName as any).collect();
+        await Promise.all(records.map(record => ctx.db.delete(record._id)));
+        console.log(`✅ Deleted ${records.length} records from ${tableName}`);
+        totalDeleted += records.length;
+      } catch (error) {
+        console.error(`❌ Error deleting from ${tableName}:`, error);
+      }
+    }
+
+    console.log(`🎉 Database cleared! Total ${totalDeleted} records deleted`);
+
+    return {
+      success: true,
+      totalDeleted,
+      message: `Successfully deleted ${totalDeleted} records from ${tables.length} tables`,
+    };
+  },
+});

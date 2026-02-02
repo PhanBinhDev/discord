@@ -1,5 +1,6 @@
 'use client';
 
+import ModalCreateCategory from '@/components/modals/modal-create-category';
 import ModalCreateChannel from '@/components/modals/modal-create-channel';
 import ModalCreateDirectMessage from '@/components/modals/modal-create-direct-message';
 import { ModalCreateServer } from '@/components/modals/modal-create-server';
@@ -25,6 +26,7 @@ const ModalsProvider = () => {
       {isModalOpen('ModalSetUserStatus') && <ModalSetUserStatus />}
       {isModalOpen('ModalInvitePeople') && <ModalInvitePeople />}
       {isModalOpen('ModalCreateChannel') && <ModalCreateChannel />}
+      {isModalOpen('ModalCreateCategory') && <ModalCreateCategory />}
     </>
   );
 };

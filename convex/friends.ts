@@ -2,7 +2,6 @@ import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
-// Send friend request
 export const sendFriendRequest = mutation({
   args: { targetUserId: v.id('users') },
   handler: async (ctx, args) => {

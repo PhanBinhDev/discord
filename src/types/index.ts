@@ -67,7 +67,7 @@ export type ServerMenu = {
 };
 
 export type ChannelWithCategory = NonNullable<
-  ApiReturn<typeof api.servers.getServerById>
+  ApiReturn<typeof api.servers.getAccessibleChannels>
 >['channels'][number];
 
 export type RenderItem =

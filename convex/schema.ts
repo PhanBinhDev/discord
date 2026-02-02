@@ -177,6 +177,7 @@ const channelCategories = defineTable({
   serverId: v.id('servers'),
   name: v.string(),
   position: v.number(),
+  isPrivate: v.boolean(),
 })
   .index('by_server', ['serverId'])
   .index('by_position', ['serverId', 'position']);
@@ -429,6 +430,16 @@ const channelPermissions = defineTable({
   .index('by_user', ['userId'])
   .index('by_channel_role', ['channelId', 'roleId']);
 
+// Category Permissions - quyền truy cập category
+const categoryPermissions = defineTable({
+  categoryId: v.id('channelCategories'),
+  roleId: v.id('roles'),
+  canView: v.boolean(),
+})
+  .index('by_category', ['categoryId'])
+  .index('by_role', ['roleId'])
+  .index('by_category_role', ['categoryId', 'roleId']);
+
 // User Last Viewed Channels - lưu channel cuối cùng user xem ở mỗi server
 const userLastViewedChannels = defineTable({
   userId: v.id('users'),
@@ -480,6 +491,7 @@ const schema = defineSchema({
   notifications,
 
   channelPermissions,
+  categoryPermissions,
   userLastViewedChannels,
 });
 

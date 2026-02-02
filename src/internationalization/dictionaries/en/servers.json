@@ -145,6 +145,21 @@
       "channelNameMaxLength": "Channel name must be at most {{max}} characters",
       "channelSettings": "Channel Settings",
       "addUsers": "Add Users"
+    },
+    "category": {
+      "create": "Create Category",
+      "createError": "Category creation failed. Please try again.",
+      "categoryCreated": "Category created successfully!",
+      "title": "Create a new category",
+      "description": "Categories help you organize your channels. Group related channels together for easy access.",
+      "categoryName": "Category Name",
+      "categoryNamePlaceholder": "e.g., Gaming",
+      "categoryNameRequired": "Category name is required",
+      "categoryNameMinLength": "Category name must be at least {{min}} character",
+      "categoryNameMaxLength": "Category name must be at most {{max}} characters",
+      "categorySettings": "Category Settings",
+      "privateCategory": "Private Category",
+      "privateCategoryDescription": "Only selected members and roles will be able to view channels in this category."
     }
   }
 }

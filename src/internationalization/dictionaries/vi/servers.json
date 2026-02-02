@@ -145,6 +145,21 @@
       "channelNameMaxLength": "Tên kênh phải có tối đa {{max}} ký tự",
       "channelSettings": "Cài đặt kênh",
       "addUsers": "Thêm người dùng"
+    },
+    "category": {
+      "create": "Tạo danh mục",
+      "createError": "Tạo danh mục thất bại. Vui lòng thử lại.",
+      "categoryCreated": "Tạo danh mục thành công!",
+      "title": "Tạo danh mục mới",
+      "description": "Danh mục giúp tổ chức các kênh của bạn. Tạo danh mục để nhóm các kênh liên quan lại với nhau.",
+      "categoryName": "Tên danh mục",
+      "categoryNamePlaceholder": "ví dụ, Thông báo, Trò chơi, Học tập",
+      "categoryNameRequired": "Tên danh mục là bắt buộc",
+      "categoryNameMinLength": "Tên danh mục phải có ít nhất {{min}} ký tự",
+      "categoryNameMaxLength": "Tên danh mục phải có tối đa {{max}} ký tự",
+      "categorySettings": "Cài đặt danh mục",
+      "privateCategory": "Danh mục riêng tư",
+      "privateCategoryDescription": "Chỉ những thành viên có vai trò được chọn mới có thể truy cập danh mục này."
     }
   }
 }

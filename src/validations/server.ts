@@ -46,5 +46,27 @@ export const createChannelSchema = z.object({
   isPrivate: z.boolean().default(false),
 });
 
+export const createCategorySchema = z.object({
+  name: z
+    .string()
+    .nonempty(dict?.servers.category.categoryNameRequired)
+    .min(
+      MIN_LENGTH_CHANNEL_NAME,
+      dict?.servers.category.categoryNameRequired.replace(
+        '{{min}}',
+        String(MIN_LENGTH_CHANNEL_NAME),
+      ),
+    )
+    .max(
+      MAX_LENGTH_CHANNEL_NAME,
+      dict?.servers.category.categoryNameMaxLength.replace(
+        '{{max}}',
+        String(MAX_LENGTH_CHANNEL_NAME),
+      ),
+    ),
+  isPrivate: z.boolean().default(false),
+});
+
 export type CreateChannelFormValues = z.infer<typeof createChannelSchema>;
 export type ServerFormValues = z.infer<typeof serverSchema>;
+export type CreateCategoryFormValues = z.infer<typeof createCategorySchema>;

@@ -23,8 +23,6 @@ const ChannelItem = ({ channel, isActive }: ChannelItemProps) => {
     hasChatFeature: ['video', 'voice'].includes(channel.type),
   });
 
-  // const 
-
   return (
     <Link
       href={`/servers/${channel.serverId}/channels/${channel._id}`}
@@ -55,18 +53,20 @@ const ChannelItem = ({ channel, isActive }: ChannelItemProps) => {
             </Button>
           </Hint>
 
-          <Hint label={dict?.servers.channel.channelSettings} side="top">
-            <Button
-              className="size-6 group"
-              size={'icon-sm'}
-              variant="ghost"
-              onClick={e => {
-                e.preventDefault();
-              }}
-            >
-              <IconSettings className="size-4 text-muted-foreground hover:text-foreground group-hover:text-foreground" />
-            </Button>
-          </Hint>
+          {channel.permissions.canManage && (
+            <Hint label={dict?.servers.channel.channelSettings} side="top">
+              <Button
+                className="size-6 group"
+                size={'icon-sm'}
+                variant="ghost"
+                onClick={e => {
+                  e.preventDefault();
+                }}
+              >
+                <IconSettings className="size-4 text-muted-foreground hover:text-foreground group-hover:text-foreground" />
+              </Button>
+            </Hint>
+          )}
         </div>
       )}
     </Link>
