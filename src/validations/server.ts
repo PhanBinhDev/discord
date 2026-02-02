@@ -7,6 +7,14 @@ import z from 'zod';
 
 const dict = getGlobalDict();
 
+console.log(
+  'dict in validations/server.ts:',
+  dict?.servers.channel.channelNameRequired.replace(
+    '{{min}}',
+    String(MIN_LENGTH_CHANNEL_NAME),
+  ),
+);
+
 export const serverSchema = z.object({
   name: z
     .string()

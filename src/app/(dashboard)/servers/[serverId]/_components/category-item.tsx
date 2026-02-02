@@ -1,6 +1,8 @@
 import TranslateText from '@/components/shared/translate/translate-text';
 import { Button } from '@/components/ui/button';
+import { Hint } from '@/components/ui/hint';
 import { Doc, Id } from '@/convex/_generated/dataModel';
+import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import useModal from '@/hooks/use-modal';
 import { cn } from '@/lib/utils';
 import { ChannelWithCategory } from '@/types';
@@ -23,6 +25,7 @@ const CategoryItem = ({
   onToggle,
 }: CategoryItemProps) => {
   const { openModal } = useModal();
+  const { dict } = useClientDictionary();
 
   const params = useParams();
   const channelId = params?.channelId as Id<'channels'> | undefined;
@@ -48,18 +51,20 @@ const CategoryItem = ({
         </button>
 
         <div className="flex items-center gap-0.5">
-          <Button
-            size={'icon'}
-            variant="ghost"
-            className="size-6"
-            onClick={() => {
-              openModal('ModalCreateChannel', {
-                category,
-              });
-            }}
-          >
-            <IconPlus className="size-3" />
-          </Button>
+          <Hint label={dict?.servers.channel.create} side="top">
+            <Button
+              size={'icon'}
+              variant="ghost"
+              className="size-6"
+              onClick={() => {
+                openModal('ModalCreateChannel', {
+                  category,
+                });
+              }}
+            >
+              <IconPlus className="size-3" />
+            </Button>
+          </Hint>
         </div>
       </div>
 

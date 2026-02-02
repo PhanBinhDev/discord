@@ -1,0 +1,38 @@
+.discord-emoji-picker em-emoji-picker {
+  --rgb-background: var(--color-muted);
+  --rgb-accent: var(--emoji-rgb-accent);
+  --rgb-input: var(--emoji-rgb-input);
+  --rgb-color: var(--emoji-rgb-color);
+  --border-radius: var(--emoji-border-radius);
+  --category-icon-size: var(--emoji-category-icon-size);
+  --font-family: var(--emoji-font-family);
+  --font-size: var(--emoji-font-size);
+  --padding: 8px!important;
+  font-family: var(--emoji-font-family);
+  background: var(--color-muted);
+  color: color-mix(in srgb, rgb(var(--rgb-color)) 100%, var(--color-muted) 0%);
+  width: 100%;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-popover) 12%, transparent),
+              0 2px 6px color-mix(in srgb, var(--color-popover) 6%, transparent);
+  scrollbar-width: thin;
+}
+
+
+/* Scrollbar */
+.discord-emoji-picker [class*="scroll"]::-webkit-scrollbar {
+  width: 8px!important;
+}
+
+.discord-emoji-picker [class*="scroll"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.discord-emoji-picker [class*="scroll"]::-webkit-scrollbar-thumb {
+  background: #1e1f22!important;
+  border-radius: 4px;
+  border: 2px solid #313338!important;
+}
+
+.discord-emoji-picker [class*="scroll"]::-webkit-scrollbar-thumb:hover {
+  background: #1a1b1e!important;
+}

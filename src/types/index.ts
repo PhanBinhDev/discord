@@ -123,3 +123,14 @@ export type ChannelTypeItem = {
     | TablerIcon
     | React.ComponentType<React.SVGProps<SVGSVGElement>>;
 };
+
+export type EmojiMartEmoji = {
+  id?: string;
+  name?: string;
+  native?: string;
+  unified?: string;
+  colons?: string;
+  skin?: number;
+  shortcodes?: string[];
+  [key: string]: unknown;
+};

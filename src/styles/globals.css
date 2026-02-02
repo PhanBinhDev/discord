@@ -79,6 +79,15 @@
   --accent-color-rgb: 88, 101, 242;
   --accent-hover: #4752c4;
   --accent-active: #3c45a5;
+
+  --emoji-rgb-background: 49, 51, 56;
+  --emoji-rgb-accent: 88, 101, 242;
+  --emoji-rgb-input: 30, 31, 34;
+  --emoji-rgb-color: 219, 222, 225;
+  --emoji-border-radius: 8px;
+  --emoji-category-icon-size: 20px;
+  --emoji-font-family: 'gg sans', 'Noto Sans', sans-serif;
+  --emoji-font-size: 14px;
 }
 
 .dark {
@@ -113,6 +122,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --emoji-rgb-background: 24, 26, 28;
+  --emoji-rgb-color: 240, 240, 240;
 }
 
 @layer base {
@@ -167,3 +178,4 @@
   *::-webkit-scrollbar { display: none; }
   * { scrollbar-width: none; }
 }
+

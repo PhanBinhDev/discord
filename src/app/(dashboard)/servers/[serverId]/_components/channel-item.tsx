@@ -1,7 +1,12 @@
+import { Button } from '@/components/ui/button';
+import { Hint } from '@/components/ui/hint';
 import { ChannelIconTypeMapping } from '@/constants/app';
+import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import { cn } from '@/lib/utils';
 import { ChannelWithCategory } from '@/types';
+import { IconSettings, IconUsersPlus } from '@tabler/icons-react';
 import Link from 'next/link';
+import { useState } from 'react';
 
 interface ChannelItemProps {
   channel: ChannelWithCategory;
@@ -9,28 +14,60 @@ interface ChannelItemProps {
 }
 
 const ChannelItem = ({ channel, isActive }: ChannelItemProps) => {
+  const { dict } = useClientDictionary();
+  const [showActions, setShowActions] = useState(false);
+
   const Icon = ChannelIconTypeMapping[channel.type]({
     isPrivate: channel.isPrivate,
     isActive,
     hasChatFeature: ['video', 'voice'].includes(channel.type),
   });
 
+  // const 
+
   return (
     <Link
       href={`/servers/${channel.serverId}/channels/${channel._id}`}
       className={cn(
-        'flex items-center gap-2 px-2 py-1.5 mx-1 text-sm rounded-md transition-colors group',
+        'flex items-center gap-2 px-2 py-1.5 h-9 mx-1 text-sm rounded-md transition-colors',
         'hover:bg-accent hover:text-accent-foreground',
-        isActive && 'bg-accent text-accent-foreground font-medium',
+        isActive && 'bg-accent text-accent-foreground',
         !isActive && 'text-muted-foreground',
       )}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
     >
       <Icon className={cn('size-4 shrink-0', isActive && 'text-foreground')} />
       <span className="flex-1 truncate">{channel.name}</span>
 
-      {/* Optional: Add indicators */}
-      {channel.isPrivate && (
-        <div className="size-1 rounded-full bg-yellow-500 shrink-0" />
+      {(isActive || showActions) && (
+        <div className="flex gap-0.5 items-center ml-auto">
+          <Hint label={dict?.servers.channel.addUsers} side="top">
+            <Button
+              className="size-6 group"
+              size={'icon-sm'}
+              variant="ghost"
+              onClick={e => {
+                e.preventDefault();
+              }}
+            >
+              <IconUsersPlus className="size-4 text-muted-foreground hover:text-foreground group-hover:text-foreground" />
+            </Button>
+          </Hint>
+
+          <Hint label={dict?.servers.channel.channelSettings} side="top">
+            <Button
+              className="size-6 group"
+              size={'icon-sm'}
+              variant="ghost"
+              onClick={e => {
+                e.preventDefault();
+              }}
+            >
+              <IconSettings className="size-4 text-muted-foreground hover:text-foreground group-hover:text-foreground" />
+            </Button>
+          </Hint>
+        </div>
       )}
     </Link>
   );

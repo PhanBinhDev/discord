@@ -307,7 +307,7 @@ export const getAccessibleChannels = query({
 
     if (!membership || membership.isBanned) return null;
 
-    // Get all categories for mapping
+    // Get all categories
     const categories = await ctx.db
       .query('channelCategories')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
@@ -315,30 +315,61 @@ export const getAccessibleChannels = query({
 
     const categoryMap = new Map(categories.map(cat => [cat._id, cat]));
 
+    // Get user's roles
+    const userRoles = await ctx.db
+      .query('userRoles')
+      .withIndex('by_user_server', q =>
+        q.eq('userId', user._id).eq('serverId', args.serverId),
+      )
+      .collect();
+
+    // Get role details
+    const roles = await Promise.all(
+      userRoles.map(async ur => {
+        const role = await ctx.db.get(ur.roleId);
+        return role;
+      }),
+    );
+
+    const validRoles = roles.filter((r): r is Doc<'roles'> => r !== null);
+
     // Get all channels
     const allChannels = await ctx.db
       .query('channels')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
-    // Filter accessible channels with permission check
-    const accessibleChannels: (Doc<'channels'> & {
-      category: Doc<'channelCategories'> | null;
-    })[] = [];
+    // Build accessible channels with permissions
+    const accessibleChannels: Array<
+      Doc<'channels'> & {
+        category: Doc<'channelCategories'> | null;
+        permissions: {
+          canView: boolean;
+          canSend: boolean;
+          canManage: boolean;
+          canDelete: boolean;
+        };
+      }
+    > = [];
 
     for (const channel of allChannels) {
-      const hasAccess = await canUserAccessChannel(
+      const permissions = await getUserChannelPermissions(
         ctx,
         user._id,
         channel._id,
         args.serverId,
       );
 
-      if (hasAccess) {
+      if (permissions.canView) {
         const category = channel.categoryId
           ? categoryMap.get(channel.categoryId) || null
           : null;
-        accessibleChannels.push({ ...channel, category });
+
+        accessibleChannels.push({
+          ...channel,
+          category,
+          permissions,
+        });
       }
     }
 
@@ -352,9 +383,7 @@ export const getAccessibleChannels = query({
       )
       .first();
 
-    let defaultChannel:
-      | (Doc<'channels'> & { category: Doc<'channelCategories'> | null })
-      | null = null;
+    let defaultChannel = null;
 
     if (lastViewed) {
       const lastViewedChannel = accessibleChannels.find(
@@ -375,6 +404,20 @@ export const getAccessibleChannels = query({
     return {
       channels: accessibleChannels,
       defaultChannelId: defaultChannel._id,
+      userMembership: {
+        role: membership.role,
+        nickname: membership.nickname,
+        isMuted: membership.isMuted,
+        isDeafened: membership.isDeafened,
+        joinedAt: membership.joinedAt,
+      },
+      userRoles: validRoles.map(role => ({
+        _id: role._id,
+        name: role.name,
+        color: role.color,
+        position: role.position,
+        permissions: role.permissions,
+      })),
     };
   },
 });
@@ -1124,9 +1167,6 @@ export const regenerateInviteCode = mutation({
   },
 });
 
-// ==================== CHANNEL CATEGORY APIs ====================
-
-// Create category
 export const createCategory = mutation({
   args: {
     serverId: v.id('servers'),
@@ -1144,7 +1184,6 @@ export const createCategory = mutation({
 
     if (!user) throw new Error('User not found');
 
-    // Check permissions
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1159,7 +1198,6 @@ export const createCategory = mutation({
       throw new Error('Insufficient permissions');
     }
 
-    // Get current max position if not provided
     let position = args.position;
     if (position === undefined) {
       const categories = await ctx.db
@@ -1179,7 +1217,6 @@ export const createCategory = mutation({
   },
 });
 
-// Update category
 export const updateCategory = mutation({
   args: {
     categoryId: v.id('channelCategories'),
@@ -1200,7 +1237,6 @@ export const updateCategory = mutation({
     const category = await ctx.db.get(args.categoryId);
     if (!category) throw new Error('Category not found');
 
-    // Check permissions
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1225,7 +1261,6 @@ export const updateCategory = mutation({
   },
 });
 
-// Delete category
 export const deleteCategory = mutation({
   args: {
     categoryId: v.id('channelCategories'),
@@ -1245,7 +1280,6 @@ export const deleteCategory = mutation({
     const category = await ctx.db.get(args.categoryId);
     if (!category) throw new Error('Category not found');
 
-    // Check permissions
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1260,16 +1294,13 @@ export const deleteCategory = mutation({
       throw new Error('Insufficient permissions');
     }
 
-    // Get channels in this category
     const channels = await ctx.db
       .query('channels')
       .withIndex('by_category', q => q.eq('categoryId', args.categoryId))
       .collect();
 
     if (args.deleteChannels) {
-      // Delete all channels in category
       for (const channel of channels) {
-        // Delete messages first
         const messages = await ctx.db
           .query('messages')
           .withIndex('by_channel', q => q.eq('channelId', channel._id))
@@ -1279,7 +1310,6 @@ export const deleteCategory = mutation({
         await ctx.db.delete(channel._id);
       }
     } else {
-      // Move channels to uncategorized
       await Promise.all(
         channels.map(channel =>
           ctx.db.patch(channel._id, { categoryId: undefined }),
@@ -1293,7 +1323,6 @@ export const deleteCategory = mutation({
   },
 });
 
-// Reorder categories
 export const reorderCategories = mutation({
   args: {
     serverId: v.id('servers'),
@@ -1341,9 +1370,6 @@ export const reorderCategories = mutation({
   },
 });
 
-// ==================== CHANNEL APIs ====================
-
-// Create channel
 export const createChannel = mutation({
   args: {
     serverId: v.id('servers'),
@@ -1366,7 +1392,6 @@ export const createChannel = mutation({
 
     if (!user) throw new Error('User not found');
 
-    // Check permissions
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1381,7 +1406,6 @@ export const createChannel = mutation({
       throw new Error('Insufficient permissions');
     }
 
-    // Get current max position if not provided
     let position = args.position;
     if (position === undefined) {
       const channels = await ctx.db
@@ -1407,7 +1431,6 @@ export const createChannel = mutation({
   },
 });
 
-// Update channel
 export const updateChannel = mutation({
   args: {
     channelId: v.id('channels'),
@@ -1435,7 +1458,6 @@ export const updateChannel = mutation({
     const channel = await ctx.db.get(args.channelId);
     if (!channel) throw new Error('Channel not found');
 
-    // Check permissions
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1476,7 +1498,6 @@ export const updateChannel = mutation({
   },
 });
 
-// Delete channel
 export const deleteChannel = mutation({
   args: { channelId: v.id('channels') },
   handler: async (ctx, args) => {
@@ -1493,7 +1514,6 @@ export const deleteChannel = mutation({
     const channel = await ctx.db.get(args.channelId);
     if (!channel) throw new Error('Channel not found');
 
-    // Check permissions
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1516,7 +1536,6 @@ export const deleteChannel = mutation({
 
     await Promise.all(messages.map(msg => ctx.db.delete(msg._id)));
 
-    // Delete channel permissions
     const permissions = await ctx.db
       .query('channelPermissions')
       .withIndex('by_channel', q => q.eq('channelId', args.channelId))
@@ -1524,14 +1543,12 @@ export const deleteChannel = mutation({
 
     await Promise.all(permissions.map(perm => ctx.db.delete(perm._id)));
 
-    // Delete channel
     await ctx.db.delete(args.channelId);
 
     return { success: true };
   },
 });
 
-// Reorder channels (batch update - for complete reorder)
 export const reorderChannels = mutation({
   args: {
     serverId: v.id('servers'),
@@ -1554,7 +1571,6 @@ export const reorderChannels = mutation({
 
     if (!user) throw new Error('User not found');
 
-    // Check permissions
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1569,7 +1585,6 @@ export const reorderChannels = mutation({
       throw new Error('Insufficient permissions');
     }
 
-    // Update positions and categories
     await Promise.all(
       args.channelOrders.map(({ channelId, position, categoryId }) => {
         const updates: any = { position, updatedAt: Date.now() };
@@ -1584,7 +1599,6 @@ export const reorderChannels = mutation({
   },
 });
 
-// Move single channel (optimized for drag & drop)
 export const moveChannel = mutation({
   args: {
     channelId: v.id('channels'),
@@ -1605,7 +1619,6 @@ export const moveChannel = mutation({
     const channel = await ctx.db.get(args.channelId);
     if (!channel) throw new Error('Channel not found');
 
-    // Check permissions
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1624,7 +1637,6 @@ export const moveChannel = mutation({
     const newCategoryId =
       args.newCategoryId === null ? undefined : args.newCategoryId;
 
-    // Get all channels in the target category
     const targetChannels = await ctx.db
       .query('channels')
       .withIndex('by_server', q => q.eq('serverId', channel.serverId))
@@ -1639,10 +1651,8 @@ export const moveChannel = mutation({
       })
       .sort((a, b) => a.position - b.position);
 
-    // Reposition channels in target category
     const updates: Array<Promise<any>> = [];
 
-    // Update moved channel
     updates.push(
       ctx.db.patch(args.channelId, {
         categoryId: newCategoryId,
@@ -1651,7 +1661,6 @@ export const moveChannel = mutation({
       }),
     );
 
-    // Shift channels in target category
     for (let i = 0; i < channelsInTargetCategory.length; i++) {
       const ch = channelsInTargetCategory[i];
       let newPos = i;
@@ -1670,7 +1679,6 @@ export const moveChannel = mutation({
       }
     }
 
-    // If moved to different category, reposition old category channels
     if (oldCategoryId !== newCategoryId) {
       const channelsInOldCategory = targetChannels
         .filter(ch => {
@@ -1699,7 +1707,6 @@ export const moveChannel = mutation({
   },
 });
 
-// Move single category (optimized for drag & drop)
 export const moveCategory = mutation({
   args: {
     categoryId: v.id('channelCategories'),
@@ -1719,7 +1726,6 @@ export const moveCategory = mutation({
     const category = await ctx.db.get(args.categoryId);
     if (!category) throw new Error('Category not found');
 
-    // Check permissions
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1734,7 +1740,6 @@ export const moveCategory = mutation({
       throw new Error('Insufficient permissions');
     }
 
-    // Get all categories
     const allCategories = await ctx.db
       .query('channelCategories')
       .withIndex('by_server', q => q.eq('serverId', category.serverId))
@@ -1746,14 +1751,12 @@ export const moveCategory = mutation({
 
     const updates: Array<Promise<any>> = [];
 
-    // Update moved category
     updates.push(
       ctx.db.patch(args.categoryId, {
         position: args.newPosition,
       }),
     );
 
-    // Reposition other categories
     for (let i = 0; i < otherCategories.length; i++) {
       const cat = otherCategories[i];
       let newPos = i;
@@ -1852,7 +1855,6 @@ export const getChannelById = query({
   },
 });
 
-// Get all categories with channels for a server
 export const getServerChannelsGrouped = query({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
@@ -2023,3 +2025,102 @@ export const getChannelsByCategories = query({
     };
   },
 });
+
+async function getUserChannelPermissions(
+  ctx: GenericQueryCtx<DataModel>,
+  userId: Id<'users'>,
+  channelId: Id<'channels'>,
+  serverId: Id<'servers'>,
+): Promise<{
+  canView: boolean;
+  canSend: boolean;
+  canManage: boolean; // Edit channel settings
+  canDelete: boolean;
+}> {
+  const channel = await ctx.db.get(channelId);
+  if (!channel) {
+    return {
+      canView: false,
+      canSend: false,
+      canManage: false,
+      canDelete: false,
+    };
+  }
+
+  const membership = await ctx.db
+    .query('serverMembers')
+    .withIndex('by_server_user', q =>
+      q.eq('serverId', serverId).eq('userId', userId),
+    )
+    .first();
+
+  if (!membership || membership.isBanned) {
+    return {
+      canView: false,
+      canSend: false,
+      canManage: false,
+      canDelete: false,
+    };
+  }
+
+  // Owner and Admin have all permissions
+  if (membership.role === 'owner' || membership.role === 'admin') {
+    return { canView: true, canSend: true, canManage: true, canDelete: true };
+  }
+
+  // For public channels, default permissions
+  if (!channel.isPrivate) {
+    return {
+      canView: true,
+      canSend: membership.role !== 'member' || !membership.isMuted,
+      canManage: membership.role === 'moderator',
+      canDelete: false,
+    };
+  }
+
+  // For private channels, check specific permissions
+  let canView = false;
+  let canSend = false;
+
+  // Check user-specific permission
+  const userPermission = await ctx.db
+    .query('channelPermissions')
+    .withIndex('by_channel', q => q.eq('channelId', channelId))
+    .filter(q => q.eq(q.field('userId'), userId))
+    .first();
+
+  if (userPermission) {
+    canView = userPermission.canView;
+    canSend = userPermission.canSend;
+  } else {
+    // Check role-based permissions
+    const userRoles = await ctx.db
+      .query('userRoles')
+      .withIndex('by_user_server', q =>
+        q.eq('userId', userId).eq('serverId', serverId),
+      )
+      .collect();
+
+    const rolePermissions = await ctx.db
+      .query('channelPermissions')
+      .withIndex('by_channel', q => q.eq('channelId', channelId))
+      .collect();
+
+    for (const userRole of userRoles) {
+      const permission = rolePermissions.find(
+        p => p.roleId === userRole.roleId,
+      );
+      if (permission) {
+        if (permission.canView) canView = true;
+        if (permission.canSend) canSend = true;
+      }
+    }
+  }
+
+  return {
+    canView,
+    canSend: canSend && !membership.isMuted,
+    canManage: membership.role === 'moderator',
+    canDelete: false,
+  };
+}

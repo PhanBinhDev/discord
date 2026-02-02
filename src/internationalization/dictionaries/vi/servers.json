@@ -142,7 +142,9 @@
       "privateChannelDescription": "Chỉ những thành viên có vai trò được chọn mới có thể truy cập kênh này.",
       "channelNameRequired": "Tên kênh là bắt buộc",
       "channelNameMinLength": "Tên kênh phải có ít nhất {{min}} ký tự",
-      "channelNameMaxLength": "Tên kênh phải có tối đa {{max}} ký tự"
+      "channelNameMaxLength": "Tên kênh phải có tối đa {{max}} ký tự",
+      "channelSettings": "Cài đặt kênh",
+      "addUsers": "Thêm người dùng"
     }
   }
 }

@@ -35,9 +35,6 @@ export function isNavItemActive(pathname: string, item: NavItem): boolean {
   return pathname === item.href || pathname.startsWith(item.href + '/');
 }
 
-/**
- * Build tree from categories and channels
- */
 export function buildTree(
   categories: Doc<'channelCategories'>[],
   channels: ChannelWithCategory[],
@@ -103,9 +100,6 @@ export function buildTree(
   return tree;
 }
 
-/**
- * Flatten tree for rendering
- */
 export function flattenTree(
   tree: TreeItem[],
   collapsedIds: Set<string> = new Set(),
@@ -132,9 +126,6 @@ export function flattenTree(
   return flattened;
 }
 
-/**
- * Apply optimistic move to tree
- */
 export function applyOptimisticMove(
   tree: TreeItem[],
   activeId: Id<TableNames>,
@@ -148,7 +139,6 @@ export function applyOptimisticMove(
   let activeParent: TreeItem | null = null;
   let activeIndex = -1;
 
-  // Find and remove active item
   for (let i = 0; i < clonedTree.length; i++) {
     if (clonedTree[i].id === activeId) {
       activeItem = clonedTree[i];
@@ -179,7 +169,6 @@ export function applyOptimisticMove(
     clonedTree.splice(activeIndex, 1);
   }
 
-  // Insert at new position
   if (overType === 'category' && activeItem.type === 'channel') {
     const categoryIndex = clonedTree.findIndex(item => item.id === overId);
     if (categoryIndex !== -1) {
@@ -215,10 +204,6 @@ export function applyOptimisticMove(
   return clonedTree;
 }
 
-/**
- * ✅ Generate tree signature for comparison
- * This allows us to detect when server data has been updated
- */
 export function getTreeSignature(tree: TreeItem[]): string {
   const positions = tree.map(item => {
     if (item.children) {
@@ -227,4 +212,14 @@ export function getTreeSignature(tree: TreeItem[]): string {
     return `${item.id}:${item.position}`;
   });
   return positions.join('|');
+}
+
+export function generateInviteCode(): string {
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }

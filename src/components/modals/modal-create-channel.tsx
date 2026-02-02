@@ -33,7 +33,9 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { ChannelTypeOptionsList } from '@/constants/app';
-import { Doc } from '@/convex/_generated/dataModel';
+import { api } from '@/convex/_generated/api';
+import { Doc, Id } from '@/convex/_generated/dataModel';
+import { useApiMutation } from '@/hooks/use-api-mutation';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import useModal from '@/hooks/use-modal';
 import {
@@ -43,14 +45,18 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconShieldLockFilled } from '@tabler/icons-react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 const ModalCreateChannel = () => {
   const { isModalOpen, closeModal, getModalData } = useModal();
-
   const { dict } = useClientDictionary();
   const data = getModalData('ModalCreateChannel') as {
     category?: Doc<'channelCategories'>;
   };
+
+  const { mutate: createChannel, pending } = useApiMutation(
+    api.servers.createChannel,
+  );
 
   const createChannelForm = useForm({
     resolver: zodResolver(createChannelSchema),
@@ -62,7 +68,20 @@ const ModalCreateChannel = () => {
   });
 
   const onSubmit = (values: CreateChannelFormValues) => {
-    console.log(values);
+    createChannel({
+      name: values.name,
+      serverId: data.category?.serverId as Id<'servers'>,
+      categoryId: data.category ? data.category._id : undefined,
+      type: values.type,
+      isPrivate: values.isPrivate,
+    })
+      .then(() => {
+        toast.success(dict?.servers.channel.channelCreated);
+        closeModal('ModalCreateChannel');
+      })
+      .catch(() => {
+        toast.error(dict?.servers.channel.createError);
+      });
   };
 
   const isPrivate = createChannelForm.watch('isPrivate');
@@ -174,8 +193,17 @@ const ModalCreateChannel = () => {
                             ) : null;
                           })()}
                         </InputGroupAddon>
-                        <InputGroupAddon align="inline-end">
-                          <SelectEmoji />
+                        <InputGroupAddon align="inline-end" className="pr-2">
+                          <SelectEmoji
+                            onSelect={e => {
+                              const prev =
+                                createChannelForm.getValues('name') || '';
+                              createChannelForm.setValue(
+                                'name',
+                                `${prev}${e.native}`,
+                              );
+                            }}
+                          />
                         </InputGroupAddon>
                       </InputGroup>
                     </FormControl>
@@ -222,6 +250,8 @@ const ModalCreateChannel = () => {
           </Button>
           <Button
             className="flex-1"
+            loading={pending || createChannelForm.formState.isSubmitting}
+            disabled={pending || createChannelForm.formState.isSubmitting}
             onClick={createChannelForm.handleSubmit(onSubmit)}
           >
             <TranslateText value="servers.channel.create" />
