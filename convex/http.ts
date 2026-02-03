@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { WebhookEvent } from '@clerk/backend';
 import { httpRouter } from 'convex/server';
 import { Webhook } from 'svix';
@@ -23,31 +24,72 @@ const handleClerkWebhook = httpAction(async (ctx, request) => {
     });
   }
 
-  switch (event.type) {
-    case 'user.created':
-    case 'user.updated': {
-      await ctx.runMutation(internal.users.upsertFromClerk, {
-        data: event.data,
-      });
-      break;
+  async function retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    maxRetries = 3,
+  ): Promise<T> {
+    let lastError: any;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+        console.error(`Attempt ${i + 1}/${maxRetries} failed:`, error);
+
+        if (i < maxRetries - 1) {
+          const delay = Math.min(1000 * Math.pow(2, i), 5000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
     }
-
-    case 'user.deleted': {
-      const clerkId = event.data.id!;
-      console.log('User deleted in Clerk:', clerkId);
-
-      await ctx.runMutation(internal.users.deleteUser, {
-        clerkId,
-      });
-
-      console.log(`User ${clerkId} soft deleted successfully`);
-      break;
-    }
+    throw lastError;
   }
 
-  return new Response(null, {
-    status: 200,
-  });
+  try {
+    switch (event.type) {
+      case 'user.created':
+      case 'user.updated': {
+        try {
+          await retryWithBackoff(() =>
+            ctx.runMutation(internal.users.upsertFromClerk, {
+              data: event.data,
+            }),
+          );
+          console.log(`User ${event.data.id} synced successfully`);
+        } catch (error) {
+          console.error(`Failed to sync user ${event.data.id}:`, error);
+        }
+        break;
+      }
+
+      case 'user.deleted': {
+        const clerkId = event.data.id!;
+        console.log('User deleted in Clerk:', clerkId);
+
+        try {
+          await retryWithBackoff(() =>
+            ctx.runMutation(internal.users.deleteUser, {
+              clerkId,
+            }),
+          );
+          console.log(`User ${clerkId} deleted successfully`);
+        } catch (error) {
+          console.error(`Failed to delete user ${clerkId}:`, error);
+        }
+        break;
+      }
+    }
+
+    return new Response(null, {
+      status: 200,
+    });
+  } catch (error) {
+    console.error('Webhook handler error:', error);
+    // Return 200 to acknowledge receipt, preventing Clerk retry storm
+    return new Response(null, {
+      status: 200,
+    });
+  }
 });
 
 const http = httpRouter();

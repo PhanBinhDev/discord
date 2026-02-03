@@ -3,6 +3,7 @@ import { getAuthUserId } from '@convex-dev/auth/server';
 import { GenericMutationCtx } from 'convex/server';
 import { v } from 'convex/values';
 import removeAccents from 'remove-accents';
+import { internal } from './_generated/api';
 import { DataModel, Id } from './_generated/dataModel';
 import { query } from './_generated/server';
 import { internalMutation, mutation } from './functions';
@@ -41,89 +42,100 @@ export const upsertFromClerk = internalMutation({
       data.username ||
       '';
 
-    // Generate discriminator (random 4 digits) for new users
-    const discriminator =
-      existingUser?.discriminator ||
-      Math.floor(1000 + Math.random() * 9000).toString();
+    const searchText = `${displayName} ${data.username} ${primaryEmail?.email_address}`;
 
-    const generateUsername = (base: string) => {
-      const username = base;
-      let suffix = 1;
+    if (existingUser) {
+      await ctx.db.patch(existingUser._id, {
+        email: primaryEmail?.email_address ?? existingUser.email,
+        displayName: displayName || existingUser.displayName,
+        avatarUrl: data.image_url || existingUser.avatarUrl,
+        emailVerified: primaryEmail?.verification?.status === 'verified',
+        lastSeen: Date.now(),
+        searchText: removeAccents(searchText),
+      });
+      return;
+    }
 
-      return async () => {
-        let uniqueUsername = username;
-        while (true) {
-          const userWithSameUsername = await ctx.db
-            .query('users')
-            .withIndex('by_username', q => q.eq('username', uniqueUsername))
-            .first();
+    const discriminator = Math.floor(1000 + Math.random() * 9000).toString();
+    const baseUsername =
+      data.username || displayName.replace(/\s+/g, '').toLowerCase() || 'user';
 
-          if (!userWithSameUsername) {
-            return uniqueUsername;
-          }
+    let username = baseUsername;
+    let suffix = 1;
 
-          uniqueUsername = `${username}${suffix}`;
-          suffix += 1;
-        }
-      };
-    };
+    while (suffix < 100) {
+      const existing = await ctx.db
+        .query('users')
+        .withIndex('by_username', q => q.eq('username', username))
+        .first();
 
-    const usernameGenerator = generateUsername(
-      data.username || displayName.replace(/\s+/g, '').toLowerCase() || 'user',
-    );
+      if (!existing) break;
 
-    const searchText = `${displayName} ${data.username} ${discriminator} ${primaryEmail?.email_address}`;
+      username = `${baseUsername}${suffix}`;
+      suffix++;
+    }
 
-    const userData = {
+    const newUserId = await ctx.db.insert('users', {
       clerkId: data.id,
       email: primaryEmail?.email_address ?? '',
-      username: await usernameGenerator(),
+      username,
       displayName,
       discriminator,
       avatarUrl: data.image_url,
       emailVerified: primaryEmail?.verification?.status === 'verified',
       status: 'online' as UserStatus,
       lastSeen: Date.now(),
-      searchText: removeAccents(searchText),
-      ...existingUser,
-    };
+      searchText: removeAccents(
+        `${displayName} ${username} ${discriminator} ${primaryEmail?.email_address}`,
+      ),
+    });
 
-    if (existingUser) {
-      await ctx.db.patch(existingUser._id, userData);
-    } else {
-      const newUserId = await ctx.db.insert('users', userData);
+    await ctx.scheduler.runAfter(0, internal.users.createDefaultSettings, {
+      userId: newUserId,
+    });
+  },
+});
 
-      await ctx.db.insert('userSettings', {
-        userId: newUserId,
-        theme: 'dark',
-        accentColor: 'blue',
-        language: 'en',
-        notifications: {
-          messages: true,
-          mentions: true,
-          directMessages: true,
-          calls: true,
-          sounds: true,
-        },
-        privacy: {
-          dmPermission: 'server_members',
-          allowFriendRequests: true,
-          showOnlineStatus: true,
-        },
-        appearance: {
-          messageDisplayCompact: false,
-          showEmbeds: true,
-          showReactions: true,
-          animateEmojis: true,
-        },
-        voice: {
-          defaultMuted: false,
-          defaultDeafened: false,
-          inputVolume: 100,
-          outputVolume: 100,
-        },
-      });
-    }
+export const createDefaultSettings = internalMutation({
+  args: { userId: v.id('users') },
+  handler: async (ctx, { userId }) => {
+    const existing = await ctx.db
+      .query('userSettings')
+      .withIndex('by_user', q => q.eq('userId', userId))
+      .first();
+
+    if (existing) return;
+
+    await ctx.db.insert('userSettings', {
+      userId,
+      theme: 'dark',
+      accentColor: 'blue',
+      language: 'en',
+      notifications: {
+        messages: true,
+        mentions: true,
+        directMessages: true,
+        calls: true,
+        sounds: true,
+      },
+      privacy: {
+        dmPermission: 'server_members',
+        allowFriendRequests: true,
+        showOnlineStatus: true,
+      },
+      appearance: {
+        messageDisplayCompact: false,
+        showEmbeds: true,
+        showReactions: true,
+        animateEmojis: true,
+      },
+      voice: {
+        defaultMuted: false,
+        defaultDeafened: false,
+        inputVolume: 100,
+        outputVolume: 100,
+      },
+    });
   },
 });
 

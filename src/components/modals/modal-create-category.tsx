@@ -91,66 +91,75 @@ const ModalCreateCategory = () => {
               onSubmit={createChannelForm.handleSubmit(onSubmit)}
               className="space-y-4"
             >
-              <FormField
-                control={createChannelForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <TranslateText value="servers.category.categoryName" />{' '}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <InputGroup>
-                        <InputGroupInput
-                          placeholder={
-                            dict?.servers.category.categoryNamePlaceholder
-                          }
-                          {...field}
-                        />
-                        <InputGroupAddon align="inline-end" className="pr-2">
-                          <SelectEmoji
-                            onSelect={e => {
-                              const prev =
-                                createChannelForm.getValues('name') || '';
-                              createChannelForm.setValue(
-                                'name',
-                                `${prev}${e.native}`,
-                              );
-                            }}
-                          />
-                        </InputGroupAddon>
-                      </InputGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {step === 1 && (
+                <>
+                  <FormField
+                    control={createChannelForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          <TranslateText value="servers.category.categoryName" />{' '}
+                          <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <InputGroup>
+                            <InputGroupInput
+                              placeholder={
+                                dict?.servers.category.categoryNamePlaceholder
+                              }
+                              {...field}
+                            />
+                            <InputGroupAddon
+                              align="inline-end"
+                              className="pr-2"
+                            >
+                              <SelectEmoji
+                                onSelect={e => {
+                                  const prev =
+                                    createChannelForm.getValues('name') || '';
+                                  createChannelForm.setValue(
+                                    'name',
+                                    `${prev}${e.native}`,
+                                  );
+                                }}
+                              />
+                            </InputGroupAddon>
+                          </InputGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={createChannelForm.control}
-                name="isPrivate"
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base flex items-center gap-1">
-                        <IconShieldLockFilled className="size-4 inline-block" />
-                        <TranslateText value="servers.category.privateCategory" />
-                      </FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        <TranslateText value="servers.category.privateCategoryDescription" />
-                      </p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        className="self-start mt-1.5 cursor-pointer"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={createChannelForm.control}
+                    name="isPrivate"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base flex items-center gap-1">
+                            <IconShieldLockFilled className="size-4 inline-block" />
+                            <TranslateText value="servers.category.privateCategory" />
+                          </FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            <TranslateText value="servers.category.privateCategoryDescription" />
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            className="self-start mt-1.5 cursor-pointer"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+              {step === 2 && <>
+              </>}
             </form>
           </Form>
         </div>
