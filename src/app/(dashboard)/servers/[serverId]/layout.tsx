@@ -64,7 +64,11 @@ const ServerLayout = ({ children, params }: ServerLayoutProps) => {
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => openModal('ModalInvitePeople')}
+            onClick={() =>
+              openModal('ModalInvitePeople', {
+                server,
+              })
+            }
           >
             <IconUsersPlus className="h-5 w-5" />
           </Button>

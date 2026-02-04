@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getAuthUserId } from '@convex-dev/auth/server';
 import { GenericQueryCtx } from 'convex/server';
 import { v } from 'convex/values';
 import { DataModel, Doc, Id } from './_generated/dataModel';
 import { query } from './_generated/server';
 import { mutation } from './functions';
 import { ChannelType } from './schema';
+import { getCurrent, getCurrentUserOrThrow } from './users';
 
 const EXPIRED_TIME = 7 * 24 * 60 * 60 * 1000;
 
@@ -27,17 +27,14 @@ async function canUserAccessChannel(
 
   if (!membership || membership.isBanned) return false;
 
-  // Owner và admin có full access
   if (membership.role === 'owner' || membership.role === 'admin') {
     return true;
   }
 
-  // Nếu channel thuộc category, kiểm tra category permissions trước
   if (channel.categoryId) {
     const category = await ctx.db.get(channel.categoryId);
 
     if (category && category.isPrivate) {
-      // Category private → phải check permissions
       const userRoles = await ctx.db
         .query('userRoles')
         .withIndex('by_user_server', q =>
@@ -45,7 +42,6 @@ async function canUserAccessChannel(
         )
         .collect();
 
-      // Lấy @everyone role
       const everyoneRole = await ctx.db
         .query('roles')
         .withIndex('by_server', q => q.eq('serverId', serverId))
@@ -57,7 +53,6 @@ async function canUserAccessChannel(
         ...(everyoneRole ? [everyoneRole._id] : []),
       ];
 
-      // Check category permissions
       const categoryPermissions = await ctx.db
         .query('categoryPermissions')
         .withIndex('by_category', q => q.eq('categoryId', channel.categoryId!))
@@ -71,10 +66,9 @@ async function canUserAccessChannel(
     }
   }
 
-  // Nếu channel không private, và đã pass category check → OK
   if (!channel.isPrivate) return true;
 
-  // Channel private → kiểm tra channel permissions
+  // Check user-specific permission first
   const userPermission = await ctx.db
     .query('channelPermissions')
     .withIndex('by_channel', q => q.eq('channelId', channelId))
@@ -85,6 +79,7 @@ async function canUserAccessChannel(
     return userPermission.canView;
   }
 
+  // Get user's custom roles
   const userRoles = await ctx.db
     .query('userRoles')
     .withIndex('by_user_server', q =>
@@ -92,15 +87,29 @@ async function canUserAccessChannel(
     )
     .collect();
 
-  if (userRoles.length === 0) return false;
+  // Get @everyone role
+  const everyoneRole = await ctx.db
+    .query('roles')
+    .withIndex('by_server', q => q.eq('serverId', serverId))
+    .filter(q => q.eq(q.field('isDefault'), true))
+    .first();
 
+  // Combine all role IDs (user roles + @everyone)
+  const allRoleIds = [
+    ...userRoles.map(ur => ur.roleId),
+    ...(everyoneRole ? [everyoneRole._id] : []),
+  ];
+
+  if (allRoleIds.length === 0) return false;
+
+  // Check role-based permissions
   const rolePermissions = await ctx.db
     .query('channelPermissions')
     .withIndex('by_channel', q => q.eq('channelId', channelId))
     .collect();
 
-  for (const userRole of userRoles) {
-    const permission = rolePermissions.find(p => p.roleId === userRole.roleId);
+  for (const roleId of allRoleIds) {
+    const permission = rolePermissions.find(p => p.roleId === roleId);
     if (permission && permission.canView) {
       return true;
     }
@@ -123,15 +132,7 @@ export const inviteUserToServer = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const currentUser = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!currentUser) throw new Error('User not found');
+    const currentUser = await getCurrentUserOrThrow(ctx);
 
     const inviteMembership = await ctx.db
       .query('serverMembers')
@@ -218,7 +219,6 @@ export const inviteUserToServer = mutation({
         isRead: false,
       });
 
-      // Send notification
       await ctx.db.insert('notifications', {
         userId: args.targetUserId,
         type: 'server_invite',
@@ -330,16 +330,8 @@ function generateInviteCode(): string {
 export const getAccessibleChannels = query({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
+    const user = await getCurrent(ctx);
     if (!user) return null;
-
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -349,7 +341,6 @@ export const getAccessibleChannels = query({
 
     if (!membership || membership.isBanned) return null;
 
-    // Get all categories
     const categories = await ctx.db
       .query('channelCategories')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
@@ -357,7 +348,6 @@ export const getAccessibleChannels = query({
 
     const categoryMap = new Map(categories.map(cat => [cat._id, cat]));
 
-    // Get user's roles
     const userRoles = await ctx.db
       .query('userRoles')
       .withIndex('by_user_server', q =>
@@ -365,7 +355,6 @@ export const getAccessibleChannels = query({
       )
       .collect();
 
-    // Get role details
     const roles = await Promise.all(
       userRoles.map(async ur => {
         const role = await ctx.db.get(ur.roleId);
@@ -375,7 +364,6 @@ export const getAccessibleChannels = query({
 
     const validRoles = roles.filter((r): r is Doc<'roles'> => r !== null);
 
-    // Get all channels
     const allChannels = await ctx.db
       .query('channels')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
@@ -468,16 +456,7 @@ export const updateLastViewedChannel = mutation({
     channelId: v.id('channels'),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const hasAccess = await canUserAccessChannel(
       ctx,
       user._id,
@@ -489,7 +468,6 @@ export const updateLastViewedChannel = mutation({
       throw new Error('No access to this channel');
     }
 
-    // Tìm record hiện tại
     const existing = await ctx.db
       .query('userLastViewedChannels')
       .withIndex('by_user_server', q =>
@@ -498,13 +476,11 @@ export const updateLastViewedChannel = mutation({
       .first();
 
     if (existing) {
-      // Update
       await ctx.db.patch(existing._id, {
         channelId: args.channelId,
         lastViewedAt: Date.now(),
       });
     } else {
-      // Insert
       await ctx.db.insert('userLastViewedChannels', {
         userId: user._id,
         serverId: args.serverId,
@@ -526,20 +502,10 @@ export const setChannelPermission = mutation({
     canSend: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const authUserId = await getAuthUserId(ctx);
-    if (!authUserId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', authUserId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const channel = await ctx.db.get(args.channelId);
     if (!channel) throw new Error('Channel not found');
 
-    // Kiểm tra quyền admin
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -554,7 +520,6 @@ export const setChannelPermission = mutation({
       throw new Error('Insufficient permissions');
     }
 
-    // Nếu channel thuộc category private, kiểm tra xem role có được phép ở category không
     if (channel.categoryId && args.roleId) {
       const category = await ctx.db.get(channel.categoryId);
 
@@ -570,7 +535,6 @@ export const setChannelPermission = mutation({
           perm => perm.roleId === args.roleId && perm.canView,
         );
 
-        // Không cho phép thêm role vào channel nếu role đó không có quyền ở category
         if (!roleHasAccessToCategory) {
           throw new Error(
             'Cannot grant channel access to role that does not have access to the parent category',
@@ -579,7 +543,6 @@ export const setChannelPermission = mutation({
       }
     }
 
-    // Tìm permission hiện tại
     let existingPermission;
     if (args.roleId) {
       existingPermission = await ctx.db
@@ -620,23 +583,12 @@ export const removeChannelPermission = mutation({
     permissionId: v.id('channelPermissions'),
   },
   handler: async (ctx, args) => {
-    const authUserId = await getAuthUserId(ctx);
-    if (!authUserId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', authUserId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const permission = await ctx.db.get(args.permissionId);
     if (!permission) throw new Error('Permission not found');
 
     const channel = await ctx.db.get(permission.channelId);
     if (!channel) throw new Error('Channel not found');
-
-    // Kiểm tra quyền admin
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -664,16 +616,7 @@ export const setCategoryPermission = mutation({
     canView: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const authUserId = await getAuthUserId(ctx);
-    if (!authUserId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', authUserId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const category = await ctx.db.get(args.categoryId);
     if (!category) throw new Error('Category not found');
 
@@ -721,23 +664,13 @@ export const removeCategoryPermission = mutation({
     permissionId: v.id('categoryPermissions'),
   },
   handler: async (ctx, args) => {
-    const authUserId = await getAuthUserId(ctx);
-    if (!authUserId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', authUserId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const permission = await ctx.db.get(args.permissionId);
     if (!permission) throw new Error('Permission not found');
 
     const category = await ctx.db.get(permission.categoryId);
     if (!category) throw new Error('Category not found');
 
-    // Kiểm tra quyền admin
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -761,14 +694,7 @@ export const removeCategoryPermission = mutation({
 export const getUserServers = query({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
+    const user = await getCurrent(ctx);
     if (!user) return [];
 
     const memberships = await ctx.db
@@ -799,20 +725,11 @@ export const getUserServers = query({
 export const getServerById = query({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
+    const user = await getCurrent(ctx);
     if (!user) return null;
-
     const server = await ctx.db.get(args.serverId);
     if (!server) return null;
 
-    // Check if user is a member
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -822,19 +739,16 @@ export const getServerById = query({
 
     if (!membership || membership.isBanned) return null;
 
-    // Get all categories for this server
     const categories = await ctx.db
       .query('channelCategories')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
-    // Get all channels for this server
     const channels = await ctx.db
       .query('channels')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
-    // Map category into each channel
     const channelsWithCategory = channels.map(channel => {
       const category =
         categories.find(cat => cat._id === channel.categoryId) || null;
@@ -856,17 +770,9 @@ export const getServerById = query({
 export const getServerMembers = query({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
+    const user = await getCurrent(ctx);
     if (!user) return [];
 
-    // Check if user is a member of this server
     const userMembership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -876,14 +782,12 @@ export const getServerMembers = query({
 
     if (!userMembership || userMembership.isBanned) return [];
 
-    // Get all members
     const members = await ctx.db
       .query('serverMembers')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .filter(q => q.eq(q.field('isBanned'), false))
       .collect();
 
-    // Get user details for each member
     const membersWithUsers = await Promise.all(
       members.map(async member => {
         const memberUser = await ctx.db.get(member.userId);
@@ -903,7 +807,6 @@ export const getServerMembers = query({
       }),
     );
 
-    // Type-safe filter to remove null values
     return membersWithUsers.filter(
       (member): member is NonNullable<typeof member> => member !== null,
     );
@@ -918,16 +821,7 @@ export const createServer = mutation({
     isPublic: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const inviteCode = Math.random()
       .toString(36)
       .substring(2, 10)
@@ -950,7 +844,6 @@ export const createServer = mutation({
       updatedAt: Date.now(),
     });
 
-    // Add owner as member
     await ctx.db.insert('serverMembers', {
       serverId,
       userId: user._id,
@@ -961,13 +854,12 @@ export const createServer = mutation({
       isBanned: false,
     });
 
-    // Create default @everyone role
     const everyoneRoleId = await ctx.db.insert('roles', {
       serverId,
       name: '@everyone',
       color: undefined,
       position: 0,
-      permissions: 0, // No special permissions
+      permissions: 0,
       isHoisted: false,
       isMentionable: false,
       isDefault: true,
@@ -987,7 +879,6 @@ export const createServer = mutation({
       isPrivate: false,
     });
 
-    // Grant @everyone access to both categories
     await ctx.db.insert('categoryPermissions', {
       categoryId: generalCategoryId,
       roleId: everyoneRoleId,
@@ -1022,6 +913,14 @@ export const createServer = mutation({
       updatedAt: Date.now(),
     });
 
+    // Auto-assign @everyone role to owner
+    await ctx.db.insert('userRoles', {
+      userId: user._id,
+      roleId: everyoneRoleId,
+      serverId,
+      assignedAt: Date.now(),
+    });
+
     return { serverId, inviteCode };
   },
 });
@@ -1039,16 +938,7 @@ export const updateServer = mutation({
     vanityUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const server = await ctx.db.get(args.serverId);
     if (!server) throw new Error('Server not found');
 
@@ -1136,25 +1026,14 @@ export const updateServer = mutation({
 export const deleteServer = mutation({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const server = await ctx.db.get(args.serverId);
     if (!server) throw new Error('Server not found');
 
-    // Only owner can delete server
     if (server.ownerId !== user._id) {
       throw new Error('Only server owner can delete the server');
     }
 
-    // Delete all related data
     const members = await ctx.db
       .query('serverMembers')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
@@ -1170,10 +1049,7 @@ export const deleteServer = mutation({
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
-    // Delete members
     await Promise.all(members.map(member => ctx.db.delete(member._id)));
-
-    // Delete channels and their messages
     await Promise.all(
       channels.map(async channel => {
         const messages = await ctx.db
@@ -1185,11 +1061,7 @@ export const deleteServer = mutation({
         await ctx.db.delete(channel._id);
       }),
     );
-
-    // Delete categories
     await Promise.all(categories.map(cat => ctx.db.delete(cat._id)));
-
-    // Delete server icons/banners from storage
     if (server.iconStorageId) {
       try {
         await ctx.storage.delete(server.iconStorageId);
@@ -1215,25 +1087,45 @@ export const deleteServer = mutation({
 export const joinServer = mutation({
   args: { inviteCode: v.string() },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
+    const user = await getCurrentUserOrThrow(ctx);
 
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
+    const serverInvite = await ctx.db
+      .query('serverInvites')
+      .withIndex('by_code', q => q.eq('code', args.inviteCode))
       .first();
 
-    if (!user) throw new Error('User not found');
+    let server;
+    let isTemporary = false;
 
-    // Find server by invite code
-    const server = await ctx.db
-      .query('servers')
-      .withIndex('by_invite_code', q => q.eq('inviteCode', args.inviteCode))
-      .first();
+    if (serverInvite) {
+      if (serverInvite.status !== 'active') {
+        throw new Error('This invite is no longer valid');
+      }
+
+      if (serverInvite.expiresAt && serverInvite.expiresAt < Date.now()) {
+        await ctx.db.patch(serverInvite._id, { status: 'expired' });
+        throw new Error('This invite has expired');
+      }
+
+      if (
+        serverInvite.maxUses !== undefined &&
+        serverInvite.uses >= serverInvite.maxUses
+      ) {
+        await ctx.db.patch(serverInvite._id, { status: 'expired' });
+        throw new Error('This invite has reached its maximum uses');
+      }
+
+      server = await ctx.db.get(serverInvite.serverId);
+      isTemporary = serverInvite.temporary;
+    } else {
+      server = await ctx.db
+        .query('servers')
+        .withIndex('by_invite_code', q => q.eq('inviteCode', args.inviteCode))
+        .first();
+    }
 
     if (!server) throw new Error('Invalid invite code');
 
-    // Check if already a member
     const existingMembership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1249,7 +1141,6 @@ export const joinServer = mutation({
       throw new Error('You are banned from this server');
     }
 
-    // Add as member
     await ctx.db.insert('serverMembers', {
       serverId: server._id,
       userId: user._id,
@@ -1260,33 +1151,73 @@ export const joinServer = mutation({
       isBanned: false,
     });
 
-    // Update member count
+    // Auto-assign @everyone role to new member
+    const everyoneRole = await ctx.db
+      .query('roles')
+      .withIndex('by_server', q => q.eq('serverId', server._id))
+      .filter(q => q.eq(q.field('isDefault'), true))
+      .first();
+
+    if (everyoneRole) {
+      await ctx.db.insert('userRoles', {
+        userId: user._id,
+        roleId: everyoneRole._id,
+        serverId: server._id,
+        assignedAt: Date.now(),
+      });
+    }
+
     await ctx.db.patch(server._id, {
       memberCount: server.memberCount + 1,
       updatedAt: Date.now(),
     });
 
-    return { serverId: server._id, serverName: server.name };
+    if (serverInvite) {
+      const newUses = serverInvite.uses + 1;
+      await ctx.db.patch(serverInvite._id, { uses: newUses });
+
+      if (
+        serverInvite.maxUses !== undefined &&
+        newUses >= serverInvite.maxUses
+      ) {
+        await ctx.db.patch(serverInvite._id, { status: 'expired' });
+      }
+    }
+
+    const relatedNotifications = await ctx.db
+      .query('notifications')
+      .filter(q =>
+        q.and(
+          q.eq(q.field('userId'), user._id),
+          q.or(
+            q.eq(q.field('type'), 'server_invite'),
+            q.eq(q.field('type'), 'server_invite_pending'),
+            q.eq(q.field('type'), 'server_invite_request'),
+          ),
+          q.eq(q.field('metadata.serverId'), server._id),
+        ),
+      )
+      .collect();
+
+    await Promise.all(
+      relatedNotifications.map(notification => ctx.db.delete(notification._id)),
+    );
+
+    return {
+      serverId: server._id,
+      serverName: server.name,
+      isTemporary,
+    };
   },
 });
 
 export const leaveServer = mutation({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const server = await ctx.db.get(args.serverId);
     if (!server) throw new Error('Server not found');
 
-    // Owner cannot leave, must transfer ownership or delete server
     if (server.ownerId === user._id) {
       throw new Error(
         'Server owner cannot leave. Transfer ownership or delete the server.',
@@ -1302,10 +1233,7 @@ export const leaveServer = mutation({
 
     if (!membership) throw new Error('Not a member of this server');
 
-    // Delete membership
     await ctx.db.delete(membership._id);
-
-    // Update member count
     await ctx.db.patch(args.serverId, {
       memberCount: Math.max(0, server.memberCount - 1),
       updatedAt: Date.now(),
@@ -1318,20 +1246,10 @@ export const leaveServer = mutation({
 export const regenerateInviteCode = mutation({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const server = await ctx.db.get(args.serverId);
     if (!server) throw new Error('Server not found');
 
-    // Check if user is owner or admin
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1360,25 +1278,42 @@ export const regenerateInviteCode = mutation({
   },
 });
 
+export const getServerInviteCode = query({
+  args: { serverId: v.id('servers') },
+  handler: async (ctx, args) => {
+    const user = await getCurrent(ctx);
+    if (!user) return null;
+
+    const server = await ctx.db.get(args.serverId);
+    if (!server) return null;
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', args.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) return null;
+
+    return {
+      inviteCode: server.inviteCode,
+      inviteLink: `${process.env.NEXT_PUBLIC_APP_URL}/invite/${server.inviteCode}`,
+      isPublic: server.isPublic,
+    };
+  },
+});
+
 export const createCategory = mutation({
   args: {
     serverId: v.id('servers'),
     name: v.string(),
     position: v.optional(v.number()),
     isPrivate: v.optional(v.boolean()),
-    roleIds: v.optional(v.array(v.id('roles'))), // Roles được phép truy cập nếu private
+    roleIds: v.optional(v.array(v.id('roles'))),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1409,7 +1344,6 @@ export const createCategory = mutation({
       isPrivate: args.isPrivate ?? false,
     });
 
-    // Nếu category là private và có roleIds, tạo permissions
     if (args.isPrivate && args.roleIds && args.roleIds.length > 0) {
       await Promise.all(
         args.roleIds.map(roleId =>
@@ -1422,7 +1356,6 @@ export const createCategory = mutation({
       );
     }
 
-    // Nếu category là public, gán cho @everyone role
     if (!args.isPrivate) {
       const everyoneRole = await ctx.db
         .query('roles')
@@ -1450,16 +1383,7 @@ export const updateCategory = mutation({
     position: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const category = await ctx.db.get(args.categoryId);
     if (!category) throw new Error('Category not found');
 
@@ -1490,19 +1414,10 @@ export const updateCategory = mutation({
 export const deleteCategory = mutation({
   args: {
     categoryId: v.id('channelCategories'),
-    deleteChannels: v.optional(v.boolean()), // true = delete channels, false = move to uncategorized
+    deleteChannels: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const category = await ctx.db.get(args.categoryId);
     if (!category) throw new Error('Category not found');
 
@@ -1560,17 +1475,7 @@ export const reorderCategories = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
-    // Check permissions
+    const user = await getCurrentUserOrThrow(ctx);
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1585,7 +1490,6 @@ export const reorderCategories = mutation({
       throw new Error('Insufficient permissions');
     }
 
-    // Update positions
     await Promise.all(
       args.categoryOrders.map(({ categoryId, position }) =>
         ctx.db.patch(categoryId, { position }),
@@ -1608,16 +1512,7 @@ export const createChannel = mutation({
     position: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1641,12 +1536,11 @@ export const createChannel = mutation({
       position = channels.length;
     }
 
-    // Nếu channel được tạo trong category private, channel phải là private
     let isPrivate = args.isPrivate ?? false;
     if (args.categoryId) {
       const category = await ctx.db.get(args.categoryId);
       if (category && category.isPrivate) {
-        isPrivate = true; // Force private nếu category là private
+        isPrivate = true;
       }
     }
 
@@ -1662,14 +1556,12 @@ export const createChannel = mutation({
       updatedAt: Date.now(),
     });
 
-    // Nếu category private, kế thừa permissions từ category
     if (args.categoryId && isPrivate) {
       const categoryPerms = await ctx.db
         .query('categoryPermissions')
         .withIndex('by_category', q => q.eq('categoryId', args.categoryId!))
         .collect();
 
-      // Tạo channel permissions tương ứng
       await Promise.all(
         categoryPerms.map(perm =>
           ctx.db.insert('channelPermissions', {
@@ -1677,7 +1569,7 @@ export const createChannel = mutation({
             roleId: perm.roleId,
             userId: undefined,
             canView: perm.canView,
-            canSend: true, // Mặc định cho phép gửi tin nhắn nếu được xem
+            canSend: true,
           }),
         ),
       );
@@ -1701,16 +1593,7 @@ export const updateChannel = mutation({
     bitrate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const channel = await ctx.db.get(args.channelId);
     if (!channel) throw new Error('Channel not found');
 
@@ -1757,19 +1640,9 @@ export const updateChannel = mutation({
 export const deleteChannel = mutation({
   args: { channelId: v.id('channels') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const channel = await ctx.db.get(args.channelId);
     if (!channel) throw new Error('Channel not found');
-
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1784,7 +1657,6 @@ export const deleteChannel = mutation({
       throw new Error('Insufficient permissions');
     }
 
-    // Delete all messages in channel
     const messages = await ctx.db
       .query('messages')
       .withIndex('by_channel', q => q.eq('channelId', args.channelId))
@@ -1817,16 +1689,7 @@ export const reorderChannels = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -1862,16 +1725,7 @@ export const moveChannel = mutation({
     newPosition: v.number(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
-
+    const user = await getCurrentUserOrThrow(ctx);
     const channel = await ctx.db.get(args.channelId);
     if (!channel) throw new Error('Channel not found');
 
@@ -1969,15 +1823,7 @@ export const moveCategory = mutation({
     newPosition: v.number(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     const category = await ctx.db.get(args.categoryId);
     if (!category) throw new Error('Category not found');
@@ -2036,24 +1882,14 @@ export const moveCategory = mutation({
   },
 });
 
-// Get channel by ID with permissions check
 export const getChannelById = query({
   args: { channelId: v.id('channels') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
+    const user = await getCurrent(ctx);
     if (!user) return null;
-
     const channel = await ctx.db.get(args.channelId);
     if (!channel) return null;
 
-    // Check membership
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -2063,11 +1899,8 @@ export const getChannelById = query({
 
     if (!membership || membership.isBanned) return null;
 
-    // Check channel access
     if (channel.isPrivate) {
-      // Owner/Admin always have access
       if (membership.role !== 'owner' && membership.role !== 'admin') {
-        // Check specific permissions
         const hasPermission = await ctx.db
           .query('channelPermissions')
           .withIndex('by_channel', q => q.eq('channelId', args.channelId))
@@ -2075,7 +1908,6 @@ export const getChannelById = query({
           .first();
 
         if (!hasPermission || !hasPermission.canView) {
-          // Check role permissions
           const userRoles = await ctx.db
             .query('userRoles')
             .withIndex('by_user_server', q =>
@@ -2099,7 +1931,6 @@ export const getChannelById = query({
       }
     }
 
-    // Get category if exists
     const category = channel.categoryId
       ? await ctx.db.get(channel.categoryId)
       : null;
@@ -2114,17 +1945,8 @@ export const getChannelById = query({
 export const getServerChannelsGrouped = query({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
+    const user = await getCurrent(ctx);
     if (!user) return null;
-
-    // Check membership
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -2134,19 +1956,16 @@ export const getServerChannelsGrouped = query({
 
     if (!membership || membership.isBanned) return null;
 
-    // Get all categories
     const categories = await ctx.db
       .query('channelCategories')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
-    // Get all channels
     const allChannels = await ctx.db
       .query('channels')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
-    // Group channels by category
     const result = categories.map(category => {
       const categoryChannels = allChannels
         .filter(ch => ch.categoryId === category._id)
@@ -2181,17 +2000,10 @@ export const getServerChannelsGrouped = query({
 export const getServerCategories = query({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
+    const user = await getCurrent(ctx);
 
     if (!user) return null;
 
-    // Check membership
     const membership = await ctx.db
       .query('serverMembers')
       .withIndex('by_server_user', q =>
@@ -2201,7 +2013,6 @@ export const getServerCategories = query({
 
     if (!membership || membership.isBanned) return null;
 
-    // Get all categories sorted by position
     const categories = await ctx.db
       .query('channelCategories')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
@@ -2214,13 +2025,7 @@ export const getServerCategories = query({
 export const getChannelsByCategories = query({
   args: { serverId: v.id('servers') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
+    const user = await getCurrent(ctx);
 
     if (!user) return null;
 
@@ -2238,7 +2043,6 @@ export const getChannelsByCategories = query({
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
-    // Filter accessible channels
     const accessibleChannels: Doc<'channels'>[] = [];
     for (const channel of allChannels) {
       const hasAccess = await canUserAccessChannel(
@@ -2252,7 +2056,6 @@ export const getChannelsByCategories = query({
       }
     }
 
-    // Group by category
     const grouped: Record<string, Doc<'channels'>[]> = {};
     const uncategorized: Doc<'channels'>[] = [];
 
@@ -2268,7 +2071,6 @@ export const getChannelsByCategories = query({
       }
     });
 
-    // Sort channels within each category
     Object.keys(grouped).forEach(catId => {
       grouped[catId].sort((a, b) => a.position - b.position);
     });
@@ -2290,7 +2092,7 @@ async function getUserChannelPermissions(
 ): Promise<{
   canView: boolean;
   canSend: boolean;
-  canManage: boolean; // Edit channel settings
+  canManage: boolean;
   canDelete: boolean;
 }> {
   const channel = await ctx.db.get(channelId);
@@ -2319,12 +2121,54 @@ async function getUserChannelPermissions(
     };
   }
 
-  // Owner and Admin have all permissions
   if (membership.role === 'owner' || membership.role === 'admin') {
     return { canView: true, canSend: true, canManage: true, canDelete: true };
   }
 
-  // For public channels, default permissions
+  // Check category private first
+  if (channel.categoryId) {
+    const category = await ctx.db.get(channel.categoryId);
+    if (category && category.isPrivate) {
+      // For private category, need to check category permissions
+      const userRoles = await ctx.db
+        .query('userRoles')
+        .withIndex('by_user_server', q =>
+          q.eq('userId', userId).eq('serverId', serverId),
+        )
+        .collect();
+
+      const everyoneRole = await ctx.db
+        .query('roles')
+        .withIndex('by_server', q => q.eq('serverId', serverId))
+        .filter(q => q.eq(q.field('isDefault'), true))
+        .first();
+
+      const allRoleIds = [
+        ...userRoles.map(ur => ur.roleId),
+        ...(everyoneRole ? [everyoneRole._id] : []),
+      ];
+
+      const categoryPermissions = await ctx.db
+        .query('categoryPermissions')
+        .withIndex('by_category', q => q.eq('categoryId', channel.categoryId!))
+        .collect();
+
+      const hasAccessToCategory = categoryPermissions.some(
+        perm => allRoleIds.includes(perm.roleId) && perm.canView,
+      );
+
+      if (!hasAccessToCategory) {
+        return {
+          canView: false,
+          canSend: false,
+          canManage: false,
+          canDelete: false,
+        };
+      }
+    }
+  }
+
+  // If channel is not private, grant view access
   if (!channel.isPrivate) {
     return {
       canView: true,
@@ -2334,11 +2178,10 @@ async function getUserChannelPermissions(
     };
   }
 
-  // For private channels, check specific permissions
   let canView = false;
   let canSend = false;
 
-  // Check user-specific permission
+  // Check user-specific permission first
   const userPermission = await ctx.db
     .query('channelPermissions')
     .withIndex('by_channel', q => q.eq('channelId', channelId))
@@ -2349,7 +2192,7 @@ async function getUserChannelPermissions(
     canView = userPermission.canView;
     canSend = userPermission.canSend;
   } else {
-    // Check role-based permissions
+    // Get user's custom roles
     const userRoles = await ctx.db
       .query('userRoles')
       .withIndex('by_user_server', q =>
@@ -2357,15 +2200,27 @@ async function getUserChannelPermissions(
       )
       .collect();
 
+    // Get @everyone role
+    const everyoneRole = await ctx.db
+      .query('roles')
+      .withIndex('by_server', q => q.eq('serverId', serverId))
+      .filter(q => q.eq(q.field('isDefault'), true))
+      .first();
+
+    // Combine all role IDs
+    const allRoleIds = [
+      ...userRoles.map(ur => ur.roleId),
+      ...(everyoneRole ? [everyoneRole._id] : []),
+    ];
+
+    // Check role-based permissions
     const rolePermissions = await ctx.db
       .query('channelPermissions')
       .withIndex('by_channel', q => q.eq('channelId', channelId))
       .collect();
 
-    for (const userRole of userRoles) {
-      const permission = rolePermissions.find(
-        p => p.roleId === userRole.roleId,
-      );
+    for (const roleId of allRoleIds) {
+      const permission = rolePermissions.find(p => p.roleId === roleId);
       if (permission) {
         if (permission.canView) canView = true;
         if (permission.canSend) canSend = true;
@@ -2380,72 +2235,3 @@ async function getUserChannelPermissions(
     canDelete: false,
   };
 }
-
-// ==================== ADMIN UTILITIES ====================
-
-export const clearAllData = mutation({
-  args: {
-    confirmationCode: v.string(), // Yêu cầu "DELETE_ALL_DATA" để xác nhận
-  },
-  handler: async (ctx, args) => {
-    // Bảo vệ: chỉ cho phép nếu nhập đúng confirmation code
-    if (args.confirmationCode !== 'DELETE_ALL_DATA') {
-      throw new Error('Invalid confirmation code');
-    }
-
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error('Unauthorized - Must be logged in');
-    }
-
-    console.log('🗑️  Starting database clear operation...');
-
-    // Xóa theo thứ tự để tránh foreign key issues
-    const tables = [
-      'categoryPermissions',
-      'channelPermissions',
-      'userLastViewedChannels',
-      'voiceChannelStates',
-      'reactions',
-      'messages',
-      'directMessages',
-      'channels',
-      'channelCategories',
-      'serverInvites',
-      'serverBoosts',
-      'serverCategoryMapping',
-      'userRoles',
-      'roles',
-      'serverMembers',
-      'servers',
-      'reports',
-      'webhooks',
-      'eventLogs',
-      'notifications',
-      'friends',
-      'userSettings',
-      // Không xóa users để giữ authentication
-    ];
-
-    let totalDeleted = 0;
-
-    for (const tableName of tables) {
-      try {
-        const records = await ctx.db.query(tableName as any).collect();
-        await Promise.all(records.map(record => ctx.db.delete(record._id)));
-        console.log(`✅ Deleted ${records.length} records from ${tableName}`);
-        totalDeleted += records.length;
-      } catch (error) {
-        console.error(`❌ Error deleting from ${tableName}:`, error);
-      }
-    }
-
-    console.log(`🎉 Database cleared! Total ${totalDeleted} records deleted`);
-
-    return {
-      success: true,
-      totalDeleted,
-      message: `Successfully deleted ${totalDeleted} records from ${tables.length} tables`,
-    };
-  },
-});

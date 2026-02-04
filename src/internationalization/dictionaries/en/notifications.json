@@ -2,6 +2,8 @@
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all as read",
+    "accept": "Accept",
+    "decline": "Decline",
     "filter": {
       "all": "All",
       "unread": "Unread",
@@ -25,6 +27,10 @@
       "meeting_started": "Meeting started",
       "meeting_cancelled": "Meeting cancelled",
       "contact_request": "Contact request",
+      "friend_request": "Friend request",
+      "friend_accepted": "Friend accepted",
+      "server_invite": "Server invite",
+      "server_invite_pending": "Server invite pending",
       "system": "System"
     },
     "contactRequest": {

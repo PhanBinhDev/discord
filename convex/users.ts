@@ -1,97 +1,104 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getAuthUserId } from '@convex-dev/auth/server';
+import { UserJSON } from '@clerk/backend';
 import { GenericMutationCtx } from 'convex/server';
-import { v } from 'convex/values';
+import { ConvexError, v, Validator } from 'convex/values';
 import removeAccents from 'remove-accents';
 import { internal } from './_generated/api';
 import { DataModel, Id } from './_generated/dataModel';
-import { query } from './_generated/server';
+import { query, QueryCtx } from './_generated/server';
 import { internalMutation, mutation } from './functions';
 import { UserStatus } from './schema';
 
 export const currentUser = query({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-
-    if (!userId) return null;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    return user;
+    return await getCurrent(ctx);
   },
 });
 
-export const upsertFromClerk = internalMutation({
-  args: { data: v.any() },
+export async function getCurrent(ctx: QueryCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (identity === null) {
+    return null;
+  }
+  return await userByExternalId(ctx, identity.subject);
+}
+
+export async function getCurrentUserOrThrow(ctx: QueryCtx) {
+  const userRecord = await getCurrent(ctx);
+  if (!userRecord)
+    throw new ConvexError({
+      message: 'User not authenticated',
+      status: 401,
+    });
+  return userRecord;
+}
+
+async function userByExternalId(ctx: QueryCtx, externalId: string) {
+  return await ctx.db
+    .query('users')
+    .withIndex('by_clerk_id', q => q.eq('clerkId', externalId))
+    .unique();
+}
+
+export const upsertFromClerk = mutation({
+  args: { data: v.any() as Validator<UserJSON> },
   handler: async (ctx, { data }) => {
-    const existingUser = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', data.id))
-      .first();
+    const user = await userByExternalId(ctx, data.id);
+
+    console.log(`Upserting user from Clerk webhook: ${data.id}`);
 
     const primaryEmail = data.email_addresses?.find(
-      (e: any) => e.id === data.primary_email_address_id,
+      e => e.id === data.primary_email_address_id,
     );
-
     const displayName =
       [data.first_name, data.last_name].filter(Boolean).join(' ') ||
       data.username ||
       '';
-
-    const searchText = `${displayName} ${data.username} ${primaryEmail?.email_address}`;
-
-    if (existingUser) {
-      await ctx.db.patch(existingUser._id, {
-        email: primaryEmail?.email_address ?? existingUser.email,
-        displayName: displayName || existingUser.displayName,
-        avatarUrl: data.image_url || existingUser.avatarUrl,
-        emailVerified: primaryEmail?.verification?.status === 'verified',
-        lastSeen: Date.now(),
-        searchText: removeAccents(searchText),
-      });
-      return;
-    }
-
     const discriminator = Math.floor(1000 + Math.random() * 9000).toString();
     const baseUsername =
       data.username || displayName.replace(/\s+/g, '').toLowerCase() || 'user';
+    const randomSuffix = Math.random().toString(36).substring(2, 6);
+    const username = `${baseUsername}_${randomSuffix}`;
+    const searchText = `${displayName} ${data.username} ${primaryEmail?.email_address}`;
+    const searchTextNoAccents = removeAccents(searchText);
 
-    let username = baseUsername;
-    let suffix = 1;
-
-    while (suffix < 100) {
-      const existing = await ctx.db
-        .query('users')
-        .withIndex('by_username', q => q.eq('username', username))
-        .first();
-
-      if (!existing) break;
-
-      username = `${baseUsername}${suffix}`;
-      suffix++;
-    }
-
-    const newUserId = await ctx.db.insert('users', {
+    const payload = {
       clerkId: data.id,
       email: primaryEmail?.email_address ?? '',
-      username,
+      username: user?.username ?? username,
       displayName,
       discriminator,
-      avatarUrl: data.image_url,
+      avatarUrl: user?.avatarStorageId ? user.avatarUrl : data.image_url,
       emailVerified: primaryEmail?.verification?.status === 'verified',
       status: 'online' as UserStatus,
       lastSeen: Date.now(),
-      searchText: removeAccents(
-        `${displayName} ${username} ${discriminator} ${primaryEmail?.email_address}`,
-      ),
-    });
+      searchText: searchTextNoAccents,
+    };
+    if (user === null) {
+      console.log(`Creating new user for clerkId ${data.id}`);
 
-    await ctx.scheduler.runAfter(0, internal.users.createDefaultSettings, {
-      userId: newUserId,
+      const userId = await ctx.db.insert('users', payload);
+
+      console.log(`New user created with id ${userId}`);
+      await ctx.scheduler.runAfter(0, internal.users.createDefaultSettings, {
+        userId,
+      });
+    } else {
+      console.log(`Updating existing user for clerkId ${data.id}`);
+      await ctx.db.patch(user._id, payload);
+    }
+  },
+});
+
+export const updateSearchText = internalMutation({
+  args: {
+    userId: v.id('users'),
+    text: v.string(),
+  },
+  handler: async (ctx, { userId, text }) => {
+    await ctx.db.patch(userId, {
+      searchText: removeAccents(text),
     });
   },
 });
@@ -153,15 +160,7 @@ export const updateUser = mutation({
     bannerStorageId: v.optional(v.id('_storage')),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     const updates: any = {};
     if (args.displayName !== undefined) updates.displayName = args.displayName;
@@ -195,8 +194,6 @@ export const deleteUser = internalMutation({
       console.log(`User with clerkId ${clerkId} not found`);
       return;
     }
-
-    console.log(`Starting deletion process for user ${user.email}`);
 
     const deletedUser = await getOrCreateDeletedUser(ctx);
 
@@ -586,13 +583,7 @@ async function getOrCreateDeletedUser(ctx: GenericMutationCtx<DataModel>) {
 export const getUserSettings = query({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
+    const user = await getCurrent(ctx);
 
     if (!user) return null;
 
@@ -651,15 +642,7 @@ export const updateUserSettings = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     const settings = await ctx.db
       .query('userSettings')
@@ -688,16 +671,12 @@ export const updateUserSettings = mutation({
 export const heartbeat = mutation({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
+    const user = await getCurrentUserOrThrow(ctx);
 
-    if (!userId) return;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) return;
+    if (!user) {
+      console.log('User not found in DB, skipping heartbeat');
+      return { success: false, reason: 'user_not_synced' };
+    }
 
     const now = Date.now();
     const isManualOffline = user.status === 'offline' && user.customStatus;
@@ -725,15 +704,7 @@ export const updatePresence = mutation({
     customStatus: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     await ctx.db.patch(user._id, {
       status: args.status,
@@ -745,22 +716,13 @@ export const updatePresence = mutation({
   },
 });
 
-// Auto-update to busy when in call/meeting
 export const setUserBusy = mutation({
   args: {
     callId: v.optional(v.id('calls')),
     meetingId: v.optional(v.id('meetings')),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) return;
+    const user = await getCurrentUserOrThrow(ctx);
 
     await ctx.db.patch(user._id, {
       status: 'busy',
@@ -770,21 +732,10 @@ export const setUserBusy = mutation({
   },
 });
 
-// Auto-update to online when call/meeting ends
 export const setUserAvailable = mutation({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) return;
-
-    // Only update if currently busy
+    const user = await getCurrentUserOrThrow(ctx);
     if (user.status === 'busy') {
       await ctx.db.patch(user._id, {
         status: 'online',
@@ -832,16 +783,9 @@ export const searchUsers = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const user = await getCurrent(ctx);
 
-    if (!userId) return [];
-
-    const currentUser = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!currentUser) return [];
+    if (!user) return [];
 
     const limit = args.limit || 10;
 
@@ -852,9 +796,7 @@ export const searchUsers = query({
       )
       .take(limit);
 
-    const filteredResults = searchResults.filter(
-      user => user._id !== currentUser._id,
-    );
+    const filteredResults = searchResults.filter(u => u._id !== user._id);
 
     return filteredResults;
   },

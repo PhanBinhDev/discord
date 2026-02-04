@@ -14,6 +14,8 @@ const triggers = new Triggers<DataModel>();
 
 triggers.register('users', async (ctx, change) => {
   if (change.operation === 'insert' || change.operation === 'update') {
+    console.log('User change detected, updating searchText');
+
     const doc = change.newDoc!;
 
     const newSearchText = [
@@ -25,9 +27,13 @@ triggers.register('users', async (ctx, change) => {
       .filter(Boolean)
       .join(' ');
 
-    if (doc.searchText !== newSearchText) {
+    const newSearchTextNoAccents = removeAccents(newSearchText);
+
+    if (doc.searchText !== newSearchTextNoAccents) {
+      console.log(`Updating searchText for user ${change.id}`);
+
       await ctx.db.patch(change.id, {
-        searchText: removeAccents(newSearchText),
+        searchText: newSearchTextNoAccents,
       });
     }
   }

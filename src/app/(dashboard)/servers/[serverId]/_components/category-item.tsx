@@ -16,6 +16,7 @@ interface CategoryItemProps {
   channels: ChannelWithCategory[];
   isCollapsed: boolean;
   onToggle: () => void;
+  canManageChannels?: boolean;
 }
 
 const CategoryItem = ({
@@ -23,6 +24,7 @@ const CategoryItem = ({
   channels,
   isCollapsed,
   onToggle,
+  canManageChannels = false,
 }: CategoryItemProps) => {
   const { openModal } = useModal();
   const { dict } = useClientDictionary();
@@ -50,22 +52,24 @@ const CategoryItem = ({
           />
         </button>
 
-        <div className="flex items-center gap-0.5">
-          <Hint label={dict?.servers.channel.create} side="top">
-            <Button
-              size={'icon'}
-              variant="ghost"
-              className="size-6"
-              onClick={() => {
-                openModal('ModalCreateChannel', {
-                  category,
-                });
-              }}
-            >
-              <IconPlus className="size-3" />
-            </Button>
-          </Hint>
-        </div>
+        {canManageChannels && (
+          <div className="flex items-center gap-0.5">
+            <Hint label={dict?.servers.channel.create} side="top">
+              <Button
+                size={'icon'}
+                variant="ghost"
+                className="size-6"
+                onClick={() => {
+                  openModal('ModalCreateChannel', {
+                    category,
+                  });
+                }}
+              >
+                <IconPlus className="size-3" />
+              </Button>
+            </Hint>
+          </div>
+        )}
       </div>
 
       {!isCollapsed && (

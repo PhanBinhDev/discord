@@ -2,6 +2,8 @@
   "notifications": {
     "title": "Thông báo",
     "markAllRead": "Đánh dấu tất cả là đã đọc",
+    "accept": "Chấp nhận",
+    "decline": "Từ chối",
     "filter": {
       "all": "Tất cả",
       "unread": "Chưa đọc",
@@ -27,6 +29,10 @@
       "meeting_started": "Cuộc họp đã bắt đầu",
       "meeting_cancelled": "Cuộc họp đã bị hủy",
       "contact_request": "Yêu cầu kết bạn",
+      "friend_request": "Lời mời kết bạn",
+      "friend_accepted": "Đã chấp nhận kết bạn",
+      "server_invite": "Lời mời tham gia máy chủ",
+      "server_invite_pending": "Lời mời máy chủ đang chờ",
       "system": "Hệ thống"
     },
     "contactRequest": {

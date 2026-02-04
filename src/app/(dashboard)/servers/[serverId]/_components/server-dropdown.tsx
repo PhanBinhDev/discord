@@ -90,8 +90,13 @@ const ServerDropdown = ({ server }: ServerDropdownProps) => {
                 return (
                   <Button
                     key={menu.label}
-                    variant={isDanger ? 'destructive' : 'ghost'}
-                    className="w-full justify-start"
+                    variant={'ghost'}
+                    className={cn(
+                      'w-full justify-start',
+                      isDanger
+                        ? 'text-destructive hover:text-destructive focus:text-destructive'
+                        : '',
+                    )}
                     onClick={() => {
                       if (menu.modal)
                         openModal(menu.modal, {
@@ -99,7 +104,7 @@ const ServerDropdown = ({ server }: ServerDropdownProps) => {
                         });
                     }}
                   >
-                    <Icon />
+                    <Icon className={cn(isDanger ? 'text-destructive' : '')} />
                     <TranslateText value={menu.label} />
                   </Button>
                 );

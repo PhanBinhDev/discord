@@ -1,6 +1,6 @@
-import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { getCurrentUserOrThrow } from './users';
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -21,15 +21,7 @@ export const saveAvatar = mutation({
     storageId: v.id('_storage'),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     if (user.avatarStorageId) {
       try {
@@ -53,15 +45,7 @@ export const saveAvatar = mutation({
 export const deleteAvatar = mutation({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     if (user.avatarStorageId) {
       try {
@@ -85,14 +69,7 @@ export const saveBanner = mutation({
     storageId: v.id('_storage'),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
+    const user = await getCurrentUserOrThrow(ctx);
     if (!user) throw new Error('User not found');
 
     if (user.bannerStorageId) {
@@ -117,15 +94,7 @@ export const saveBanner = mutation({
 export const deleteBanner = mutation({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     if (user.bannerStorageId) {
       try {

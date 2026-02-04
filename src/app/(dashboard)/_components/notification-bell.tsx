@@ -28,6 +28,7 @@ import { usePaginatedQuery } from 'convex/react';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import Link from 'next/link';
+import { useMemo } from 'react';
 
 type Notification = Doc<'notifications'>;
 
@@ -55,6 +56,237 @@ interface NotificationItemProps {
   locale: typeof vi | typeof enUS;
   onMarkAsRead: (id: Id<'notifications'>) => void;
   onDelete: (id: Id<'notifications'>) => void;
+}
+
+function ServerInviteNotification({
+  notification,
+  locale,
+  onDelete,
+}: NotificationItemProps) {
+  const { dict } = useClientDictionary();
+  const actorName = notification.actorName || '';
+  const { mutate: acceptInvite, pending: isAccepting } = useApiMutation(
+    api.servers.joinServer,
+  );
+  const { mutate: declineInvite, pending: isDeclining } = useApiMutation(
+    api.notifications.deleteNotification,
+  );
+
+  const handleAccept = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      console.log('Accepting invite', notification.metadata?.inviteCode);
+
+      await acceptInvite({ inviteCode: notification.metadata?.inviteCode });
+      onDelete(notification._id);
+    } catch (error) {
+      console.error('Failed to accept invite:', error);
+    }
+  };
+
+  const handleDecline = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await declineInvite({ notificationId: notification._id });
+  };
+
+  return (
+    <div className="flex gap-3 p-3 rounded-lg hover:bg-(--accent-color)/10 transition-colors group">
+      {notification.actorImageUrl ? (
+        <Avatar className="h-10 w-10 shrink-0">
+          <AvatarImage src={notification.actorImageUrl} alt={actorName} />
+          <AvatarFallback className="bg-(--accent-color)/10 text-(--accent-color) text-xs">
+            {getInitials(actorName || 'N')}
+          </AvatarFallback>
+        </Avatar>
+      ) : (
+        <div className="h-10 w-10 shrink-0 rounded-full bg-(--accent-color)/10 text-(--accent-color) flex items-center justify-center">
+          <NotificationIcon type={notification.type} />
+        </div>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium line-clamp-1">
+          {(() => {
+            const translated = getByPath(dict, notification.title);
+            if (translated && typeof translated === 'string') {
+              return translated.replace(/{{name}}/g, actorName);
+            }
+            return notification.title;
+          })()}
+        </p>
+        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+          {(() => {
+            const translated = getByPath(dict, notification.message);
+            if (translated && typeof translated === 'string') {
+              return translated.replace(/{{name}}/g, actorName);
+            }
+            return notification.message;
+          })()}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {formatDistanceToNow(notification._creationTime, {
+            addSuffix: true,
+            locale,
+          })}
+        </p>
+
+        <div className="flex gap-2 mt-2">
+          <Button
+            size="sm"
+            variant="default"
+            className="h-7 text-xs"
+            onClick={handleAccept}
+            disabled={isAccepting || isDeclining}
+            loading={isAccepting}
+          >
+            <TranslateText value="notifications.accept" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={handleDecline}
+            disabled={isAccepting || isDeclining}
+            loading={isDeclining}
+          >
+            <TranslateText value="notifications.decline" />
+          </Button>
+        </div>
+      </div>
+
+      <button
+        className="p-1 hover:bg-destructive/10 rounded self-start opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={e => {
+          e.stopPropagation();
+          onDelete(notification._id);
+        }}
+        title="Delete"
+      >
+        <IconX className="h-4 w-4 text-destructive" />
+      </button>
+    </div>
+  );
+}
+
+function FriendRequestNotification({
+  notification,
+  locale,
+  onDelete,
+}: NotificationItemProps) {
+  const { dict } = useClientDictionary();
+  const actorName = notification.actorName || '';
+  const { mutate: acceptFriend, pending: isAccepting } = useApiMutation(
+    api.friends.acceptFriendRequest,
+  );
+  const { mutate: rejectFriend, pending: isRejecting } = useApiMutation(
+    api.friends.rejectFriendRequest,
+  );
+
+  const handleAccept = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (notification.metadata?.friendshipId) {
+        await acceptFriend({
+          friendRequestId: notification.metadata.friendshipId as Id<'friends'>,
+        });
+        onDelete(notification._id);
+      }
+    } catch (error) {
+      console.error('Failed to accept friend request:', error);
+    }
+  };
+
+  const handleReject = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (notification.metadata?.friendshipId) {
+        await rejectFriend({
+          friendRequestId: notification.metadata.friendshipId,
+        });
+        onDelete(notification._id);
+      }
+    } catch (error) {
+      console.error('Failed to reject friend request:', error);
+    }
+  };
+
+  return (
+    <div className="flex gap-3 p-3 rounded-lg hover:bg-(--accent-color)/10 transition-colors group">
+      {notification.actorImageUrl ? (
+        <Avatar className="h-10 w-10 shrink-0">
+          <AvatarImage src={notification.actorImageUrl} alt={actorName} />
+          <AvatarFallback className="bg-(--accent-color)/10 text-(--accent-color) text-xs">
+            {getInitials(actorName || 'N')}
+          </AvatarFallback>
+        </Avatar>
+      ) : (
+        <div className="h-10 w-10 shrink-0 rounded-full bg-(--accent-color)/10 text-(--accent-color) flex items-center justify-center">
+          <NotificationIcon type={notification.type} />
+        </div>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium line-clamp-1">
+          {(() => {
+            const translated = getByPath(dict, notification.title);
+            if (translated && typeof translated === 'string') {
+              return translated.replace(/{{name}}/g, actorName);
+            }
+            return notification.title;
+          })()}
+        </p>
+        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+          {(() => {
+            const translated = getByPath(dict, notification.message);
+            if (translated && typeof translated === 'string') {
+              return translated.replace(/{{name}}/g, actorName);
+            }
+            return notification.message;
+          })()}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {formatDistanceToNow(notification._creationTime, {
+            addSuffix: true,
+            locale,
+          })}
+        </p>
+
+        <div className="flex gap-2 mt-2">
+          <Button
+            size="sm"
+            variant="default"
+            className="h-7 text-xs"
+            onClick={handleAccept}
+            disabled={isAccepting || isRejecting}
+            loading={isAccepting}
+          >
+            <TranslateText value="notifications.accept" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={handleReject}
+            disabled={isAccepting || isRejecting}
+            loading={isRejecting}
+          >
+            <TranslateText value="notifications.decline" />
+          </Button>
+        </div>
+      </div>
+
+      <button
+        className="p-1 hover:bg-destructive/10 rounded self-start opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={e => {
+          e.stopPropagation();
+          onDelete(notification._id);
+        }}
+        title="Delete"
+      >
+        <IconX className="h-4 w-4 text-destructive" />
+      </button>
+    </div>
+  );
 }
 
 function DefaultNotification({
@@ -145,6 +377,11 @@ function DefaultNotification({
 
 function NotificationItem(props: NotificationItemProps) {
   switch (props.notification.type) {
+    case 'server_invite':
+    case 'server_invite_pending':
+      return <ServerInviteNotification {...props} />;
+    case 'friend_request':
+      return <FriendRequestNotification {...props} />;
     default:
       return <DefaultNotification {...props} />;
   }
@@ -156,11 +393,17 @@ interface NotificationBellProps {
 
 export function NotificationBell({ size }: NotificationBellProps) {
   const { locale: lang } = useClientDictionary();
-  const { results: notifications, status } = usePaginatedQuery(
+  const paginatedResult = usePaginatedQuery(
     api.notifications.getUserNotifications,
     { filter: 'all' },
     { initialNumItems: DEFAULT_LIMIT },
   );
+
+  const notifications = useMemo(() => {
+    if (!paginatedResult) return [];
+    return paginatedResult.results;
+  }, [paginatedResult]);
+
   const { mutate: markAsRead } = useApiMutation(api.notifications.markAsRead);
   const { mutate: markAllAsRead, pending: isMarkingAllAsRead } = useApiMutation(
     api.notifications.markAllAsRead,
@@ -169,7 +412,7 @@ export function NotificationBell({ size }: NotificationBellProps) {
     api.notifications.deleteNotification,
   );
 
-  const unreadCount = notifications?.filter(n => !n.read).length ?? 0;
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleMarkAllAsRead = async () => {
     await markAllAsRead();
@@ -234,7 +477,7 @@ export function NotificationBell({ size }: NotificationBellProps) {
           </div>
 
           <ScrollArea className="h-[300px]">
-            {status === 'LoadingFirstPage' ? (
+            {paginatedResult.status === 'LoadingFirstPage' ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-(--accent-color)" />
               </div>

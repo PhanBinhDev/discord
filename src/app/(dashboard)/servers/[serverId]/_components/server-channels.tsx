@@ -107,6 +107,15 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
     return items;
   }, [categories, channelsData?.channels]);
 
+  const canManageChannels = useMemo(() => {
+    if (!channelsData?.userMembership) return false;
+
+    return (
+      channelsData?.userMembership?.role === 'owner' ||
+      channelsData?.userMembership?.role === 'admin'
+    );
+  }, [channelsData?.userMembership]);
+
   const collapsedCategories = useMemo(
     () => new Set(collapsedCategoriesArray),
     [collapsedCategoriesArray],
@@ -148,6 +157,7 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
               channels={item.channels}
               isCollapsed={isCollapsed}
               onToggle={() => toggleCategory(item.category._id)}
+              canManageChannels={canManageChannels}
             />
           );
         } else {

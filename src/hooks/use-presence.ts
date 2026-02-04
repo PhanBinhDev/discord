@@ -1,12 +1,14 @@
 'use client';
 
 import { api } from '@/convex/_generated/api';
+import { useAuth } from '@clerk/nextjs';
 import { useMutation, useQuery } from 'convex/react';
 import { useEffect, useRef } from 'react';
 
 export function usePresence() {
   const heartbeat = useMutation(api.users.heartbeat);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { signOut } = useAuth();
   const lastActivityRef = useRef<number>(Date.now());
 
   useEffect(() => {
@@ -24,7 +26,16 @@ export function usePresence() {
       const timeSinceActivity = now - lastActivityRef.current;
 
       if (timeSinceActivity < 2 * 60 * 1000) {
-        heartbeat();
+        heartbeat().catch(error => {
+          console.log('Failed to send heartbeat', error);
+
+          if (
+            error?.data?.status === 401 ||
+            error?.message?.includes('not authenticated')
+          ) {
+            signOut();
+          }
+        });
       }
     };
 

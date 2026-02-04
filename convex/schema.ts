@@ -1,9 +1,7 @@
-// convex/schema.ts
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import { notifications } from './notifications';
 
-// ==================== ENUMS ====================
 export const UserStatus = v.union(
   v.literal('online'),
   v.literal('away'),
@@ -53,8 +51,6 @@ export const DMPermission = v.union(
   v.literal('none'),
 );
 
-// ==================== TYPES ====================
-
 export type UserStatus = typeof UserStatus.type;
 export type ChannelType = typeof ChannelType.type;
 export type MessageType = typeof MessageType.type;
@@ -63,15 +59,12 @@ export type InviteStatus = typeof InviteStatus.type;
 export type FriendRequestStatus = typeof FriendRequestStatus.type;
 export type DMPermission = typeof DMPermission.type;
 
-// ==================== TABLES ====================
-
-// Users Table
 const users = defineTable({
   clerkId: v.string(),
   email: v.string(),
   username: v.string(),
   displayName: v.optional(v.string()),
-  discriminator: v.string(), // #1234
+  discriminator: v.string(),
   avatarUrl: v.optional(v.string()),
   avatarStorageId: v.optional(v.id('_storage')),
   bannerUrl: v.optional(v.string()),
@@ -105,7 +98,6 @@ const friends = defineTable({
   .index('by_status', ['status'])
   .index('by_users', ['userId1', 'userId2']);
 
-// Servers Table
 const servers = defineTable({
   name: v.string(),
   description: v.optional(v.string()),
