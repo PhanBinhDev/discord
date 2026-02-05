@@ -159,7 +159,20 @@
       "categoryNameMaxLength": "Category name must be at most {{max}} characters",
       "categorySettings": "Category Settings",
       "privateCategory": "Private Category",
-      "privateCategoryDescription": "Only selected members and roles will be able to view channels in this category."
+      "privateCategoryDescription": "Only selected members and roles will be able to view channels in this category.",
+      "searchUserRolePlaceholder": "Search users and roles",
+      "context": {
+        "markAsRead": "Mark as Read",
+        "edit": "Edit Category",
+        "delete": "Delete Category"
+      },
+      "delete": {
+        "title": "Delete Category",
+        "description": "Are you sure you want to delete the category \"{{categoryName}}\"?. This action cannot be undone.",
+        "confirm": "Delete Category",
+        "success": "Category deleted successfully!",
+        "error": "Failed to delete category. Please try again."
+      }
     }
   }
 }

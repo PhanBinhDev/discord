@@ -5,6 +5,7 @@ import ModalCreateChannel from '@/components/modals/modal-create-channel';
 import ModalCreateDirectMessage from '@/components/modals/modal-create-direct-message';
 import { ModalCreateServer } from '@/components/modals/modal-create-server';
 import ModalInvitePeople from '@/components/modals/modal-invite-people';
+import ModalRemoveCategory from '@/components/modals/modal-remve-category';
 import ModalSetUserStatus from '@/components/modals/modal-set-user-status';
 import useModal from '@/hooks/use-modal';
 import { useEffect, useState } from 'react';
@@ -27,6 +28,7 @@ const ModalsProvider = () => {
       {isModalOpen('ModalInvitePeople') && <ModalInvitePeople />}
       {isModalOpen('ModalCreateChannel') && <ModalCreateChannel />}
       {isModalOpen('ModalCreateCategory') && <ModalCreateCategory />}
+      {isModalOpen('ModalDeleteCategory') && <ModalRemoveCategory />}
     </>
   );
 };

@@ -11,6 +11,7 @@ import IconVoiceChannel from '@/components/icons/voice-channel';
 import IconVoicePrivateActiveChannel from '@/components/icons/voice-private-active-channel';
 import IconVoicePrivateChannel from '@/components/icons/voice-private-channel';
 import {
+  CategoryMenuItem,
   ChannelIconType,
   ChannelTypeItem,
   ServerMenu,
@@ -19,11 +20,13 @@ import {
 } from '@/types';
 import {
   IconCalendarEvent,
+  IconChecks,
   IconCirclePlusFilled,
   IconFolderPlus,
   IconInbox,
   IconLogout2,
   IconSettings,
+  IconTrash,
 } from '@tabler/icons-react';
 import { ArrowLeftRight } from 'lucide-react';
 
@@ -207,5 +210,23 @@ export const ChannelTypeOptionsList: ChannelTypeItem[] = [
       if (isPrivate) return IconAnnouncementPrivateChannel;
       return IconAnnouncementChannel;
     },
+  },
+];
+
+export const CategoryContextMenuItems: CategoryMenuItem[] = [
+  {
+    label: 'servers.category.context.markAsRead',
+    action: 'markAsRead',
+    icon: IconChecks,
+  },
+  {
+    label: 'servers.category.context.edit',
+    action: 'edit',
+    icon: IconSettings,
+  },
+  {
+    label: 'servers.category.context.delete',
+    action: 'delete',
+    icon: IconTrash,
   },
 ];

@@ -35,11 +35,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { IconShieldLockFilled } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Input } from '../ui/input';
 
 const ModalCreateCategory = () => {
   const { isModalOpen, closeModal, getModalData } = useModal();
   const { dict } = useClientDictionary();
   const [step, setStep] = useState(1);
+  const [search, setSearch] = useState('');
 
   const { server } = getModalData('ModalCreateCategory') as {
     server: Doc<'servers'>;
@@ -52,6 +54,9 @@ const ModalCreateCategory = () => {
       isPrivate: false,
     },
   });
+
+  const isPrivate = createChannelForm.watch('isPrivate');
+  const name = createChannelForm.watch('name');
 
   const { mutate: createCategory, pending } = useApiMutation(
     api.servers.createCategory,
@@ -77,12 +82,12 @@ const ModalCreateCategory = () => {
       open={isModalOpen('ModalCreateCategory')}
     >
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+        <DialogHeader className="gap-1">
+          <DialogTitle className="text-left">
             <TranslateText value="servers.category.title" />
           </DialogTitle>
-          <DialogDescription className="pt-2">
-            <TranslateText value="servers.category.description" />
+          <DialogDescription className="text-left">
+            {isPrivate && step === 2 && <>{name}</>}
           </DialogDescription>
         </DialogHeader>
         <div>
@@ -158,8 +163,18 @@ const ModalCreateCategory = () => {
                   />
                 </>
               )}
-              {step === 2 && <>
-              </>}
+              {step === 2 && (
+                <>
+                  <Input
+                    className="mt-1.5"
+                    placeholder={
+                      dict?.servers.category.searchUserRolePlaceholder
+                    }
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                  />
+                </>
+              )}
             </form>
           </Form>
         </div>

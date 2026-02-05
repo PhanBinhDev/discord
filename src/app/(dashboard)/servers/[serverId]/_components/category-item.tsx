@@ -1,6 +1,14 @@
 import TranslateText from '@/components/shared/translate/translate-text';
 import { Button } from '@/components/ui/button';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import { Hint } from '@/components/ui/hint';
+import { CategoryContextMenuItems } from '@/constants/app';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import useModal from '@/hooks/use-modal';
@@ -9,6 +17,7 @@ import { ChannelWithCategory } from '@/types';
 import { IconPlus } from '@tabler/icons-react';
 import { ChevronRight } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { Fragment } from 'react';
 import ChannelItem from './channel-item';
 
 interface CategoryItemProps {
@@ -37,20 +46,56 @@ const CategoryItem = ({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between w-full">
-        <button
-          className="flex cursor-pointer items-center gap-1 px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground w-fit transition-colors"
-          onClick={onToggle}
-        >
-          <span className="flex-1 text-left tracking-wide">
-            {category.name}
-          </span>
-          <ChevronRight
-            className={cn(
-              'size-3 transition-transform shrink-0',
-              isCollapsed ? 'rotate-0' : 'rotate-90',
-            )}
-          />
-        </button>
+        <ContextMenu>
+          <ContextMenuTrigger>
+            <button
+              className="flex cursor-pointer items-center gap-1 px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground w-fit transition-colors"
+              onClick={onToggle}
+            >
+              <span className="flex-1 text-left tracking-wide">
+                {category.name}
+              </span>
+              <ChevronRight
+                className={cn(
+                  'size-3 transition-transform shrink-0',
+                  isCollapsed ? 'rotate-0' : 'rotate-90',
+                )}
+              />
+            </button>
+          </ContextMenuTrigger>
+
+          <ContextMenuContent className="p-2 flex flex-col gap-1">
+            {CategoryContextMenuItems.map(item => {
+              const Icon = item.icon;
+
+              return (
+                <Fragment key={item.action}>
+                  {item.action === 'delete' && <ContextMenuSeparator />}
+                  <ContextMenuItem
+                    variant={
+                      item.action === 'delete' ? 'destructive' : 'default'
+                    }
+                    onClick={() => {
+                      if (item.action === 'edit') {
+                        openModal('ModalEditCategory', { category });
+                      } else if (item.action === 'delete') {
+                        openModal('ModalDeleteCategory', { category });
+                      } else if (item.action === 'markAsRead') {
+                        // handle action here
+                      }
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Icon className="text-current" />
+                    <TranslateText
+                      value={`servers.category.context.${item.action}`}
+                    />
+                  </ContextMenuItem>
+                </Fragment>
+              );
+            })}
+          </ContextMenuContent>
+        </ContextMenu>
 
         {canManageChannels && (
           <div className="flex items-center gap-0.5">

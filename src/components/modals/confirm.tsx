@@ -11,22 +11,22 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DictKey } from '@/internationalization/get-dictionaries';
+import { TranslateTextKey } from '@/types';
 import { useState } from 'react';
 
 interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
-  title: DictKey;
-  description: DictKey;
-  confirmText?: DictKey;
-  cancelText?: DictKey;
+  title: TranslateTextKey;
+  description: TranslateTextKey;
+  confirmText?: TranslateTextKey;
+  cancelText?: TranslateTextKey;
   variant?: 'default' | 'destructive';
   requireConfirmation?: {
     text: string;
-    label?: DictKey;
-    placeholder?: DictKey;
+    label?: TranslateTextKey;
+    placeholder?: TranslateTextKey;
   };
   loading?: boolean;
 }
@@ -37,8 +37,8 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmText = 'common.confirm',
-  cancelText = 'common.cancel',
+  confirmText = { value: 'common.confirm' },
+  cancelText = { value: 'common.cancel' },
   variant = 'default',
   requireConfirmation,
   loading,
@@ -66,10 +66,10 @@ export function ConfirmDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            <TranslateText value={title} />
+            <TranslateText {...title} />
           </AlertDialogTitle>
           <AlertDialogDescription>
-            <TranslateText value={description} />
+            <TranslateText {...description} />
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -77,7 +77,9 @@ export function ConfirmDialog({
           <div className="space-y-2 py-4">
             <Label htmlFor="confirmation">
               <TranslateText
-                value={requireConfirmation.label || 'common.typeToConfirm'}
+                {...(requireConfirmation.label || {
+                  value: 'common.typeToConfirm',
+                })}
                 params={{
                   text: requireConfirmation.text,
                 }}
@@ -87,7 +89,11 @@ export function ConfirmDialog({
               id="confirmation"
               value={confirmationInput}
               onChange={e => setConfirmationInput(e.target.value)}
-              placeholder={requireConfirmation.placeholder}
+              placeholder={
+                requireConfirmation.placeholder?.value
+                  ? requireConfirmation.placeholder.value
+                  : undefined
+              }
               className="font-mono"
               autoFocus
             />
@@ -96,7 +102,7 @@ export function ConfirmDialog({
 
         <AlertDialogFooter>
           <AlertDialogCancel>
-            <TranslateText value={cancelText} />
+            <TranslateText {...cancelText} />
           </AlertDialogCancel>
           <Button
             onClick={handleConfirm}
@@ -104,7 +110,7 @@ export function ConfirmDialog({
             disabled={!isConfirmEnabled}
             loading={loading}
           >
-            <TranslateText value={confirmText} />
+            <TranslateText {...confirmText} />
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

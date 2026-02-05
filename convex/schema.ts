@@ -85,7 +85,6 @@ const users = defineTable({
     searchField: 'searchText',
   });
 
-// Friends Table
 const friends = defineTable({
   userId1: v.id('users'),
   userId2: v.id('users'),
@@ -273,7 +272,7 @@ const serverInvites = defineTable({
   code: v.string(),
   maxUses: v.optional(v.number()),
   uses: v.number(),
-  maxAge: v.optional(v.number()), // seconds
+  maxAge: v.optional(v.number()),
   temporary: v.boolean(),
   status: InviteStatus,
   expiresAt: v.optional(v.number()),
@@ -412,8 +411,8 @@ const eventLogs = defineTable({
 
 const channelPermissions = defineTable({
   channelId: v.id('channels'),
-  roleId: v.optional(v.id('roles')), // null = everyone
-  userId: v.optional(v.id('users')), // cho phép user cụ thể
+  roleId: v.optional(v.id('roles')), 
+  userId: v.optional(v.id('users')),
   canView: v.boolean(),
   canSend: v.boolean(),
 })
@@ -422,7 +421,6 @@ const channelPermissions = defineTable({
   .index('by_user', ['userId'])
   .index('by_channel_role', ['channelId', 'roleId']);
 
-// Category Permissions - quyền truy cập category
 const categoryPermissions = defineTable({
   categoryId: v.id('channelCategories'),
   roleId: v.id('roles'),
@@ -432,7 +430,6 @@ const categoryPermissions = defineTable({
   .index('by_role', ['roleId'])
   .index('by_category_role', ['categoryId', 'roleId']);
 
-// User Last Viewed Channels - lưu channel cuối cùng user xem ở mỗi server
 const userLastViewedChannels = defineTable({
   userId: v.id('users'),
   serverId: v.id('servers'),

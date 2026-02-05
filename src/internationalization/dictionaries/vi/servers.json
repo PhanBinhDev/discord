@@ -159,7 +159,20 @@
       "categoryNameMaxLength": "Tên danh mục phải có tối đa {{max}} ký tự",
       "categorySettings": "Cài đặt danh mục",
       "privateCategory": "Danh mục riêng tư",
-      "privateCategoryDescription": "Chỉ những thành viên có vai trò được chọn mới có thể truy cập danh mục này."
+      "privateCategoryDescription": "Chỉ những thành viên có vai trò được chọn mới có thể truy cập danh mục này.",
+      "searchUserRolePlaceholder": "Điều phối viên, Thành viên, @everyone",
+      "context": {
+        "markAsRead": "Đánh dấu đã đọc",
+        "edit": "Chỉnh sửa danh mục",
+        "delete": "Xóa danh mục"
+      },
+      "delete": {
+        "title": "Xóa danh mục",
+        "description": "Bạn có chắc chắn muốn xóa danh mục này không? Tất cả các kênh bên trong sẽ được di chuyển ra ngoài danh mục.",
+        "confirm": "Xóa danh mục",
+        "success": "Xóa danh mục thành công!",
+        "error": "Xóa danh mục thất bại. Vui lòng thử lại."
+      }
     }
   }
 }

@@ -34,7 +34,9 @@ export type ModalType =
   | 'ModalEditChannel'
   | 'ModalDeleteChannel'
   | 'ModalDeleteServer'
-  | 'ModalCreateEvent';
+  | 'ModalCreateEvent'
+  | 'ModalEditCategory'
+  | 'ModalDeleteCategory';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
 
@@ -134,3 +136,14 @@ export type EmojiMartEmoji = {
   shortcodes?: string[];
   [key: string]: unknown;
 };
+
+export type CategoryMenuItem = {
+  label: DictKey;
+  action: 'markAsRead' | 'edit' | 'delete';
+  icon: TablerIcon | LucideIcon;
+};
+
+export type TranslateTextKey = {
+  value: DictKey; 
+  params?: Record<string, string | number>;
+}
