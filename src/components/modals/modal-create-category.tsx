@@ -21,7 +21,9 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { useApiMutation } from '@/hooks/use-api-mutation';
@@ -31,11 +33,14 @@ import {
   CreateCategoryFormValues,
   createCategorySchema,
 } from '@/validations/server';
+import { convexQuery } from '@convex-dev/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconShieldLockFilled } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
+import Image from 'next/image';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Input } from '../ui/input';
+import { toast } from 'sonner';
 
 const ModalCreateCategory = () => {
   const { isModalOpen, closeModal, getModalData } = useModal();
@@ -62,6 +67,14 @@ const ModalCreateCategory = () => {
     api.servers.createCategory,
   );
 
+  const { data: searchResults } = useQuery({
+    ...convexQuery(api.servers.searchUsersAndRoles, {
+      serverId: server._id,
+      query: search,
+    }),
+    enabled: step === 2 && isPrivate,
+  });
+
   const onSubmit = ({ isPrivate, name }: CreateCategoryFormValues) => {
     if (isPrivate && step === 1) {
       setStep(2);
@@ -73,7 +86,14 @@ const ModalCreateCategory = () => {
       serverId: server._id as Id<'servers'>,
       isPrivate,
       roleIds: isPrivate ? [] : undefined,
-    });
+    })
+      .then(() => {
+        toast.success(dict?.servers.category.categoryCreated);
+        closeModal('ModalCreateCategory');
+      })
+      .catch(() => {
+        toast.error(dict?.servers.category.createError);
+      });
   };
 
   return (
@@ -108,7 +128,7 @@ const ModalCreateCategory = () => {
                           <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
-                          <InputGroup>
+                          <InputGroup className="mt-1">
                             <InputGroupInput
                               placeholder={
                                 dict?.servers.category.categoryNamePlaceholder
@@ -165,14 +185,94 @@ const ModalCreateCategory = () => {
               )}
               {step === 2 && (
                 <>
-                  <Input
-                    className="mt-1.5"
+                  <Textarea
+                    className="mt-1.5 py-2"
                     placeholder={
                       dict?.servers.category.searchUserRolePlaceholder
                     }
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                   />
+
+                  <ScrollArea className="min-h-[200px]">
+                    <div className="space-y-3">
+                      {/* Roles Section */}
+                      {searchResults?.roles &&
+                        searchResults.roles.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-2">
+                              <TranslateText value="servers.category.roles" />
+                            </h3>
+                            <div className="space-y-2">
+                              {searchResults.roles.map(role => (
+                                <div
+                                  key={role._id}
+                                  className="flex items-center gap-2 p-2.5 rounded-md cursor-pointer hover:bg-muted-foreground/10"
+                                >
+                                  <div
+                                    className="w-4 h-4 rounded-full"
+                                    style={{
+                                      backgroundColor: role.color || '#808080',
+                                    }}
+                                  />
+                                  <span className="text-sm">{role.name}</span>
+                                  <span className="text-xs text-muted-foreground ml-auto">
+                                    <TranslateText value="servers.category.role" />
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Users Section */}
+                      {searchResults?.users &&
+                        searchResults.users.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-2">
+                              <TranslateText value="servers.category.members" />
+                            </h3>
+                            <div className="space-y-2">
+                              {searchResults.users.map(user => (
+                                <div
+                                  key={user._id}
+                                  className="flex items-center gap-2 p-2.5 rounded-md cursor-pointer hover:bg-muted-foreground/10"
+                                >
+                                  {user.avatarUrl ? (
+                                    <Image
+                                      src={user.avatarUrl}
+                                      alt={user.displayName || 'user'}
+                                      width={24}
+                                      height={24}
+                                      className="w-6 h-6 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-6 h-6 rounded-full bg-muted" />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm truncate">
+                                      {user.displayName || user.username}
+                                    </p>
+                                  </div>
+                                  {user.username && (
+                                    <span className="text-xs text-muted-foreground">
+                                      @{user.username}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {!searchResults?.roles?.length &&
+                        !searchResults?.users?.length && (
+                          <div className="text-center text-sm text-muted-foreground py-8">
+                            <TranslateText value="servers.category.noResultsFound" />
+                          </div>
+                        )}
+                    </div>
+                  </ScrollArea>
                 </>
               )}
             </form>
@@ -192,7 +292,9 @@ const ModalCreateCategory = () => {
             disabled={pending || createChannelForm.formState.isSubmitting}
             onClick={createChannelForm.handleSubmit(onSubmit)}
           >
-            <TranslateText value="servers.category.create" />
+            <TranslateText
+              value={isPrivate ? 'common.next' : 'servers.category.create'}
+            />
           </Button>
         </div>
       </DialogContent>

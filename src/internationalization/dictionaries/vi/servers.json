@@ -161,6 +161,11 @@
       "privateCategory": "Danh mục riêng tư",
       "privateCategoryDescription": "Chỉ những thành viên có vai trò được chọn mới có thể truy cập danh mục này.",
       "searchUserRolePlaceholder": "Điều phối viên, Thành viên, @everyone",
+      "roles": "Vai trò",
+      "role": "Vai trò",
+      "members": "Thành viên",
+      "noResultsFound": "Không tìm thấy kết quả",
+      "searchPlaceholder": "Bắt đầu nhập để tìm kiếm thành viên hoặc vai trò",
       "context": {
         "markAsRead": "Đánh dấu đã đọc",
         "edit": "Chỉnh sửa danh mục",
@@ -168,10 +173,16 @@
       },
       "delete": {
         "title": "Xóa danh mục",
-        "description": "Bạn có chắc chắn muốn xóa danh mục này không? Tất cả các kênh bên trong sẽ được di chuyển ra ngoài danh mục.",
+        "description": "Bạn có chắc chắn muốn xóa {{categoryName}} này không? Tất cả các kênh bên trong sẽ được di chuyển ra ngoài danh mục.",
         "confirm": "Xóa danh mục",
         "success": "Xóa danh mục thành công!",
         "error": "Xóa danh mục thất bại. Vui lòng thử lại."
+      },
+      "edit": {
+        "title": "Chỉnh sửa danh mục",
+        "description": "Cập nhật tên và cài đặt quyền riêng tư cho danh mục của bạn.",
+        "success": "Cập nhật danh mục thành công!",
+        "error": "Cập nhật danh mục thất bại. Vui lòng thử lại."
       }
     }
   }

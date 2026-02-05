@@ -27,14 +27,12 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
   const params = useParams();
   const channelId = params?.channelId as Id<'channels'> | undefined;
 
-  // Fetch categories (always show all categories by position)
   const { data: categories } = useQuery(
     convexQuery(api.servers.getServerCategories, {
       serverId: server?._id as Id<'servers'>,
     }),
   );
 
-  // Fetch accessible channels
   const { data: channelsData } = useQuery(
     convexQuery(api.servers.getAccessibleChannels, {
       serverId: server?._id as Id<'servers'>,
@@ -46,7 +44,6 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
 
     const items: RenderItem[] = [];
 
-    // Group channels by category
     const channelsByCategory = new Map<string, ChannelWithCategory[]>();
     const uncategorizedChannels: ChannelWithCategory[] = [];
 
@@ -62,15 +59,12 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
       }
     });
 
-    // Sort channels within each category by position
     channelsByCategory.forEach(chans => {
       chans.sort((a, b) => a.position - b.position);
     });
 
-    // Sort uncategorized channels by position
     uncategorizedChannels.sort((a, b) => a.position - b.position);
 
-    // Merge categories and uncategorized channels by position
     let categoryIndex = 0;
     let channelIndex = 0;
 
@@ -85,7 +79,6 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
       const channelPos = currentChannel?.position ?? Infinity;
 
       if (categoryPos < channelPos) {
-        // Add category (even if empty)
         items.push({
           type: DragType.CATEGORY,
           category: currentCategory,
@@ -94,7 +87,6 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
         });
         categoryIndex++;
       } else if (currentChannel) {
-        // Add uncategorized channel
         items.push({
           type: DragType.CHANNEL,
           channel: currentChannel,
@@ -145,7 +137,7 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
   }
 
   return (
-    <div className="flex flex-col gap-1 py-2 flex-1 overflow-y-auto">
+    <div className="flex flex-col gap-1 py-2 flex-1 overflow-y-auto max-h-[calc(100vh-265px)]">
       {sortedItems.map(item => {
         if (item.type === DragType.CATEGORY) {
           const isCollapsed = collapsedCategories?.has(item.category._id);

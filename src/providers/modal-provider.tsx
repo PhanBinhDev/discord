@@ -4,8 +4,9 @@ import ModalCreateCategory from '@/components/modals/modal-create-category';
 import ModalCreateChannel from '@/components/modals/modal-create-channel';
 import ModalCreateDirectMessage from '@/components/modals/modal-create-direct-message';
 import { ModalCreateServer } from '@/components/modals/modal-create-server';
+import ModalEditCategory from '@/components/modals/modal-edit-category';
 import ModalInvitePeople from '@/components/modals/modal-invite-people';
-import ModalRemoveCategory from '@/components/modals/modal-remve-category';
+import ModalRemoveCategory from '@/components/modals/modal-remove-category';
 import ModalSetUserStatus from '@/components/modals/modal-set-user-status';
 import useModal from '@/hooks/use-modal';
 import { useEffect, useState } from 'react';
@@ -29,6 +30,7 @@ const ModalsProvider = () => {
       {isModalOpen('ModalCreateChannel') && <ModalCreateChannel />}
       {isModalOpen('ModalCreateCategory') && <ModalCreateCategory />}
       {isModalOpen('ModalDeleteCategory') && <ModalRemoveCategory />}
+      {isModalOpen('ModalEditCategory') && <ModalEditCategory />}
     </>
   );
 };

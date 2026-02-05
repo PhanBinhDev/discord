@@ -68,7 +68,6 @@ async function canUserAccessChannel(
 
   if (!channel.isPrivate) return true;
 
-  // Check user-specific permission first
   const userPermission = await ctx.db
     .query('channelPermissions')
     .withIndex('by_channel', q => q.eq('channelId', channelId))
@@ -79,7 +78,6 @@ async function canUserAccessChannel(
     return userPermission.canView;
   }
 
-  // Get user's custom roles
   const userRoles = await ctx.db
     .query('userRoles')
     .withIndex('by_user_server', q =>
@@ -87,22 +85,18 @@ async function canUserAccessChannel(
     )
     .collect();
 
-  // Get @everyone role
   const everyoneRole = await ctx.db
     .query('roles')
     .withIndex('by_server', q => q.eq('serverId', serverId))
     .filter(q => q.eq(q.field('isDefault'), true))
     .first();
 
-  // Combine all role IDs (user roles + @everyone)
   const allRoleIds = [
     ...userRoles.map(ur => ur.roleId),
     ...(everyoneRole ? [everyoneRole._id] : []),
   ];
 
   if (allRoleIds.length === 0) return false;
-
-  // Check role-based permissions
   const rolePermissions = await ctx.db
     .query('channelPermissions')
     .withIndex('by_channel', q => q.eq('channelId', channelId))
@@ -2235,3 +2229,71 @@ async function getUserChannelPermissions(
     canDelete: false,
   };
 }
+
+export const searchUsersAndRoles = query({
+  args: {
+    serverId: v.id('servers'),
+    query: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { serverId, query: searchQuery, limit = 20 }) => {
+    const currentUser = await getCurrent(ctx);
+
+    if (!currentUser) return { users: [], roles: [] };
+
+    const roles = await ctx.db
+      .query('roles')
+      .withIndex('by_server', q => q.eq('serverId', serverId))
+      .collect();
+
+    const filteredRoles = searchQuery
+      ? roles
+          .filter(role =>
+            role.name.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+          .slice(0, limit)
+      : roles.slice(0, limit);
+
+    const serverMembers = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server', q => q.eq('serverId', serverId))
+      .collect();
+
+    console.log('serverMembers:', serverMembers);
+
+    const userIds = serverMembers.map(member => member.userId);
+
+    const users = await Promise.all(userIds.map(userId => ctx.db.get(userId)));
+
+    const filteredUsers = searchQuery
+      ? users
+          .filter(
+            user =>
+              user &&
+              (user.displayName
+                ?.toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+                user.username
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase())),
+          )
+          .slice(0, limit)
+      : users.filter(user => user !== null).slice(0, limit);
+
+    return {
+      users: filteredUsers.map(user => ({
+        _id: user?._id,
+        displayName: user?.displayName,
+        username: user?.username,
+        avatarUrl: user?.avatarUrl,
+        type: 'user' as const,
+      })),
+      roles: filteredRoles.map(role => ({
+        _id: role._id,
+        name: role.name,
+        color: role.color,
+        type: 'role' as const,
+      })),
+    };
+  },
+});
