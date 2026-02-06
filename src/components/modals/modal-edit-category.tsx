@@ -36,6 +36,12 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Fragment, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { Card, CardContent } from '../ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '../ui/collapsible';
 
 const ModalEditCategory = () => {
   const { isModalOpen, closeModal, openModal, getModalData } = useModal();
@@ -72,7 +78,7 @@ const ModalEditCategory = () => {
     })
       .then(() => {
         toast.success(dict?.servers.category.edit.success);
-        closeModal('ModalEditCategory');
+        form.reset(values);
       })
       .catch(() => {
         toast.error(dict?.servers.category.edit.error);
@@ -176,7 +182,13 @@ const ModalEditCategory = () => {
                                 <SelectEmoji
                                   onSelect={e => {
                                     const prev = form.getValues('name') || '';
-                                    form.setValue('name', `${prev}${e.native}`);
+                                    form.setValue(
+                                      'name',
+                                      `${prev}${e.native}`,
+                                      {
+                                        shouldDirty: true,
+                                      },
+                                    );
                                   }}
                                 />
                               </InputGroupAddon>
@@ -215,6 +227,33 @@ const ModalEditCategory = () => {
               <p className="text-sm text-muted-foreground">
                 <TranslateText value="servers.category.edit.permissions.description" />
               </p>
+              <Card className="p-0 mt-4 overflow-hidden rounded-md border border-foreground/10 shadow-none">
+                <CardContent className="p-0">
+                  <Collapsible className="bg-muted">
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between w-full p-4 cursor-pointer bg-muted/10 transition-colors">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-semibold text-white">
+                            Private Category
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            By making a category private, only select members
+                            and roles will be able to view this category. Linked
+                            channels in this category will automatically match
+                            to this setting.
+                          </span>
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="flex flex-col items-start gap-2 p-4 text-sm bg-muted/80">
+                      <div>
+                        This panel can be expanded or collapsed to reveal
+                        additional content.
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </CardContent>
+              </Card>
             </TabsContent>
           </div>
         </Tabs>
