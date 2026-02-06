@@ -182,7 +182,15 @@
         "title": "Chỉnh sửa danh mục",
         "description": "Cập nhật tên và cài đặt quyền riêng tư cho danh mục của bạn.",
         "success": "Cập nhật danh mục thành công!",
-        "error": "Cập nhật danh mục thất bại. Vui lòng thử lại."
+        "error": "Cập nhật danh mục thất bại. Vui lòng thử lại.",
+        "general": {
+          "title": "Cài đặt chung",
+          "description": "Cập nhật tên và giao diện của danh mục của bạn."
+        },
+        "permissions": {
+          "title": "Cài đặt quyền",
+          "description": "Quản lý quyền truy cập cho các vai trò và thành viên trong danh mục này."
+        }
       }
     }
   }

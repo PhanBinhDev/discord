@@ -81,6 +81,8 @@ const ModalCreateCategory = () => {
       return;
     }
 
+    // const roleIds = step === 2 && isPrivate ? searchResults?.map(r => r._id) : undefined;
+
     createCategory({
       name,
       serverId: server._id as Id<'servers'>,

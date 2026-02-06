@@ -137,13 +137,17 @@ export type EmojiMartEmoji = {
   [key: string]: unknown;
 };
 
-export type CategoryMenuItem = {
+export type CategoryMenuNav = {
+  key: string;
   label: DictKey;
-  action: 'markAsRead' | 'edit' | 'delete';
   icon: TablerIcon | LucideIcon;
 };
 
+export type CategoryMenuItem = CategoryMenuNav & {
+  action: 'markAsRead' | 'edit' | 'delete';
+};
+
 export type TranslateTextKey = {
-  value: DictKey; 
+  value: DictKey;
   params?: Record<string, string | number>;
-}
+};

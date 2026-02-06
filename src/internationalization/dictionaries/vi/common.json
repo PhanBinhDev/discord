@@ -93,6 +93,9 @@
       "busy": "Bận",
       "away": "Vắng mặt"
     },
-    "invite": "Mời"
+    "invite": "Mời",
+    "discard": "Bỏ qua",
+    "saveChanges": "Lưu thay đổi",
+    "unsavedChanges": "Bạn có những thay đổi chưa được lưu. Bạn có chắc muốn rời đi mà không lưu không?"
   }
 }

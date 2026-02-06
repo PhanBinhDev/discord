@@ -172,6 +172,20 @@
         "confirm": "Delete Category",
         "success": "Category deleted successfully!",
         "error": "Failed to delete category. Please try again."
+      },
+      "edit": {
+        "title": "Edit Category",
+        "description": "Update your category details and settings.",
+        "success": "Category updated successfully!",
+        "error": "Failed to update category. Please try again.",
+        "general": {
+          "title": "General Settings",
+          "description": "Update the name and appearance of your category."
+        },
+        "permissions": {
+          "title": "Permissions Settings",
+          "description": "Manage roles and member permissions for this category."
+        }
       }
     }
   }
