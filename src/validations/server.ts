@@ -1,6 +1,7 @@
 import {
   MAX_LENGTH_CHANNEL_NAME,
   MIN_LENGTH_CHANNEL_NAME,
+  TOPIC_CHANNEL_MAX_LENGTH,
 } from '@/constants/app';
 import { getGlobalDict } from '@/lib/dictionary-store';
 import z from 'zod';
@@ -59,7 +60,37 @@ export const createCategorySchema = z.object({
   isPrivate: z.boolean().default(false),
 });
 
-export const updateChannelSchema = createChannelSchema.extend({});
+export const updateChannelSchema = z.object({
+  name: z
+    .string()
+    .nonempty(dict?.servers.channel.channelNameRequired)
+    .min(
+      MIN_LENGTH_CHANNEL_NAME,
+      dict?.servers.channel.channelNameRequired.replace(
+        '{{min}}',
+        String(MIN_LENGTH_CHANNEL_NAME),
+      ),
+    )
+    .max(
+      MAX_LENGTH_CHANNEL_NAME,
+      dict?.servers.channel.channelNameMaxLength.replace(
+        '{{max}}',
+        String(MAX_LENGTH_CHANNEL_NAME),
+      ),
+    ),
+  isNsfw: z.boolean().default(false),
+  topic: z
+    .string()
+    .max(
+      TOPIC_CHANNEL_MAX_LENGTH,
+      dict?.servers.channel.edit.general.topicMaxLength.replace(
+        '{{max}}',
+        TOPIC_CHANNEL_MAX_LENGTH.toString(),
+      ),
+    ),
+  slowMode: z.number().min(0).max(21600).default(0),
+  isPrivate: z.boolean().default(false),
+});
 
 export type CreateChannelFormValues = z.infer<typeof createChannelSchema>;
 export type ServerFormValues = z.infer<typeof serverSchema>;

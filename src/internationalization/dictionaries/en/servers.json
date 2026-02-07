@@ -152,7 +152,40 @@
         "error": "Failed to update channel. Please try again.",
         "general": {
           "title": "General Settings",
-          "description": "Update the name and appearance of your channel."
+          "description": "Update the name and appearance of your channel.",
+          "name": "Channel Name",
+          "namePlaceholder": {
+            "text": "e.g., general chat",
+            "voice": "e.g., general voice",
+            "announcement": "e.g., announcements"
+          },
+          "slowMode": {
+            "label": "Slow Mode",
+            "description": "Set a cooldown period between messages for each user.",
+            "off": "Off",
+            "seconds": "{{count}} seconds",
+            "minute": "1 minute",
+            "minutes": "{{count}} minutes",
+            "hour": "1 hour",
+            "hours": "{{count}} hours"
+          },
+          "nsfw": {
+            "label": "Age-Restricted Channel",
+            "description": "Users will need to confirm they are of over the legal age to view the content in this channel. Age-restricted channels are exempt from the explicit content filter."
+          },
+          "topic": "Channel Topic",
+          "topicPlaceholder": "Let others know what this channel is about",
+          "topicMaxLength": "Channel topic must be at most {{max}} characters",
+          "topicEditor": {
+            "bold": "Bold",
+            "italic": "Italic",
+            "strikethrough": "Strikethrough",
+            "spoiler": "Spoiler",
+            "preview": "Preview",
+            "edit": "Edit"
+          },
+          "success": "Channel updated successfully!",
+          "error": "Failed to update settings. Please try again."
         },
         "permissions": {
           "title": "Permissions Settings",

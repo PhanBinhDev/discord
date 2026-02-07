@@ -125,7 +125,7 @@ const CategoryItem = ({
               <TranslateText value="servers.noChannels" />
             </div>
           ) : (
-            <div className="flex flex-col ml-1.5 gap-1">
+            <div className="flex flex-col ml-2 gap-1">
               {channels.map(channel => (
                 <ChannelItem
                   key={channel._id}
@@ -138,18 +138,20 @@ const CategoryItem = ({
         </>
       )}
 
-      {isCollapsed &&
-        (() => {
-          const activeChannel = channels.find(ch => ch._id === channelId);
-          if (!activeChannel) return null;
-          return (
-            <ChannelItem
-              key={activeChannel._id}
-              channel={activeChannel}
-              isActive={true}
-            />
-          );
-        })()}
+      <div className="ml-2">
+        {isCollapsed &&
+          (() => {
+            const activeChannel = channels.find(ch => ch._id === channelId);
+            if (!activeChannel) return null;
+            return (
+              <ChannelItem
+                key={activeChannel._id}
+                channel={activeChannel}
+                isActive={true}
+              />
+            );
+          })()}
+      </div>
     </div>
   );
 };

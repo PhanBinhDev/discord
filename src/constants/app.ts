@@ -33,9 +33,11 @@ import {
   IconShieldCog,
   IconTrash,
   IconUsersPlus,
+  IconWebhook,
 } from '@tabler/icons-react';
 import { ArrowLeftRight } from 'lucide-react';
 
+export const TOPIC_CHANNEL_MAX_LENGTH = 990;
 export const DEFAULT_ROLE_COLOR = '#8e9297';
 export const MIN_LENGTH_CHANNEL_NAME = 1;
 export const MAX_LENGTH_CHANNEL_NAME = 100;
@@ -114,6 +116,23 @@ export const StatusExpiredOptions: StatusExpiredOption[] = [
     label: 'servers.userStatus.time.never',
     value: 'never',
   },
+];
+
+export const SlowModeOptions = [
+  { label: 'Off', value: 0 },
+  { label: '5 seconds', value: 5 },
+  { label: '10 seconds', value: 10 },
+  { label: '15 seconds', value: 15 },
+  { label: '30 seconds', value: 30 },
+  { label: '1 minute', value: 60 },
+  { label: '2 minutes', value: 120 },
+  { label: '5 minutes', value: 300 },
+  { label: '10 minutes', value: 600 },
+  { label: '15 minutes', value: 900 },
+  { label: '30 minutes', value: 1800 },
+  { label: '1 hour', value: 3600 },
+  { label: '2 hours', value: 7200 },
+  { label: '6 hours', value: 21600 },
 ];
 
 export const ServerMenusItems: ServerMenu[] = [
@@ -277,6 +296,11 @@ export const ChannelManageNavItems: CategoryMenuNav<ChannelManageNavItemsKey>[] 
       key: 'invite',
       label: 'servers.channel.edit.invite.title',
       icon: IconUsersPlus,
+    },
+    {
+      key: 'integrations',
+      label: 'servers.channel.edit.integrate.title',
+      icon: IconWebhook,
     },
     {
       key: 'delete',

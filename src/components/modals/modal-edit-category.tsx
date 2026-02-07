@@ -64,8 +64,6 @@ const ModalEditCategory = () => {
     category: Doc<'channelCategories'>;
   };
 
-  console.log('Rendering ModalEditCategory for category:', category);
-
   const [shake, setShake] = useState(false);
 
   const { data: categoryPermissions, isLoading: loadingCategoryPermissions } =
@@ -85,11 +83,8 @@ const ModalEditCategory = () => {
   });
 
   const { handleDiscard, handleSave, isDirty } = useDirty(form, {
-    onSave: async () => {
+    onSave: () => {
       form.handleSubmit(onSubmit)();
-    },
-    onDiscard: () => {
-      form.reset();
     },
   });
 
@@ -121,6 +116,8 @@ const ModalEditCategory = () => {
   }, [category, form]);
 
   const onSubmit = (values: { name: string; isPrivate: boolean }) => {
+    if (!isDirty) return;
+
     updateCategory({
       categoryId: category._id,
       name: values.name,

@@ -27,7 +27,6 @@ export const SnackbarUnsaved = ({
   message = 'common.unsavedChanges',
 }: SnackbarUnsavedProps) => {
   if (typeof window === 'undefined') return null;
-
   return createPortal(
     <AnimatePresence>
       {open && (
@@ -59,10 +58,10 @@ export const SnackbarUnsaved = ({
               'bg-var(--accent-color) border border-var(--accent-color)/30 backdrop-blur-xl',
               'rounded-lg shadow-2xl px-4 py-3',
               'flex items-center gap-4',
-              'min-w-[400px] max-w-2xl',
+              'min-w-[400px] max-w-3xl',
             )}
           >
-            <span className="text-sm font-medium text-var(--accent-color) flex-1">
+            <span className="text-sm font-medium text-var(--accent-color) flex-1 shrink-0">
               <TranslateText value={message} />
             </span>
             <div className="flex items-center gap-2">

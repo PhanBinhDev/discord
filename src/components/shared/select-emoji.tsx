@@ -16,10 +16,16 @@ interface SelectEmojiProps {
   onSelect: (emoji: EmojiMartEmoji) => void;
   emojiSize?: number;
   emojiButtonSize?: number;
+  disabled?: boolean;
 }
 
 const SelectEmoji = memo(
-  ({ onSelect, emojiSize = 32, emojiButtonSize = 36 }: SelectEmojiProps) => {
+  ({
+    onSelect,
+    emojiSize = 32,
+    emojiButtonSize = 36,
+    disabled = false,
+  }: SelectEmojiProps) => {
     const { locale } = useClientDictionary();
     const [open, setOpen] = useState(false);
 
@@ -39,6 +45,7 @@ const SelectEmoji = memo(
             onClick={e => {
               e.stopPropagation();
             }}
+            disabled={disabled}
           >
             <IconMoodHappy className="text-var(--accent-color) w-5 h-5" />
           </Button>

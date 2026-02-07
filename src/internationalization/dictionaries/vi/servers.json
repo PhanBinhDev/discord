@@ -152,7 +152,40 @@
         "error": "Cập nhật kênh thất bại. Vui lòng thử lại.",
         "general": {
           "title": "Cài đặt chung",
-          "description": "Cập nhật tên và giao diện của kênh."
+          "description": "Cập nhật tên và giao diện của kênh.",
+          "name": "Tên kênh",
+          "namePlaceholder": {
+            "text": "ví dụ, trò chuyện",
+            "voice": "ví dụ, giọng nói",
+            "announcement": "ví dụ, diễn đàn"
+          },
+           "slowMode": {
+            "label": "Chế độ chậm",
+            "description": "Đặt khoảng thời gian chờ giữa các tin nhắn cho mỗi người dùng.",
+            "off": "Tắt",
+            "seconds": "{{count}} giây",
+            "minute": "1 phút",
+            "minutes": "{{count}} phút",
+            "hour": "1 giờ",
+            "hours": "{{count}} giờ"
+          },
+          "nsfw": {
+            "label": "Kênh giới hạn độ tuổi",
+            "description": "Người dùng sẽ cần xác nhận họ đủ tuổi hợp pháp để xem nội dung trong kênh này. Kênh giới hạn độ tuổi được miễn trừ khỏi bộ lọc nội dung khiêu dâm."
+          },
+          "topic": "Chủ đề kênh",
+           "topicEditor": {
+            "bold": "Bôi đậm",
+            "italic": "Nghiêng",
+            "strikethrough": "Gạch ngang",
+            "spoiler": "Tiết lộ",
+            "preview": "Xem trước",
+            "edit": "Chỉnh sửa"
+          },
+          "topicPlaceholder": "Nhập chủ đề kênh (tối đa {{max}} ký tự)",
+          "topicMaxLength": "Chủ đề kênh tối đa {{max}} ký tự",
+          "success": "Cập nhật kênh thành công!",
+          "error": "Cập nhật kênh thất bại. Vui lòng thử lại."
         },
         "permissions": {
           "title": "Cài đặt quyền",

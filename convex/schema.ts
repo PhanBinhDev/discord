@@ -173,7 +173,6 @@ const channelCategories = defineTable({
   .index('by_server', ['serverId'])
   .index('by_position', ['serverId', 'position']);
 
-// Channels Table
 const channels = defineTable({
   serverId: v.id('servers'),
   categoryId: v.optional(v.id('channelCategories')),
@@ -183,9 +182,9 @@ const channels = defineTable({
   position: v.number(),
   isPrivate: v.boolean(),
   isNsfw: v.boolean(),
-  slowMode: v.optional(v.number()), // seconds
-  userLimit: v.optional(v.number()), // for voice channels
-  bitrate: v.optional(v.number()), // for voice channels
+  slowMode: v.optional(v.number()), 
+  userLimit: v.optional(v.number()), 
+  bitrate: v.optional(v.number()), 
   updatedAt: v.number(),
 })
   .index('by_server', ['serverId'])
