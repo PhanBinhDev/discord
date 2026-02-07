@@ -101,7 +101,7 @@ export function ConfirmDialog({
         )}
 
         <AlertDialogFooter>
-          <AlertDialogCancel>
+          <AlertDialogCancel className='cursor-pointer'>
             <TranslateText {...cancelText} />
           </AlertDialogCancel>
           <Button
@@ -109,6 +109,7 @@ export function ConfirmDialog({
             variant={variant}
             disabled={!isConfirmEnabled}
             loading={loading}
+            className='cursor-pointer'
           >
             <TranslateText {...confirmText} />
           </Button>

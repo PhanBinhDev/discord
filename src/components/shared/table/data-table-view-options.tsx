@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import TranslateText from '../translate/translate-text';
+import TranslateText from '@/components/shared/translate/translate-text';
 
 export function DataTableViewOptions<TData>({
   table,

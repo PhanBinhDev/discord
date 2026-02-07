@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Hint } from '@/components/ui/hint';
 import { ChannelIconTypeMapping } from '@/constants/app';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
+import useModal from '@/hooks/use-modal';
 import { cn } from '@/lib/utils';
 import { ChannelWithCategory } from '@/types';
 import { IconSettings, IconUsersPlus } from '@tabler/icons-react';
@@ -15,6 +16,7 @@ interface ChannelItemProps {
 
 const ChannelItem = ({ channel, isActive }: ChannelItemProps) => {
   const { dict } = useClientDictionary();
+  const { openModal } = useModal();
   const [showActions, setShowActions] = useState(false);
 
   const Icon = ChannelIconTypeMapping[channel.type]({
@@ -61,6 +63,7 @@ const ChannelItem = ({ channel, isActive }: ChannelItemProps) => {
                 variant="ghost"
                 onClick={e => {
                   e.preventDefault();
+                  openModal('ModalEditChannel', { channel });
                 }}
               >
                 <IconSettings className="size-4 text-muted-foreground hover:text-foreground group-hover:text-foreground" />

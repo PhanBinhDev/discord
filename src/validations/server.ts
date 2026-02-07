@@ -7,14 +7,6 @@ import z from 'zod';
 
 const dict = getGlobalDict();
 
-console.log(
-  'dict in validations/server.ts:',
-  dict?.servers.channel.channelNameRequired.replace(
-    '{{min}}',
-    String(MIN_LENGTH_CHANNEL_NAME),
-  ),
-);
-
 export const serverSchema = z.object({
   name: z
     .string()
@@ -67,6 +59,9 @@ export const createCategorySchema = z.object({
   isPrivate: z.boolean().default(false),
 });
 
+export const updateChannelSchema = createChannelSchema.extend({});
+
 export type CreateChannelFormValues = z.infer<typeof createChannelSchema>;
 export type ServerFormValues = z.infer<typeof serverSchema>;
 export type CreateCategoryFormValues = z.infer<typeof createCategorySchema>;
+export type UpdateChannelFormValues = z.infer<typeof updateChannelSchema>;

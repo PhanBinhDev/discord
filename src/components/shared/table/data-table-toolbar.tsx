@@ -5,7 +5,7 @@ import { type Table } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { IconX } from '@tabler/icons-react';
-import TranslateText from '../translate/translate-text';
+import TranslateText from '@/components/shared/translate/translate-text';
 import { DataTableViewOptions } from './data-table-view-options';
 
 interface DataTableToolbarProps<TData> {

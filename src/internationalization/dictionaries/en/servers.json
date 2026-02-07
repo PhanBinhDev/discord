@@ -144,7 +144,46 @@
       "channelNameMinLength": "Channel name must be at least {{min}} character",
       "channelNameMaxLength": "Channel name must be at most {{max}} characters",
       "channelSettings": "Channel Settings",
-      "addUsers": "Add Users"
+      "addUsers": "Add Users",
+      "edit": {
+        "title": "Edit channel",
+        "description": "Update your channel details and settings.",
+        "success": "Channel updated successfully!",
+        "error": "Failed to update channel. Please try again.",
+        "general": {
+          "title": "General Settings",
+          "description": "Update the name and appearance of your channel."
+        },
+        "permissions": {
+          "title": "Permissions Settings",
+          "description": "Manage roles and member permissions for this channel.",
+          "privateChannel": "Private Channel",
+          "privateChannelDescription": "By making a channel private, only select members and roles will be able to view this channel.",
+          "whoCanAccess": "Who can access?",
+          "addUsersAndRoles": "Add Users and Roles",
+          "removeSuccess": "Permission removed successfully!",
+          "removeError": "Failed to remove permission. Please try again.",
+          "addSuccess": "Permission added successfully!",
+          "addError": "Failed to add permission. Please try again.",
+          "noRoles": "No roles",
+          "noMembers": "No members."
+        },
+        "invite": {
+          "title": "Invite People",
+          "description": "Below is a list of active invitations. You can create new ones or revoke existing invitations."
+        },
+        "integrate": {
+          "title": "Integrations",
+          "description": "Manage integrations for this channel."
+        },
+        "delete": {
+          "title": "Delete Channel",
+          "description": "Are you sure you want to delete the channel \"{{channelName}}\"?. This action cannot be undone.",
+          "confirm": "Delete Channel",
+          "success": "Channel deleted successfully!",
+          "error": "Failed to delete channel. Please try again."
+        }
+      }
     },
     "category": {
       "create": "Create Category",
@@ -161,6 +200,11 @@
       "privateCategory": "Private Category",
       "privateCategoryDescription": "Only selected members and roles will be able to view channels in this category.",
       "searchUserRolePlaceholder": "Search users and roles",
+      "roles": "Roles",
+      "members": "Members",
+      "noResultsFound": "No results found",
+      "searchPlaceholder": "Start typing to search for members or roles",
+      "owner": "Owner",
       "context": {
         "markAsRead": "Mark as Read",
         "edit": "Edit Category",
@@ -184,7 +228,22 @@
         },
         "permissions": {
           "title": "Permissions Settings",
-          "description": "Manage roles and member permissions for this category."
+          "description": "Manage roles and member permissions for this category.",
+          "privateCategory": "Private Category",
+          "privateCategoryDescription": "By making a category private, only select members and roles will be able to view this category. Linked channels in this category will automatically match to this setting.",
+          "whoCanAccess": "Who can access?",
+          "addUsersAndRoles": "Add Users and Roles",
+          "removeSuccess": "Permission removed successfully!",
+          "removeError": "Failed to remove permission. Please try again.",
+          "addSuccess": "Permission added successfully!",
+          "addError": "Failed to add permission. Please try again.",
+          "noRoles": "No roles",
+          "noMembers": "No members.",
+          "cannotRemoveOwner": "Cannot remove server owner's permission",
+          "membersAndRoles": {
+            "title": "Add Members & Roles",
+            "description": "Manage permissions for members and roles in this category."
+          }
         }
       }
     }

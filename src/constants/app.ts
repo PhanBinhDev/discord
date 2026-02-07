@@ -11,9 +11,12 @@ import IconVoiceChannel from '@/components/icons/voice-channel';
 import IconVoicePrivateActiveChannel from '@/components/icons/voice-private-active-channel';
 import IconVoicePrivateChannel from '@/components/icons/voice-private-channel';
 import {
+  CategoryManageNavItemsKey,
   CategoryMenuItem,
+  CategoryMenuItemKey,
   CategoryMenuNav,
   ChannelIconType,
+  ChannelManageNavItemsKey,
   ChannelTypeItem,
   ServerMenu,
   StatusExpiredOption,
@@ -29,9 +32,11 @@ import {
   IconSettings,
   IconShieldCog,
   IconTrash,
+  IconUsersPlus,
 } from '@tabler/icons-react';
 import { ArrowLeftRight } from 'lucide-react';
 
+export const DEFAULT_ROLE_COLOR = '#8e9297';
 export const MIN_LENGTH_CHANNEL_NAME = 1;
 export const MAX_LENGTH_CHANNEL_NAME = 100;
 export const DROPPABLE_CATEGORY = 'category-droppable';
@@ -215,41 +220,67 @@ export const ChannelTypeOptionsList: ChannelTypeItem[] = [
   },
 ];
 
-export const CategoryContextMenuItems: CategoryMenuItem[] = [
-  {
-    key: 'markAsRead',
-    label: 'servers.category.context.markAsRead',
-    action: 'markAsRead',
-    icon: IconChecks,
-  },
-  {
-    key: 'edit',
-    label: 'servers.category.context.edit',
-    action: 'edit',
-    icon: IconSettings,
-  },
-  {
-    key: 'delete',
-    label: 'servers.category.context.delete',
-    action: 'delete',
-    icon: IconTrash,
-  },
-];
+export const CategoryContextMenuItems: CategoryMenuItem<CategoryMenuItemKey>[] =
+  [
+    {
+      key: 'markAsRead',
+      label: 'servers.category.context.markAsRead',
+      action: 'markAsRead',
+      icon: IconChecks,
+    },
+    {
+      key: 'edit',
+      label: 'servers.category.context.edit',
+      action: 'edit',
+      icon: IconSettings,
+    },
+    {
+      key: 'delete',
+      label: 'servers.category.context.delete',
+      action: 'delete',
+      icon: IconTrash,
+    },
+  ];
 
-export const CategoryManageNavItems: CategoryMenuNav[] = [
-  {
-    key: 'general',
-    label: 'servers.category.edit.general.title',
-    icon: IconSettings,
-  },
-  {
-    key: 'permissions',
-    label: 'servers.category.edit.permissions.title',
-    icon: IconShieldCog,
-  },
-  {
-    key: 'delete',
-    label: 'servers.category.delete.title',
-    icon: IconTrash,
-  },
-];
+export const CategoryManageNavItems: CategoryMenuNav<CategoryManageNavItemsKey>[] =
+  [
+    {
+      key: 'general',
+      label: 'servers.category.edit.general.title',
+      icon: IconSettings,
+    },
+    {
+      key: 'permissions',
+      label: 'servers.category.edit.permissions.title',
+      icon: IconShieldCog,
+    },
+    {
+      key: 'delete',
+      label: 'servers.category.delete.title',
+      icon: IconTrash,
+    },
+  ];
+
+export const ChannelManageNavItems: CategoryMenuNav<ChannelManageNavItemsKey>[] =
+  [
+    {
+      key: 'general',
+      label: 'servers.channel.edit.general.title',
+      icon: IconSettings,
+    },
+    {
+      key: 'permissions',
+      label: 'servers.channel.edit.permissions.title',
+      icon: IconShieldCog,
+    },
+    {
+      key: 'invite',
+      label: 'servers.channel.edit.invite.title',
+      icon: IconUsersPlus,
+    },
+    {
+      key: 'delete',
+      label: 'servers.channel.edit.delete.title',
+      icon: IconTrash,
+    },
+  ];

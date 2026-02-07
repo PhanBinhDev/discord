@@ -6,6 +6,7 @@ import {
   ChevronsRight,
 } from 'lucide-react';
 
+import TranslateText from '@/components/shared/translate/translate-text';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -15,7 +16,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { OPTIONS_LIMIT } from '@/constants/app';
-import TranslateText from '../translate/translate-text';
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;

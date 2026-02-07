@@ -2,7 +2,15 @@
 
 import SelectEmoji from '@/components/shared/select-emoji';
 import TranslateText from '@/components/shared/translate/translate-text';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -22,26 +30,32 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SnackbarUnsaved } from '@/components/ui/snackbar-unsaved';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CategoryManageNavItems } from '@/constants/app';
+import { CategoryManageNavItems, DEFAULT_ROLE_COLOR } from '@/constants/app';
 import { api } from '@/convex/_generated/api';
-import { Doc } from '@/convex/_generated/dataModel';
+import { Doc, Id } from '@/convex/_generated/dataModel';
 import { useApiMutation } from '@/hooks/use-api-mutation';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
+import { useDirty } from '@/hooks/use-dirty';
 import useModal from '@/hooks/use-modal';
 import { createCategorySchema } from '@/validations/server';
+import { convexQuery } from '@convex-dev/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
-import { Fragment, useEffect } from 'react';
+import {
+  IconShieldCheck,
+  IconShieldCheckFilled,
+  IconTrash,
+} from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
+import { Fragment, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { Card, CardContent } from '../ui/card';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '../ui/collapsible';
 
 const ModalEditCategory = () => {
   const { isModalOpen, closeModal, openModal, getModalData } = useModal();
@@ -49,6 +63,18 @@ const ModalEditCategory = () => {
   const { category } = getModalData('ModalEditCategory') as {
     category: Doc<'channelCategories'>;
   };
+
+  console.log('Rendering ModalEditCategory for category:', category);
+
+  const [shake, setShake] = useState(false);
+
+  const { data: categoryPermissions, isLoading: loadingCategoryPermissions } =
+    useQuery({
+      ...convexQuery(api.servers.getCategoryPermissions, {
+        categoryId: category?._id,
+      }),
+      enabled: isModalOpen('ModalEditCategory') && !!category,
+    });
 
   const form = useForm({
     resolver: zodResolver(createCategorySchema),
@@ -58,9 +84,32 @@ const ModalEditCategory = () => {
     },
   });
 
+  const { handleDiscard, handleSave, isDirty } = useDirty(form, {
+    onSave: async () => {
+      form.handleSubmit(onSubmit)();
+    },
+    onDiscard: () => {
+      form.reset();
+    },
+  });
+
   const { mutate: updateCategory, pending } = useApiMutation(
     api.servers.updateCategory,
   );
+  const { mutate: removePermission, pending: removingPermission } =
+    useApiMutation(api.servers.removeCategoryPermissionById);
+
+  const handleRemovePermission = (permissionId: Id<'categoryPermissions'>) => {
+    removePermission({
+      permissionId,
+    })
+      .then(() => {
+        toast.success(dict?.servers.category.edit.permissions.removeSuccess);
+      })
+      .catch(() => {
+        toast.error(dict?.servers.category.edit.permissions.removeError);
+      });
+  };
 
   useEffect(() => {
     if (category) {
@@ -75,6 +124,7 @@ const ModalEditCategory = () => {
     updateCategory({
       categoryId: category._id,
       name: values.name,
+      isPrivate: values.isPrivate,
     })
       .then(() => {
         toast.success(dict?.servers.category.edit.success);
@@ -85,12 +135,38 @@ const ModalEditCategory = () => {
       });
   };
 
+  const triggerShake = () => {
+    setShake(true);
+    setTimeout(() => setShake(false), 400);
+  };
+
   return (
     <Dialog
-      onOpenChange={() => closeModal('ModalEditCategory')}
+      onOpenChange={open => {
+        if (!open && isDirty) {
+          triggerShake();
+          return;
+        }
+        if (!open) {
+          closeModal('ModalEditCategory');
+        }
+      }}
       open={isModalOpen('ModalEditCategory')}
     >
-      <DialogContent className="sm:max-w-6xl h-[95vh] p-0 overflow-hidden">
+      <DialogContent
+        className="sm:max-w-6xl h-[95vh] p-0 overflow-hidden"
+        onInteractOutside={e => {
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-snackbar-unsaved]')) {
+            e.preventDefault();
+            return;
+          }
+          if (isDirty) {
+            e.preventDefault();
+            triggerShake();
+          }
+        }}
+      >
         <VisuallyHidden.Root>
           <DialogTitle>
             <TranslateText value="servers.category.edit.title" />
@@ -116,9 +192,14 @@ const ModalEditCategory = () => {
                       <>
                         <Separator className="my-1 bg-muted-foreground/10" />
                         <Button
-                          className="w-full p-2 gap-1.5 justify-start text-destructive hover:bg-destructive/10 hover:text-destructive flex items-center"
+                          className="w-full p-2 px-2! gap-1.5 justify-start text-destructive hover:bg-destructive/10 hover:text-destructive flex items-center"
                           variant={'ghost'}
                           onClick={() => {
+                            if (isDirty) {
+                              triggerShake();
+                              return;
+                            }
+
                             openModal('ModalDeleteCategory', {
                               category,
                               callback: () => {
@@ -147,17 +228,13 @@ const ModalEditCategory = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">
-            <TabsContent value="general" className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">
-                  <TranslateText value="servers.category.edit.general.title" />
-                </h3>
-
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-4"
-                  >
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <TabsContent value="general" className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">
+                      <TranslateText value="servers.category.edit.general.title" />
+                    </h3>
                     <FormField
                       control={form.control}
                       name="name"
@@ -198,66 +275,252 @@ const ModalEditCategory = () => {
                         </FormItem>
                       )}
                     />
-
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => form.reset()}
-                        disabled={pending}
+                  </div>
+                </TabsContent>
+                <TabsContent value="permissions">
+                  <h3 className="text-lg font-semibold mb-4">
+                    <TranslateText value="servers.category.edit.permissions.title" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    <TranslateText value="servers.category.edit.permissions.description" />
+                  </p>
+                  <Card className="p-0 mt-4 overflow-hidden rounded-md border border-foreground/10 shadow-none">
+                    <CardContent className="p-0">
+                      <Collapsible
+                        className="bg-muted"
+                        open={form.getValues('isPrivate')}
+                        onOpenChange={open => {
+                          form.setValue('isPrivate', open, {
+                            shouldDirty: true,
+                          });
+                        }}
                       >
-                        <TranslateText value="common.reset" />
-                      </Button>
-                      <Button
-                        type="submit"
-                        loading={pending}
-                        disabled={pending || !form.formState.isDirty}
-                      >
-                        <TranslateText value="common.save" />
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </div>
-            </TabsContent>
-            <TabsContent value="permissions">
-              <h3 className="text-lg font-semibold mb-4">
-                <TranslateText value="servers.category.edit.permissions.title" />
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                <TranslateText value="servers.category.edit.permissions.description" />
-              </p>
-              <Card className="p-0 mt-4 overflow-hidden rounded-md border border-foreground/10 shadow-none">
-                <CardContent className="p-0">
-                  <Collapsible className="bg-muted">
-                    <CollapsibleTrigger asChild>
-                      <div className="flex items-center justify-between w-full p-4 cursor-pointer bg-muted/10 transition-colors">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-semibold text-white">
-                            Private Category
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            By making a category private, only select members
-                            and roles will be able to view this category. Linked
-                            channels in this category will automatically match
-                            to this setting.
-                          </span>
+                        <div className="flex items-center justify-between w-full p-4 bg-background/15 transition-colors">
+                          <div className="flex flex-col gap-1 flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <IconShieldCheck className="size-4" />
+                                <span className="text-sm font-semibold">
+                                  <TranslateText value="servers.category.edit.permissions.privateCategory" />
+                                </span>
+                              </div>
+                              <CollapsibleTrigger asChild>
+                                <FormField
+                                  control={form.control}
+                                  name="isPrivate"
+                                  render={({ field }) => (
+                                    <FormItem className="m-0">
+                                      <FormControl>
+                                        <Switch
+                                          checked={field.value}
+                                          onCheckedChange={field.onChange}
+                                          className="cursor-pointer"
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                              </CollapsibleTrigger>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              <TranslateText value="servers.category.edit.permissions.privateCategoryDescription" />
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="flex flex-col items-start gap-2 p-4 text-sm bg-muted/80">
-                      <div>
-                        This panel can be expanded or collapsed to reveal
-                        additional content.
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                        <CollapsibleContent className="flex flex-col items-start gap-2 p-4 text-sm bg-muted/80">
+                          <div className="flex items-center justify-between w-full">
+                            <span className="font-medium">
+                              <TranslateText value="servers.category.edit.permissions.whoCanAccess" />
+                            </span>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => {
+                                openModal('ModalAddMemberRoles', {
+                                  category,
+                                });
+                              }}
+                            >
+                              <TranslateText value="servers.category.edit.permissions.addUsersAndRoles" />
+                            </Button>
+                          </div>
+                          <Separator className="my-1 bg-muted-foreground/10" />
+                          <div className="flex flex-col w-full gap-2">
+                            <span className="font-medium text-sm">
+                              <TranslateText value="servers.category.roles" />
+                            </span>
+                            {loadingCategoryPermissions ? (
+                              <div className="space-y-2">
+                                {[1, 2, 3].map(i => (
+                                  <div
+                                    key={i}
+                                    className="flex items-center justify-between p-2 rounded-md bg-background/50"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Skeleton className="size-8 rounded-full" />
+                                      <Skeleton className="h-4 w-24" />
+                                    </div>
+                                    <Skeleton className="size-8" />
+                                  </div>
+                                ))}
+                              </div>
+                            ) : categoryPermissions?.roles &&
+                              categoryPermissions.roles.length > 0 ? (
+                              <ScrollArea className="max-h-[200px]">
+                                <div className="space-y-2">
+                                  {categoryPermissions.roles.map(
+                                    ({ permissionId, role }) => (
+                                      <div
+                                        key={permissionId}
+                                        className="flex items-center justify-between p-2 pl-3 rounded-md bg-background/20 hover:bg-background/25 transition-colors"
+                                      >
+                                        <div className="flex items-center gap-1">
+                                          <IconShieldCheckFilled
+                                            className="size-4"
+                                            style={{
+                                              color:
+                                                role?.color ||
+                                                DEFAULT_ROLE_COLOR,
+                                            }}
+                                          />
+                                          <span className="text-sm font-medium">
+                                            {role?.name}
+                                          </span>
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="size-8 hover:bg-destructive/10 hover:text-destructive"
+                                          onClick={() =>
+                                            handleRemovePermission(permissionId)
+                                          }
+                                          disabled={removingPermission}
+                                        >
+                                          <IconTrash className="size-4" />
+                                        </Button>
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              </ScrollArea>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic py-2">
+                                <TranslateText value="servers.category.edit.permissions.noRoles" />
+                              </p>
+                            )}
+                          </div>
+                          <Separator className="my-1 bg-muted-foreground/10" />
+                          <div className="flex flex-col w-full gap-2">
+                            <span className="font-medium text-sm">
+                              <TranslateText value="servers.category.members" />
+                            </span>
+                            {loadingCategoryPermissions ? (
+                              <div className="space-y-2">
+                                {[1, 2].map(i => (
+                                  <div
+                                    key={i}
+                                    className="flex items-center justify-between p-2 pl-3 rounded-md bg-background/25"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Skeleton className="size-8 rounded-full" />
+                                      <div className="space-y-1">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-3 w-16" />
+                                      </div>
+                                    </div>
+                                    <Skeleton className="size-8" />
+                                  </div>
+                                ))}
+                              </div>
+                            ) : categoryPermissions?.users &&
+                              categoryPermissions.users.length > 0 ? (
+                              <ScrollArea className="max-h-[200px]">
+                                <div className="space-y-2">
+                                  {categoryPermissions.users.map(
+                                    ({ permissionId, user }) => (
+                                      <div
+                                        key={permissionId}
+                                        className="flex items-center justify-between p-2 pl-3 rounded-md bg-background/20 hover:bg-background/25 transition-colors"
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <Avatar className="size-8">
+                                            <AvatarImage
+                                              src={user?.avatarUrl}
+                                            />
+                                            <AvatarFallback>
+                                              {user?.displayName?.[0] ||
+                                                user?.username?.[0]}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <div className="flex flex-col">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="text-sm font-medium">
+                                                {user?.displayName ||
+                                                  user?.username}
+                                              </span>
+                                              {permissionId === 'owner' && (
+                                                <Badge
+                                                  variant="default"
+                                                  className="text-xs px-1.5 py-0.5 h-4"
+                                                >
+                                                  <TranslateText value="servers.category.owner" />
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            <span className="text-xs text-muted-foreground">
+                                              @{user?.username}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        {permissionId !== 'owner' && (
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="size-8 hover:bg-destructive/10 hover:text-destructive"
+                                            onClick={() =>
+                                              handleRemovePermission(
+                                                permissionId,
+                                              )
+                                            }
+                                            disabled={
+                                              removingPermission ||
+                                              permissionId === 'owner'
+                                            }
+                                          >
+                                            <IconTrash className="size-4" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              </ScrollArea>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic py-2">
+                                <TranslateText value="servers.category.edit.permissions.noMembers" />
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </form>
+            </Form>
           </div>
         </Tabs>
       </DialogContent>
+      <SnackbarUnsaved
+        open={isDirty}
+        onDiscard={handleDiscard}
+        onSave={handleSave}
+        loading={pending}
+        shake={shake}
+      />
     </Dialog>
   );
 };

@@ -144,7 +144,46 @@
       "channelNameMinLength": "Tên kênh phải có ít nhất {{min}} ký tự",
       "channelNameMaxLength": "Tên kênh phải có tối đa {{max}} ký tự",
       "channelSettings": "Cài đặt kênh",
-      "addUsers": "Thêm người dùng"
+      "addUsers": "Thêm người dùng",
+      "edit": {
+        "title": "Chỉnh sửa kênh",
+        "description": "Cập nhật chi tiết và cài đặt kênh của bạn.",
+        "success": "Cập nhật kênh thành công!",
+        "error": "Cập nhật kênh thất bại. Vui lòng thử lại.",
+        "general": {
+          "title": "Cài đặt chung",
+          "description": "Cập nhật tên và giao diện của kênh."
+        },
+        "permissions": {
+          "title": "Cài đặt quyền",
+          "description": "Quản lý vai trò và quyền của thành viên cho kênh này.",
+          "privateChannel": "Kênh riêng tư",
+          "privateChannelDescription": "Bằng cách làm cho kênh trở nên riêng tư, chỉ những thành viên và vai trò được chọn mới có thể xem kênh này.",
+          "whoCanAccess": "Ai có thể truy cập?",
+          "addUsersAndRoles": "Thêm người dùng và vai trò",
+          "removeSuccess": "Xóa quyền thành công!",
+          "removeError": "Xóa quyền thất bại. Vui lòng thử lại.",
+          "addSuccess": "Thêm quyền thành công!",
+          "addError": "Thêm quyền thất bại. Vui lòng thử lại.",
+          "noRoles": "Không có vai trò",
+          "noMembers": "Không có thành viên."
+        },
+        "invite": {
+          "title": "Lời mời",
+          "description": "Dưới đây là danh sách các lời mời còn hoạt động. Bạn có thể tạo mới hoặc thu hồi các lời mời hiện có."
+        },
+        "integrate": {
+          "title": "Tích hợp",
+          "description": "Quản lý các tích hợp cho kênh này."
+        },
+        "delete": {
+          "title": "Xóa kênh",
+          "description": "Bạn có chắc chắn muốn xóa kênh {{channelName}} không? Hành động này không thể hoàn tác.",
+          "confirm": "Xóa kênh",
+          "success": "Xóa kênh thành công!",
+          "error": "Xóa kênh thất bại. Vui lòng thử lại."
+        }
+      }
     },
     "category": {
       "create": "Tạo danh mục",
@@ -162,8 +201,8 @@
       "privateCategoryDescription": "Chỉ những thành viên có vai trò được chọn mới có thể truy cập danh mục này.",
       "searchUserRolePlaceholder": "Điều phối viên, Thành viên, @everyone",
       "roles": "Vai trò",
-      "role": "Vai trò",
       "members": "Thành viên",
+      "owner": "Chủ sở hữu",
       "noResultsFound": "Không tìm thấy kết quả",
       "searchPlaceholder": "Bắt đầu nhập để tìm kiếm thành viên hoặc vai trò",
       "context": {
@@ -189,7 +228,22 @@
         },
         "permissions": {
           "title": "Cài đặt quyền",
-          "description": "Quản lý quyền truy cập cho các vai trò và thành viên trong danh mục này."
+          "description": "Quản lý quyền truy cập cho các vai trò và thành viên trong danh mục này.",
+          "privateCategory": "Danh mục riêng",
+          "privateCategoryDescription": "Bằng cách đặt danh mục này thành riêng tư, chỉ những thành viên và vai trò được chọn mới có thể xem danh mục này. Các kênh liên kết trong danh mục này sẽ tự động phù hợp với cài đặt này.",
+          "whoCanAccess": "Ai có thể truy cập?",
+          "addUsersAndRoles": "Thêm người dùng và vai trò",
+          "removeSuccess": "Xóa quyền truy cập thành công!",
+          "removeError": "Xóa quyền truy cập thất bại. Vui lòng thử lại.",
+          "addSuccess": "Thêm quyền truy cập thành công!",
+          "addError": "Thêm quyền truy cập thất bại. Vui lòng thử lại.",
+          "noRoles": "Chưa có vai trò nào",
+          "noMembers": "Chưa có thành viên nào",
+          "cannotRemoveOwner": "Không thể xóa quyền của chủ sở hữu máy chủ",
+          "membersAndRoles": {
+            "title": "Thêm Thành viên & Vai trò",
+            "description": "Quản lý quyền cho các thành viên và vai trò trong danh mục này."
+          }
         }
       }
     }

@@ -45,14 +45,14 @@ const CategoryItem = ({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full gap-1">
         <ContextMenu>
-          <ContextMenuTrigger>
+          <ContextMenuTrigger asChild>
             <button
-              className="flex cursor-pointer items-center gap-1 px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground w-fit transition-colors"
+              className="flex cursor-pointer items-center gap-1 px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors flex-1 min-w-0"
               onClick={onToggle}
             >
-              <span className="flex-1 text-left tracking-wide">
+              <span className="text-left tracking-wide truncate overflow-hidden whitespace-nowrap min-w-0">
                 {category.name}
               </span>
               <ChevronRight
@@ -107,6 +107,7 @@ const CategoryItem = ({
                 onClick={() => {
                   openModal('ModalCreateChannel', {
                     category,
+                    type: 'category',
                   });
                 }}
               >
@@ -124,7 +125,7 @@ const CategoryItem = ({
               <TranslateText value="servers.noChannels" />
             </div>
           ) : (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col ml-1.5 gap-1">
               {channels.map(channel => (
                 <ChannelItem
                   key={channel._id}

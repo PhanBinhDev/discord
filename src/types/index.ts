@@ -36,7 +36,8 @@ export type ModalType =
   | 'ModalDeleteServer'
   | 'ModalCreateEvent'
   | 'ModalEditCategory'
-  | 'ModalDeleteCategory';
+  | 'ModalDeleteCategory'
+  | 'ModalAddMemberRoles';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
 
@@ -72,10 +73,14 @@ export type ChannelWithCategory = NonNullable<
   ApiReturn<typeof api.servers.getAccessibleChannels>
 >['channels'][number];
 
+export type CategoryWithPermissions = NonNullable<
+  ApiReturn<typeof api.servers.getServerCategories>
+>[number];
+
 export type RenderItem =
   | {
       type: 'category';
-      category: NonNullable<ChannelWithCategory['category']>;
+      category: CategoryWithPermissions;
       channels: ChannelWithCategory[];
       position: number;
     }
@@ -137,17 +142,28 @@ export type EmojiMartEmoji = {
   [key: string]: unknown;
 };
 
-export type CategoryMenuNav = {
-  key: string;
+export type CategoryMenuNav<T extends string> = {
+  key: T;
   label: DictKey;
   icon: TablerIcon | LucideIcon;
 };
 
-export type CategoryMenuItem = CategoryMenuNav & {
-  action: 'markAsRead' | 'edit' | 'delete';
+export type CategoryMenuItem<T extends string> = CategoryMenuNav<T> & {
+  action: CategoryMenuItemKey;
 };
 
 export type TranslateTextKey = {
   value: DictKey;
   params?: Record<string, string | number>;
 };
+
+export type ChannelManageNavItemsKey =
+  | 'general'
+  | 'permissions'
+  | 'integrations'
+  | 'invite'
+  | 'delete';
+
+export type CategoryMenuItemKey = 'markAsRead' | 'edit' | 'delete';
+
+export type CategoryManageNavItemsKey = 'general' | 'permissions' | 'delete';

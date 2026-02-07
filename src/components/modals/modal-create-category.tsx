@@ -81,8 +81,6 @@ const ModalCreateCategory = () => {
       return;
     }
 
-    // const roleIds = step === 2 && isPrivate ? searchResults?.map(r => r._id) : undefined;
-
     createCategory({
       name,
       serverId: server._id as Id<'servers'>,
@@ -219,7 +217,7 @@ const ModalCreateCategory = () => {
                                   />
                                   <span className="text-sm">{role.name}</span>
                                   <span className="text-xs text-muted-foreground ml-auto">
-                                    <TranslateText value="servers.category.role" />
+                                    <TranslateText value="servers.category.roles" />
                                   </span>
                                 </div>
                               ))}

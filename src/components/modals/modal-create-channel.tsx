@@ -34,7 +34,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { ChannelTypeOptionsList } from '@/constants/app';
 import { api } from '@/convex/_generated/api';
-import { Doc, Id } from '@/convex/_generated/dataModel';
+import { Doc } from '@/convex/_generated/dataModel';
 import { useApiMutation } from '@/hooks/use-api-mutation';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import useModal from '@/hooks/use-modal';
@@ -51,7 +51,9 @@ const ModalCreateChannel = () => {
   const { isModalOpen, closeModal, getModalData } = useModal();
   const { dict } = useClientDictionary();
   const data = getModalData('ModalCreateChannel') as {
-    category?: Doc<'channelCategories'>;
+    category: Doc<'channelCategories'>;
+    server: Doc<'servers'>;
+    type: 'category' | undefined;
   };
 
   const { mutate: createChannel, pending } = useApiMutation(
@@ -68,13 +70,16 @@ const ModalCreateChannel = () => {
   });
 
   const onSubmit = (values: CreateChannelFormValues) => {
-    createChannel({
+    const payload = {
       name: values.name,
-      serverId: data.category?.serverId as Id<'servers'>,
+      serverId:
+        data?.type === 'category' ? data.category?.serverId : data.server?._id,
       categoryId: data.category ? data.category._id : undefined,
       type: values.type,
       isPrivate: values.isPrivate,
-    })
+    };
+
+    createChannel(payload)
       .then(() => {
         toast.success(dict?.servers.channel.channelCreated);
         closeModal('ModalCreateChannel');

@@ -57,7 +57,7 @@ export function DictionaryProvider({
     return () => {
       mounted = false;
     };
-  }, [locale]);
+  }, [locale, setDictStore]);
 
   const setLocale = async (newLocale: Locale) => {
     if (newLocale === locale) return;

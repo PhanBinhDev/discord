@@ -1,6 +1,7 @@
 import { type Column } from '@tanstack/react-table';
 import { Check, PlusCircle } from 'lucide-react';
 
+import TranslateText from '@/components/shared/translate/translate-text';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +21,6 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { TablerIcon } from '@tabler/icons-react';
-import TranslateText from '../translate/translate-text';
 
 interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;

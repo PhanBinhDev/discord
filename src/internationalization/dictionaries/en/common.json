@@ -91,6 +91,6 @@
     "invite": "Invite",
     "discard": "Discard",
     "saveChanges": "Save Changes",
-    "unsavedChanges": "You have unsaved changes. Are you sure you want to leave without saving?"
+    "unsavedChanges": "Be careful - you have unsaved changes!"  
   }
 }

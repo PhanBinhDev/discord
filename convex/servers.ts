@@ -9,6 +9,70 @@ import { getCurrent, getCurrentUserOrThrow } from './users';
 
 const EXPIRED_TIME = 7 * 24 * 60 * 60 * 1000;
 
+async function canUserAccessChannelDirect(
+  ctx: GenericQueryCtx<DataModel>,
+  userId: Id<'users'>,
+  channel: Doc<'channels'>,
+  serverId: Id<'servers'>,
+): Promise<boolean> {
+  const membership = await ctx.db
+    .query('serverMembers')
+    .withIndex('by_server_user', q =>
+      q.eq('serverId', serverId).eq('userId', userId),
+    )
+    .first();
+
+  if (!membership || membership.isBanned) return false;
+
+  if (membership.role === 'owner' || membership.role === 'admin') {
+    return true;
+  }
+
+  if (!channel.isPrivate) return true;
+
+  const userPermission = await ctx.db
+    .query('channelPermissions')
+    .withIndex('by_channel', q => q.eq('channelId', channel._id))
+    .filter(q => q.eq(q.field('userId'), userId))
+    .first();
+
+  if (userPermission?.canView) {
+    return true;
+  }
+
+  const userRoles = await ctx.db
+    .query('userRoles')
+    .withIndex('by_user_server', q =>
+      q.eq('userId', userId).eq('serverId', serverId),
+    )
+    .collect();
+
+  const everyoneRole = await ctx.db
+    .query('roles')
+    .withIndex('by_server', q => q.eq('serverId', serverId))
+    .filter(q => q.eq(q.field('isDefault'), true))
+    .first();
+
+  const allRoleIds = [
+    ...userRoles.map(ur => ur.roleId),
+    ...(everyoneRole ? [everyoneRole._id] : []),
+  ];
+
+  const rolePermissions = await ctx.db
+    .query('channelPermissions')
+    .withIndex('by_channel', q => q.eq('channelId', channel._id))
+    .collect();
+
+  for (const roleId of allRoleIds) {
+    const permission = rolePermissions.find(p => p.roleId === roleId);
+    if (permission?.canView) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 async function canUserAccessChannel(
   ctx: GenericQueryCtx<DataModel>,
   userId: Id<'users'>,
@@ -31,42 +95,58 @@ async function canUserAccessChannel(
     return true;
   }
 
+  // Check channel itself first - if channel is public, allow access
+  // regardless of category permissions
+  if (!channel.isPrivate) return true;
+
+  // Channel is private - check category permission first if in category
   if (channel.categoryId) {
     const category = await ctx.db.get(channel.categoryId);
 
     if (category && category.isPrivate) {
-      const userRoles = await ctx.db
-        .query('userRoles')
-        .withIndex('by_user_server', q =>
-          q.eq('userId', userId).eq('serverId', serverId),
-        )
-        .collect();
-
-      const everyoneRole = await ctx.db
-        .query('roles')
-        .withIndex('by_server', q => q.eq('serverId', serverId))
-        .filter(q => q.eq(q.field('isDefault'), true))
-        .first();
-
-      const allUserRoleIds = [
-        ...userRoles.map(ur => ur.roleId),
-        ...(everyoneRole ? [everyoneRole._id] : []),
-      ];
-
-      const categoryPermissions = await ctx.db
+      const userCategoryPerm = await ctx.db
         .query('categoryPermissions')
         .withIndex('by_category', q => q.eq('categoryId', channel.categoryId!))
-        .collect();
+        .filter(q => q.eq(q.field('userId'), userId))
+        .first();
 
-      const hasAccessToCategory = categoryPermissions.some(
-        perm => allUserRoleIds.includes(perm.roleId) && perm.canView,
-      );
+      if (userCategoryPerm) {
+        if (!userCategoryPerm.canView) return false;
+      } else {
+        const userRoles = await ctx.db
+          .query('userRoles')
+          .withIndex('by_user_server', q =>
+            q.eq('userId', userId).eq('serverId', serverId),
+          )
+          .collect();
 
-      if (!hasAccessToCategory) return false;
+        const everyoneRole = await ctx.db
+          .query('roles')
+          .withIndex('by_server', q => q.eq('serverId', serverId))
+          .filter(q => q.eq(q.field('isDefault'), true))
+          .first();
+
+        const allUserRoleIds = [
+          ...userRoles.map(ur => ur.roleId),
+          ...(everyoneRole ? [everyoneRole._id] : []),
+        ];
+
+        const categoryPermissions = await ctx.db
+          .query('categoryPermissions')
+          .withIndex('by_category', q =>
+            q.eq('categoryId', channel.categoryId!),
+          )
+          .collect();
+
+        const hasAccessToCategory = categoryPermissions.some(
+          perm =>
+            perm.roleId && allUserRoleIds.includes(perm.roleId) && perm.canView,
+        );
+
+        if (!hasAccessToCategory) return false;
+      }
     }
   }
-
-  if (!channel.isPrivate) return true;
 
   const userPermission = await ctx.db
     .query('channelPermissions')
@@ -1375,6 +1455,7 @@ export const updateCategory = mutation({
     categoryId: v.id('channelCategories'),
     name: v.optional(v.string()),
     position: v.optional(v.number()),
+    isPrivate: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
@@ -1398,8 +1479,280 @@ export const updateCategory = mutation({
     const updates: any = {};
     if (args.name !== undefined) updates.name = args.name;
     if (args.position !== undefined) updates.position = args.position;
+    if (args.isPrivate !== undefined) {
+      updates.isPrivate = args.isPrivate;
+
+      const channelsInCategory = await ctx.db
+        .query('channels')
+        .withIndex('by_category', q => q.eq('categoryId', args.categoryId))
+        .collect();
+
+      await Promise.all(
+        channelsInCategory.map(channel =>
+          ctx.db.patch(channel._id, {
+            isPrivate: args.isPrivate,
+            updatedAt: Date.now(),
+          }),
+        ),
+      );
+
+      const everyoneRole = await ctx.db
+        .query('roles')
+        .withIndex('by_server', q => q.eq('serverId', category.serverId))
+        .filter(q => q.eq(q.field('isDefault'), true))
+        .first();
+
+      if (everyoneRole) {
+        const everyonePermission = await ctx.db
+          .query('categoryPermissions')
+          .withIndex('by_category_role', q =>
+            q.eq('categoryId', args.categoryId).eq('roleId', everyoneRole._id),
+          )
+          .first();
+
+        if (args.isPrivate) {
+          if (everyonePermission) {
+            await ctx.db.delete(everyonePermission._id);
+          }
+        } else {
+          if (!everyonePermission) {
+            await ctx.db.insert('categoryPermissions', {
+              categoryId: args.categoryId,
+              roleId: everyoneRole._id,
+              userId: undefined,
+              canView: true,
+            });
+          }
+        }
+      }
+    }
 
     await ctx.db.patch(args.categoryId, updates);
+
+    return { success: true };
+  },
+});
+
+export const getCategoryPermissions = query({
+  args: {
+    categoryId: v.id('channelCategories'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const category = await ctx.db.get(args.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    const permissions = await ctx.db
+      .query('categoryPermissions')
+      .withIndex('by_category', q => q.eq('categoryId', args.categoryId))
+      .collect();
+
+    const rolesWithPermissions = await Promise.all(
+      permissions
+        .filter(perm => perm.roleId)
+        .map(async perm => {
+          const role = await ctx.db.get(perm.roleId!);
+          return {
+            permissionId: perm._id,
+            role,
+            canView: perm.canView,
+            type: 'role' as const,
+          };
+        }),
+    );
+
+    const usersWithPermissions = await Promise.all(
+      permissions
+        .filter(perm => perm.userId)
+        .map(async perm => {
+          const permUser = await ctx.db.get(perm.userId!);
+          return {
+            permissionId: perm._id,
+            user: permUser,
+            canView: perm.canView,
+            type: 'user' as const,
+          };
+        }),
+    );
+
+    const server = await ctx.db.get(category.serverId);
+    const filteredUsers = usersWithPermissions.filter(u => u.user !== null);
+
+    if (server) {
+      const ownerInList = filteredUsers.some(
+        u => u.user && u.user._id === server.ownerId,
+      );
+
+      if (!ownerInList) {
+        const owner = await ctx.db.get(server.ownerId);
+        if (owner) {
+          filteredUsers.unshift({
+            permissionId: 'owner' as any,
+            user: owner,
+            canView: true,
+            type: 'user' as const,
+          });
+        }
+      }
+    }
+
+    return {
+      roles: rolesWithPermissions.filter(
+        r => r.role !== null && !r.role.isDefault,
+      ),
+      users: filteredUsers,
+    };
+  },
+});
+
+export const addCategoryPermission = mutation({
+  args: {
+    categoryId: v.id('channelCategories'),
+    roleId: v.id('roles'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const category = await ctx.db.get(args.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    const role = await ctx.db.get(args.roleId);
+    if (!role || role.serverId !== category.serverId) {
+      throw new Error('Role not found or does not belong to this server');
+    }
+
+    const existing = await ctx.db
+      .query('categoryPermissions')
+      .withIndex('by_category_role', q =>
+        q.eq('categoryId', args.categoryId).eq('roleId', args.roleId),
+      )
+      .first();
+
+    if (existing) {
+      throw new Error('Permission already exists');
+    }
+
+    const permissionId = await ctx.db.insert('categoryPermissions', {
+      categoryId: args.categoryId,
+      roleId: args.roleId,
+      userId: undefined,
+      canView: true,
+    });
+
+    return { success: true, permissionId };
+  },
+});
+
+export const addCategoryUserPermission = mutation({
+  args: {
+    categoryId: v.id('channelCategories'),
+    userId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const category = await ctx.db.get(args.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    const targetMembership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', args.userId),
+      )
+      .first();
+
+    if (!targetMembership) {
+      throw new Error('User is not a member of this server');
+    }
+
+    const existing = await ctx.db
+      .query('categoryPermissions')
+      .withIndex('by_category', q => q.eq('categoryId', args.categoryId))
+      .filter(q => q.eq(q.field('userId'), args.userId))
+      .first();
+
+    if (existing) {
+      throw new Error('Permission already exists');
+    }
+
+    const permissionId = await ctx.db.insert('categoryPermissions', {
+      categoryId: args.categoryId,
+      roleId: undefined,
+      userId: args.userId,
+      canView: true,
+    });
+
+    return { success: true, permissionId };
+  },
+});
+
+export const removeCategoryPermissionById = mutation({
+  args: {
+    permissionId: v.id('categoryPermissions'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const permission = await ctx.db.get(args.permissionId);
+    if (!permission) throw new Error('Permission not found');
+
+    const category = await ctx.db.get(permission.categoryId);
+    if (!category) throw new Error('Category not found');
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', category.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    await ctx.db.delete(args.permissionId);
 
     return { success: true };
   },
@@ -1530,13 +1883,7 @@ export const createChannel = mutation({
       position = channels.length;
     }
 
-    let isPrivate = args.isPrivate ?? false;
-    if (args.categoryId) {
-      const category = await ctx.db.get(args.categoryId);
-      if (category && category.isPrivate) {
-        isPrivate = true;
-      }
-    }
+    const isPrivate = args.isPrivate ?? false;
 
     const channelId = await ctx.db.insert('channels', {
       serverId: args.serverId,
@@ -2007,12 +2354,85 @@ export const getServerCategories = query({
 
     if (!membership || membership.isBanned) return null;
 
+    const isOwnerOrAdmin =
+      membership.role === 'owner' || membership.role === 'admin';
+
     const categories = await ctx.db
       .query('channelCategories')
       .withIndex('by_server', q => q.eq('serverId', args.serverId))
       .collect();
 
-    return categories.sort((a, b) => a.position - b.position);
+    const userRoles = await ctx.db
+      .query('userRoles')
+      .withIndex('by_user_server', q =>
+        q.eq('userId', user._id).eq('serverId', args.serverId),
+      )
+      .collect();
+
+    const everyoneRole = await ctx.db
+      .query('roles')
+      .withIndex('by_server', q => q.eq('serverId', args.serverId))
+      .filter(q => q.eq(q.field('isDefault'), true))
+      .first();
+
+    const allRoleIds = [
+      ...userRoles.map(ur => ur.roleId),
+      ...(everyoneRole ? [everyoneRole._id] : []),
+    ];
+
+    const categoriesWithPermissions = await Promise.all(
+      categories.map(async category => {
+        if (isOwnerOrAdmin) {
+          return { ...category, canView: true };
+        }
+
+        if (!category.isPrivate) {
+          return { ...category, canView: true };
+        }
+
+        const categoryPermissions = await ctx.db
+          .query('categoryPermissions')
+          .withIndex('by_category', q => q.eq('categoryId', category._id))
+          .collect();
+
+        for (const roleId of allRoleIds) {
+          const rolePermission = categoryPermissions.find(
+            p => p.roleId === roleId,
+          );
+          if (rolePermission?.canView) {
+            return { ...category, canView: true };
+          }
+        }
+
+        const userPermission = categoryPermissions.find(
+          p => p.userId === user._id,
+        );
+        if (userPermission?.canView) {
+          return { ...category, canView: true };
+        }
+
+        const channelsInCategory = await ctx.db
+          .query('channels')
+          .withIndex('by_category', q => q.eq('categoryId', category._id))
+          .collect();
+
+        for (const channel of channelsInCategory) {
+          const hasChannelAccess = await canUserAccessChannelDirect(
+            ctx,
+            user._id,
+            channel,
+            args.serverId,
+          );
+          if (hasChannelAccess) {
+            return { ...category, canView: true };
+          }
+        }
+
+        return { ...category, canView: false };
+      }),
+    );
+
+    return categoriesWithPermissions.sort((a, b) => a.position - b.position);
   },
 });
 
@@ -2119,11 +2539,18 @@ async function getUserChannelPermissions(
     return { canView: true, canSend: true, canManage: true, canDelete: true };
   }
 
-  // Check category private first
+  if (!channel.isPrivate) {
+    return {
+      canView: true,
+      canSend: membership.role !== 'member' || !membership.isMuted,
+      canManage: membership.role === 'moderator',
+      canDelete: false,
+    };
+  }
+
   if (channel.categoryId) {
     const category = await ctx.db.get(channel.categoryId);
     if (category && category.isPrivate) {
-      // For private category, need to check category permissions
       const userRoles = await ctx.db
         .query('userRoles')
         .withIndex('by_user_server', q =>
@@ -2140,7 +2567,7 @@ async function getUserChannelPermissions(
       const allRoleIds = [
         ...userRoles.map(ur => ur.roleId),
         ...(everyoneRole ? [everyoneRole._id] : []),
-      ];
+      ].filter((id): id is Id<'roles'> => id !== undefined);
 
       const categoryPermissions = await ctx.db
         .query('categoryPermissions')
@@ -2148,7 +2575,10 @@ async function getUserChannelPermissions(
         .collect();
 
       const hasAccessToCategory = categoryPermissions.some(
-        perm => allRoleIds.includes(perm.roleId) && perm.canView,
+        perm =>
+          perm.roleId !== undefined &&
+          allRoleIds.includes(perm.roleId) &&
+          perm.canView,
       );
 
       if (!hasAccessToCategory) {
@@ -2162,20 +2592,10 @@ async function getUserChannelPermissions(
     }
   }
 
-  // If channel is not private, grant view access
-  if (!channel.isPrivate) {
-    return {
-      canView: true,
-      canSend: membership.role !== 'member' || !membership.isMuted,
-      canManage: membership.role === 'moderator',
-      canDelete: false,
-    };
-  }
-
+  // Channel is private - check channel permissions
   let canView = false;
   let canSend = false;
 
-  // Check user-specific permission first
   const userPermission = await ctx.db
     .query('channelPermissions')
     .withIndex('by_channel', q => q.eq('channelId', channelId))
@@ -2186,7 +2606,6 @@ async function getUserChannelPermissions(
     canView = userPermission.canView;
     canSend = userPermission.canSend;
   } else {
-    // Get user's custom roles
     const userRoles = await ctx.db
       .query('userRoles')
       .withIndex('by_user_server', q =>
@@ -2194,20 +2613,17 @@ async function getUserChannelPermissions(
       )
       .collect();
 
-    // Get @everyone role
     const everyoneRole = await ctx.db
       .query('roles')
       .withIndex('by_server', q => q.eq('serverId', serverId))
       .filter(q => q.eq(q.field('isDefault'), true))
       .first();
 
-    // Combine all role IDs
     const allRoleIds = [
       ...userRoles.map(ur => ur.roleId),
       ...(everyoneRole ? [everyoneRole._id] : []),
     ];
 
-    // Check role-based permissions
     const rolePermissions = await ctx.db
       .query('channelPermissions')
       .withIndex('by_channel', q => q.eq('channelId', channelId))
@@ -2258,8 +2674,6 @@ export const searchUsersAndRoles = query({
       .query('serverMembers')
       .withIndex('by_server', q => q.eq('serverId', serverId))
       .collect();
-
-    console.log('serverMembers:', serverMembers);
 
     const userIds = serverMembers.map(member => member.userId);
 

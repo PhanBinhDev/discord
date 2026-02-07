@@ -411,7 +411,7 @@ const eventLogs = defineTable({
 
 const channelPermissions = defineTable({
   channelId: v.id('channels'),
-  roleId: v.optional(v.id('roles')), 
+  roleId: v.optional(v.id('roles')),
   userId: v.optional(v.id('users')),
   canView: v.boolean(),
   canSend: v.boolean(),
@@ -423,11 +423,13 @@ const channelPermissions = defineTable({
 
 const categoryPermissions = defineTable({
   categoryId: v.id('channelCategories'),
-  roleId: v.id('roles'),
+  roleId: v.optional(v.id('roles')),
+  userId: v.optional(v.id('users')),
   canView: v.boolean(),
 })
   .index('by_category', ['categoryId'])
   .index('by_role', ['roleId'])
+  .index('by_user', ['userId'])
   .index('by_category_role', ['categoryId', 'roleId']);
 
 const userLastViewedChannels = defineTable({

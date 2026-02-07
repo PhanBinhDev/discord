@@ -40,14 +40,16 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
   );
 
   const sortedItems = useMemo((): RenderItem[] => {
-    if (!categories || !channelsData?.channels) return [];
+    if (!categories) return [];
 
     const items: RenderItem[] = [];
+
+    const channels = channelsData?.channels || [];
 
     const channelsByCategory = new Map<string, ChannelWithCategory[]>();
     const uncategorizedChannels: ChannelWithCategory[] = [];
 
-    channelsData.channels.forEach(channel => {
+    channels.forEach(channel => {
       if (channel.category) {
         const categoryId = channel.category._id;
         if (!channelsByCategory.has(categoryId)) {
@@ -140,6 +142,12 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
     <div className="flex flex-col gap-1 py-2 flex-1 overflow-y-auto max-h-[calc(100vh-265px)]">
       {sortedItems.map(item => {
         if (item.type === DragType.CATEGORY) {
+          if (!canManageChannels) {
+            if (!item.category.canView && item.channels.length === 0) {
+              return null;
+            }
+          }
+
           const isCollapsed = collapsedCategories?.has(item.category._id);
 
           return (
