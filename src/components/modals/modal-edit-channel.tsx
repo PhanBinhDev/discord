@@ -787,6 +787,9 @@ const ModalEditChannel = () => {
                           </Button>
                         </div>
                       ),
+                      emptyText: {
+                        value: 'servers.channel.edit.invite.noInvites',
+                      }
                     }}
                   />
                 </TabsContent>

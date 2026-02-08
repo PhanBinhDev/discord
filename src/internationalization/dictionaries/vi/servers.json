@@ -244,7 +244,8 @@
             "createInvite": "Tạo lời mời",
             "success": "Tạo lời mời thành công!",
             "error": "Tạo lời mời thất bại. Vui lòng thử lại."
-          }
+          },
+          "noInvites": "Không có lời mời nào được tạo cho kênh này."
         },
         "integrate": {
           "title": "Tích hợp",

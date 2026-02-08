@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { type Table } from '@tanstack/react-table';
 import { Settings2 } from 'lucide-react';
 
+import TranslateText from '@/components/shared/translate/translate-text';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,7 +14,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import TranslateText from '@/components/shared/translate/translate-text';
+import { DictKey } from '@/internationalization/get-dictionaries';
 
 export function DataTableViewOptions<TData>({
   table,
@@ -23,12 +25,11 @@ export function DataTableViewOptions<TData>({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
-          size="sm"
-          className="ml-auto hidden h-8 lg:flex"
+          variant="ghost"
+          size="icon-sm"
+          className="hover:bg-muted-foreground/10"
         >
           <Settings2 />
-          <TranslateText value="common.table.view" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[150px]">
@@ -43,6 +44,9 @@ export function DataTableViewOptions<TData>({
               typeof column.accessorFn !== 'undefined' && column.getCanHide(),
           )
           .map(column => {
+            const translationKey = (column.columnDef.meta as any)
+              ?.translationKey as DictKey | undefined;
+
             return (
               <DropdownMenuCheckboxItem
                 key={column.id}
@@ -50,7 +54,14 @@ export function DataTableViewOptions<TData>({
                 checked={column.getIsVisible()}
                 onCheckedChange={value => column.toggleVisibility(!!value)}
               >
-                {column.id}
+                {translationKey ? (
+                  <TranslateText value={translationKey} />
+                ) : (
+                  column.id
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase())
+                    .trim()
+                )}
               </DropdownMenuCheckboxItem>
             );
           })}

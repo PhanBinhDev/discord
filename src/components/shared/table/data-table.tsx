@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import TranslateText from '@/components/shared/translate/translate-text';
@@ -11,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { DEFAULT_LIMIT } from '@/constants/app';
-import { PaginationMode } from '@/types';
+import { PaginationMode, TranslateTextKey } from '@/types';
 import {
   flexRender,
   getCoreRowModel,
@@ -36,6 +37,7 @@ interface DataTableOptions<TData> {
   paginationButton?: React.ReactNode;
   toolbar?: React.ComponentType<{ table: TableType<TData> }> | false;
   loading?: boolean;
+  emptyText?: TranslateTextKey;
 }
 
 interface DataTableProps<TData, TValue> {
@@ -51,6 +53,9 @@ export function DataTable<TData, TValue>({
     paginations: true,
     paginationType: 'offset',
     loading: false,
+    emptyText: {
+      value: 'common.noResultsFound' as const,
+    },
   },
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -96,22 +101,32 @@ export function DataTable<TData, TValue>({
       <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
-                  return (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
+            {table.getHeaderGroups().map(headerGroup => {
+              return (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map(header => {
+                    const headerClassName = (
+                      header.column.columnDef.meta as any
+                    )?.headerClassName as string | undefined;
+
+                    return (
+                      <TableHead
+                        key={header.id}
+                        colSpan={header.colSpan}
+                        className={headerClassName}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
           </TableHeader>
           <TableBody>
             {options.loading ? (
@@ -152,7 +167,9 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  <TranslateText value="common.noResultsFound" />
+                  {options.emptyText?.value && (
+                    <TranslateText {...options.emptyText} />
+                  )}
                 </TableCell>
               </TableRow>
             )}

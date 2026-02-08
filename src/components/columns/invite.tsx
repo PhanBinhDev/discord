@@ -4,6 +4,7 @@ import { Doc } from '@/convex/_generated/dataModel';
 import { type ColumnDef } from '@tanstack/react-table';
 
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header';
+import { DataTableViewOptions } from '@/components/shared/table/data-table-view-options';
 import TranslateText from '@/components/shared/translate/translate-text';
 import UserAvatar from '@/components/shared/user-avatar';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,9 @@ import moment from 'moment';
 export const columns: ColumnDef<Doc<'serverInvites'>>[] = [
   {
     accessorKey: 'inviter',
+    meta: {
+      translationKey: 'servers.channel.edit.invite.columns.inviter',
+    },
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
@@ -54,6 +58,9 @@ export const columns: ColumnDef<Doc<'serverInvites'>>[] = [
   },
   {
     accessorKey: 'code',
+    meta: {
+      translationKey: 'servers.channel.edit.invite.columns.code',
+    },
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
@@ -87,6 +94,9 @@ export const columns: ColumnDef<Doc<'serverInvites'>>[] = [
   },
   {
     accessorKey: 'uses',
+    meta: {
+      translationKey: 'servers.channel.edit.invite.columns.uses',
+    },
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
@@ -108,6 +118,9 @@ export const columns: ColumnDef<Doc<'serverInvites'>>[] = [
   },
   {
     accessorKey: 'expiresAt',
+    meta: {
+      translationKey: 'servers.channel.edit.invite.columns.expires',
+    },
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
@@ -150,6 +163,17 @@ export const columns: ColumnDef<Doc<'serverInvites'>>[] = [
   },
   {
     id: 'actions',
+    enableHiding: false,
+    meta: {
+      headerClassName: 'pr-1',
+    },
+    header: ({ table }) => {
+      return (
+        <div className="flex items-center justify-end">
+          <DataTableViewOptions table={table} />
+        </div>
+      );
+    },
     cell: ({ row }) => {
       return (
         <div className="flex items-center justify-end gap-2">
