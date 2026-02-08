@@ -2,18 +2,22 @@
 
 import { type Table } from '@tanstack/react-table';
 
+import TranslateText from '@/components/shared/translate/translate-text';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { IconX } from '@tabler/icons-react';
-import TranslateText from '@/components/shared/translate/translate-text';
 import { DataTableViewOptions } from './data-table-view-options';
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+  filterKey?: string;
+  filterPlaceholder?: string;
 }
 
 export function DataTableToolbar<TData>({
   table,
+  filterKey = 'title',
+  filterPlaceholder = 'Filter...',
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -21,10 +25,10 @@ export function DataTableToolbar<TData>({
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center gap-2">
         <Input
-          placeholder="Filter tasks..."
-          value={(table.getColumn('title')?.getFilterValue() as string) ?? ''}
+          placeholder={filterPlaceholder}
+          value={(table.getColumn(filterKey)?.getFilterValue() as string) ?? ''}
           onChange={event =>
-            table.getColumn('title')?.setFilterValue(event.target.value)
+            table.getColumn(filterKey)?.setFilterValue(event.target.value)
           }
           className="h-8 w-[150px] lg:w-[250px]"
         />
@@ -53,10 +57,7 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <div className="flex items-center gap-2">
-        <DataTableViewOptions table={table} />
-        <Button size="sm">Add Task</Button>
-      </div>
+      <DataTableViewOptions table={table} />
     </div>
   );
 }

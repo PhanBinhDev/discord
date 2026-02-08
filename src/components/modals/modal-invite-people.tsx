@@ -46,11 +46,7 @@ const ModalInvitePeople = () => {
   );
 
   const handleInvite = (user: ApiReturn<typeof api.users.searchUsers>[0]) => {
-    console.log('Server', server);
-
     if (!server) return;
-
-    console.log('Inviting user', user);
 
     inviteUserToServer({
       serverId: server?._id,

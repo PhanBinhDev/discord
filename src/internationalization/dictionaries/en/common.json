@@ -40,6 +40,7 @@
     "refreshError": "Error refreshing data",
     "somethingWrong": "Something went wrong. Please try again.",
     "somethingWentWrong": "Oops! Something went wrong",
+    "unknown": "Unknown",
     "new": "New",
     "sort": {
       "newest": "Newest",

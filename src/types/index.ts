@@ -37,7 +37,8 @@ export type ModalType =
   | 'ModalCreateEvent'
   | 'ModalEditCategory'
   | 'ModalDeleteCategory'
-  | 'ModalAddMemberRoles';
+  | 'ModalAddMemberRoles'
+  | 'ModalCreateInviteChannel';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
 

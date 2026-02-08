@@ -4,6 +4,7 @@ import ModalAddMemberRoles from '@/components/modals/modal-add-members-roles';
 import ModalCreateCategory from '@/components/modals/modal-create-category';
 import ModalCreateChannel from '@/components/modals/modal-create-channel';
 import ModalCreateDirectMessage from '@/components/modals/modal-create-direct-message';
+import ModalCreateInviteChannel from '@/components/modals/modal-create-invite-channel';
 import { ModalCreateServer } from '@/components/modals/modal-create-server';
 import ModalEditCategory from '@/components/modals/modal-edit-category';
 import ModalEditChannel from '@/components/modals/modal-edit-channel';
@@ -37,6 +38,7 @@ const ModalsProvider = () => {
       {isModalOpen('ModalAddMemberRoles') && <ModalAddMemberRoles />}
       {isModalOpen('ModalEditChannel') && <ModalEditChannel />}
       {isModalOpen('ModalDeleteChannel') && <ModalRemoveChannel />}
+      {isModalOpen('ModalCreateInviteChannel') && <ModalCreateInviteChannel />}
     </>
   );
 };

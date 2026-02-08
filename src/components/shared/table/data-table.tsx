@@ -1,5 +1,7 @@
 'use client';
 
+import TranslateText from '@/components/shared/translate/translate-text';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -18,6 +20,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  Table as TableType,
   useReactTable,
   type ColumnDef,
   type ColumnFiltersState,
@@ -26,18 +29,19 @@ import {
 } from '@tanstack/react-table';
 import * as React from 'react';
 import { DataTablePagination } from './data-table-pagination';
-import { DataTableToolbar } from './data-table-toolbar';
 
-interface DataTableOptions {
+interface DataTableOptions<TData> {
   paginations?: boolean;
   paginationType?: PaginationMode;
   paginationButton?: React.ReactNode;
+  toolbar?: React.ComponentType<{ table: TableType<TData> }> | false;
+  loading?: boolean;
 }
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  options?: DataTableOptions;
+  options?: DataTableOptions<TData>;
 }
 
 export function DataTable<TData, TValue>({
@@ -46,6 +50,7 @@ export function DataTable<TData, TValue>({
   options = {
     paginations: true,
     paginationType: 'offset',
+    loading: false,
   },
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -83,9 +88,11 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
+  const CustomToolbar = options.toolbar;
+
   return (
     <div className="flex flex-col gap-4">
-      <DataTableToolbar table={table} />
+      {CustomToolbar && <CustomToolbar table={table} />}
       <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
@@ -107,7 +114,23 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {options.loading ? (
+              Array.from({ length: 5 }).map((_, rowIndex) => (
+                <TableRow key={`skeleton-${rowIndex}`}>
+                  {columns.map((_, cellIndex) => {
+                    const widths = ['w-full', 'w-3/4', 'w-2/3', 'w-1/2'];
+                    const width = widths[cellIndex % widths.length];
+                    return (
+                      <TableCell key={`skeleton-cell-${rowIndex}-${cellIndex}`}>
+                        <Skeleton
+                          className={`h-5 ${width} rounded bg-background/20`}
+                        />
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
                 <TableRow
                   key={row.id}
@@ -129,7 +152,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  <TranslateText value="common.noResultsFound" />
                 </TableCell>
               </TableRow>
             )}

@@ -103,12 +103,20 @@
     },
     "invite": {
       "title": "Invite people to your server",
-      "description": "Recipients will arrive at #{{channel}}",
-      "copyLink": "Copy invite link",
+      "description": "Recipients will arrive at <strong class='font-semibold'>#{{channel}}</strong>",
+      "copyLink": "Copy",
+      "modal": {
+        "title": "Invite friends to {{serverName}}'s server",
+        "recipients": "Recipients will land in #{{channel}}",
+        "shareLink": "Share this link with others to grant access to your server!",
+        "expiresIn": "Your invite link expires in 7 days.",
+        "neverExpire": "Set this link to never expire"
+      },
       "placeholder": "Enter username or email",
       "noUsersFound": "No users found",
       "inviteSuccess": "Invitation sent successfully!",
-      "inviteFailed": "Failed to send invitation. Please try again."
+      "inviteFailed": "Failed to send invitation. Please try again.",
+      "copied": "Invite link copied!"
     },
     "channel": {
       "create": "Create Channel",
@@ -199,11 +207,44 @@
           "addSuccess": "Permission added successfully!",
           "addError": "Failed to add permission. Please try again.",
           "noRoles": "No roles",
-          "noMembers": "No members."
+          "noMembers": "No members.",
+          "syncSuccess": "Channel permissions synced with category successfully!",
+          "syncError": "Failed to sync channel permissions. Please try again.",
+          "syncedWith": "Permissions synced with category:",
+          "notSyncedWith": "Permissions not synced with category:",
+          "differentSettings": "This channel has different privacy settings than its category",
+          "syncNow": "Sync Now"
         },
         "invite": {
           "title": "Invite People",
-          "description": "Below is a list of active invitations. You can create new ones or revoke existing invitations."
+          "createNew": "Create New",
+          "description": "Below is a list of active invitations. You can {{action}} or revoke existing invitations.",
+          "columns": {
+            "inviter": "Inviter",
+            "code": "Invite Code",
+            "uses": "Uses",
+            "expires": "Expires",
+            "neverExpires": "Never",
+            "expired": "Expired"
+          },
+          "create": {
+            "title": "Create Invite",
+            "description": "Generate a new invite link to share with others.",
+            "inviteLink": "Invite Link",
+            "expiration": "Expiration",
+            "never": "Never",
+            "30_minutes": "30 Minutes",
+            "1_hour": "1 Hour",
+            "6_hours": "6 Hours",
+            "12_hours": "12 Hours",
+            "1_day": "1 Day",
+            "7_days": "7 Days",
+            "maxUses": "Max Uses",
+            "unlimited": "Unlimited",
+            "createInvite": "Create Invite",
+            "success": "Invite created successfully!",
+            "error": "Failed to create invite. Please try again."
+          }
         },
         "integrate": {
           "title": "Integrations",

@@ -1,19 +1,11 @@
-import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { getCurrent, getCurrentUserOrThrow } from './users';
 
 export const sendFriendRequest = mutation({
   args: { targetUserId: v.id('users') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     const targetUser = await ctx.db.get(args.targetUserId);
     if (!targetUser) throw new Error('Target user not found');
@@ -22,7 +14,6 @@ export const sendFriendRequest = mutation({
       throw new Error('Cannot send friend request to yourself');
     }
 
-    // Check if target allows friend requests
     const targetSettings = await ctx.db
       .query('userSettings')
       .withIndex('by_user', q => q.eq('userId', args.targetUserId))
@@ -32,7 +23,6 @@ export const sendFriendRequest = mutation({
       throw new Error('This user is not accepting friend requests');
     }
 
-    // Check if already friends or request exists
     const existingRelation = await ctx.db
       .query('friends')
       .withIndex('by_users', q =>
@@ -60,7 +50,6 @@ export const sendFriendRequest = mutation({
       }
     }
 
-    // Create friend request
     const friendRequestId = await ctx.db.insert('friends', {
       userId1: user._id,
       userId2: args.targetUserId,
@@ -72,24 +61,14 @@ export const sendFriendRequest = mutation({
   },
 });
 
-// Accept friend request
 export const acceptFriendRequest = mutation({
   args: { friendRequestId: v.id('friends') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     const friendRequest = await ctx.db.get(args.friendRequestId);
     if (!friendRequest) throw new Error('Friend request not found');
 
-    // Verify user is the receiver
     if (friendRequest.userId2 !== user._id) {
       throw new Error('You can only accept requests sent to you');
     }
@@ -98,7 +77,6 @@ export const acceptFriendRequest = mutation({
       throw new Error('Friend request is not pending');
     }
 
-    // Update to accepted
     await ctx.db.patch(args.friendRequestId, {
       status: 'accepted',
       acceptedAt: Date.now(),
@@ -108,24 +86,14 @@ export const acceptFriendRequest = mutation({
   },
 });
 
-// Reject friend request
 export const rejectFriendRequest = mutation({
   args: { friendRequestId: v.id('friends') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     const friendRequest = await ctx.db.get(args.friendRequestId);
     if (!friendRequest) throw new Error('Friend request not found');
 
-    // Verify user is the receiver
     if (friendRequest.userId2 !== user._id) {
       throw new Error('You can only reject requests sent to you');
     }
@@ -134,7 +102,6 @@ export const rejectFriendRequest = mutation({
       throw new Error('Friend request is not pending');
     }
 
-    // Update to rejected
     await ctx.db.patch(args.friendRequestId, {
       status: 'rejected',
     });
@@ -143,24 +110,14 @@ export const rejectFriendRequest = mutation({
   },
 });
 
-// Cancel sent friend request
 export const cancelFriendRequest = mutation({
   args: { friendRequestId: v.id('friends') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     const friendRequest = await ctx.db.get(args.friendRequestId);
     if (!friendRequest) throw new Error('Friend request not found');
 
-    // Verify user is the sender
     if (friendRequest.requestedBy !== user._id) {
       throw new Error('You can only cancel requests you sent');
     }
@@ -169,61 +126,39 @@ export const cancelFriendRequest = mutation({
       throw new Error('Friend request is not pending');
     }
 
-    // Delete the request
     await ctx.db.delete(args.friendRequestId);
 
     return { success: true };
   },
 });
 
-// Remove friend
 export const removeFriend = mutation({
   args: { friendId: v.id('friends') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     const friendship = await ctx.db.get(args.friendId);
     if (!friendship) throw new Error('Friendship not found');
 
-    // Verify user is part of this friendship
     if (friendship.userId1 !== user._id && friendship.userId2 !== user._id) {
       throw new Error('You are not part of this friendship');
     }
 
-    // Delete the friendship
     await ctx.db.delete(args.friendId);
 
     return { success: true };
   },
 });
 
-// Block user
 export const blockUser = mutation({
   args: { targetUserId: v.id('users') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     if (user._id === args.targetUserId) {
       throw new Error('Cannot block yourself');
     }
 
-    // Check if relation exists
     const existingRelation = await ctx.db
       .query('friends')
       .withIndex('by_users', q =>
@@ -239,12 +174,10 @@ export const blockUser = mutation({
       .first();
 
     if (existingRelation) {
-      // Update existing to blocked
       await ctx.db.patch(existingRelation._id, {
         status: 'blocked',
       });
     } else if (reverseRelation) {
-      // Delete reverse relation and create blocked relation
       await ctx.db.delete(reverseRelation._id);
       await ctx.db.insert('friends', {
         userId1: user._id,
@@ -253,7 +186,6 @@ export const blockUser = mutation({
         requestedBy: user._id,
       });
     } else {
-      // Create new blocked relation
       await ctx.db.insert('friends', {
         userId1: user._id,
         userId2: args.targetUserId,
@@ -266,19 +198,10 @@ export const blockUser = mutation({
   },
 });
 
-// Unblock user
 export const unblockUser = mutation({
   args: { targetUserId: v.id('users') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
-    if (!user) throw new Error('User not found');
+    const user = await getCurrentUserOrThrow(ctx);
 
     const blockedRelation = await ctx.db
       .query('friends')
@@ -291,7 +214,6 @@ export const unblockUser = mutation({
       throw new Error('User is not blocked');
     }
 
-    // Delete the block
     await ctx.db.delete(blockedRelation._id);
 
     return { success: true };
@@ -301,13 +223,7 @@ export const unblockUser = mutation({
 export const getFriends = query({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
+    const user = await getCurrent(ctx);
 
     if (!user) return [];
 
@@ -359,14 +275,7 @@ export const getFriends = query({
 export const getPendingRequests = query({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
-
+    const user = await getCurrent(ctx);
     if (!user) return [];
 
     const requests = await ctx.db
@@ -403,24 +312,16 @@ export const getPendingRequests = query({
 export const getSentRequests = query({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
+    const user = await getCurrent(ctx);
 
     if (!user) return [];
 
-    // Get requests sent by user
     const requests = await ctx.db
       .query('friends')
       .withIndex('by_user1', q => q.eq('userId1', user._id))
       .filter(q => q.eq(q.field('status'), 'pending'))
       .collect();
 
-    // Get receiver details
     const requestsWithUsers = await Promise.all(
       requests.map(async request => {
         const receiver = await ctx.db.get(request.userId2);
@@ -449,13 +350,7 @@ export const getSentRequests = query({
 export const getBlockedUsers = query({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
+    const user = await getCurrent(ctx);
 
     if (!user) return [];
 
@@ -492,17 +387,10 @@ export const getBlockedUsers = query({
 export const getFriendshipStatus = query({
   args: { targetUserId: v.id('users') },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
+    const user = await getCurrent(ctx);
 
     if (!user) return null;
 
-    // Check both directions
     const relation1 = await ctx.db
       .query('friends')
       .withIndex('by_users', q =>
@@ -537,13 +425,7 @@ export const getFriendshipStatus = query({
 export const hasFriends = query({
   args: {},
   handler: async ctx => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return false;
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', q => q.eq('clerkId', userId))
-      .first();
+    const user = await getCurrent(ctx);
 
     if (!user) return false;
 

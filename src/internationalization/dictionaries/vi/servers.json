@@ -103,12 +103,20 @@
     },
     "invite": {
       "title": "Mời mọi người đến máy chủ của bạn",
-      "description": "Người nhận sẽ đến #{{channel}}",
-      "copyLink": "Sao chép liên kết mời",
+      "description": "Người nhận sẽ đến <strong class='font-semibold'>#{{channel}}</strong>",
+      "copyLink": "Sao chép",
+      "modal": {
+        "title": "Mời bạn bè đến máy chủ {{serverName}}",
+        "recipients": "Người nhận sẽ đến #{{channel}}",
+        "shareLink": "Chia sẻ liên kết này với người khác để cấp quyền truy cập vào máy chủ của bạn!",
+        "expiresIn": "Liên kết mời của bạn hết hạn sau 7 ngày.",
+        "neverExpire": "Đặt liên kết này không bao giờ hết hạn"
+      },
       "placeholder": "Nhập tên người dùng hoặc email",
       "noUsersFound": "Không tìm thấy người dùng",
       "inviteSuccess": "Lời mời đã được gửi thành công!",
-      "inviteFailed": "Gửi lời mời thất bại. Vui lòng thử lại."
+      "inviteFailed": "Gửi lời mời thất bại. Vui lòng thử lại.",
+      "copied": "Đã sao chép liên kết mời!"
     },
     "channel": {
       "create": "Tạo kênh",
@@ -199,11 +207,44 @@
           "addSuccess": "Thêm quyền thành công!",
           "addError": "Thêm quyền thất bại. Vui lòng thử lại.",
           "noRoles": "Không có vai trò",
-          "noMembers": "Không có thành viên."
+          "noMembers": "Không có thành viên.",
+          "syncSuccess": "Đã đồng bộ quyền kênh với danh mục thành công!",
+          "syncError": "Đồng bộ quyền kênh thất bại. Vui lòng thử lại.",
+          "syncedWith": "Quyền đã đồng bộ với danh mục:",
+          "notSyncedWith": "Quyền chưa đồng bộ với danh mục:",
+          "differentSettings": "Kênh này có cài đặt riêng tư khác với danh mục",
+          "syncNow": "Đồng bộ ngay"
         },
         "invite": {
           "title": "Lời mời",
-          "description": "Dưới đây là danh sách các lời mời còn hoạt động. Bạn có thể tạo mới hoặc thu hồi các lời mời hiện có."
+          "createNew": "Tạo mới",
+          "description": "Dưới đây là danh sách các lời mời còn hoạt động. Bạn có thể {{action}} hoặc thu hồi các lời mời hiện có.",
+          "columns": {
+            "inviter": "Người mời",
+            "code": "Mã mời",
+            "uses": "Lượt dùng",
+            "expires": "Hết hạn",
+            "neverExpires": "Không bao giờ",
+            "expired": "Đã hết hạn"
+          },
+          "create": {
+            "title": "Tạo lời mời mới",
+            "description": "Tạo một liên kết lời mời mới để chia sẻ với người khác.",
+            "inviteLink": "Liên kết lời mời",
+            "expiration": "Thời hạn",
+            "never": "Không bao giờ",
+            "30_minutes": "30 Phút",
+            "1_hour": "1 Giờ",
+            "6_hours": "6 Giờ",
+            "12_hours": "12 Giờ",
+            "1_day": "1 Ngày",
+            "7_days": "7 Ngày",
+            "maxUses": "Số lần sử dụng tối đa",
+            "unlimited": "Không giới hạn",
+            "createInvite": "Tạo lời mời",
+            "success": "Tạo lời mời thành công!",
+            "error": "Tạo lời mời thất bại. Vui lòng thử lại."
+          }
         },
         "integrate": {
           "title": "Tích hợp",

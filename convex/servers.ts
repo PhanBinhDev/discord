@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GenericQueryCtx } from 'convex/server';
+import { GenericQueryCtx, paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 import { DataModel, Doc, Id } from './_generated/dataModel';
 import { query } from './_generated/server';
@@ -1619,6 +1619,95 @@ export const getCategoryPermissions = query({
   },
 });
 
+export const getChannelPermissions = query({
+  args: {
+    channelId: v.id('channels'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) throw new Error('Channel not found');
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    const permissions = await ctx.db
+      .query('channelPermissions')
+      .withIndex('by_channel', q => q.eq('channelId', args.channelId))
+      .collect();
+
+    const rolesWithPermissions = await Promise.all(
+      permissions
+        .filter(perm => perm.roleId)
+        .map(async perm => {
+          const role = await ctx.db.get(perm.roleId!);
+          return {
+            permissionId: perm._id,
+            role,
+            canView: perm.canView,
+            canSend: perm.canSend,
+            type: 'role' as const,
+          };
+        }),
+    );
+
+    const usersWithPermissions = await Promise.all(
+      permissions
+        .filter(perm => perm.userId)
+        .map(async perm => {
+          const permUser = await ctx.db.get(perm.userId!);
+          return {
+            permissionId: perm._id,
+            user: permUser,
+            canView: perm.canView,
+            canSend: perm.canSend,
+            type: 'user' as const,
+          };
+        }),
+    );
+
+    const server = await ctx.db.get(channel.serverId);
+    const filteredUsers = usersWithPermissions.filter(u => u.user !== null);
+
+    if (server) {
+      const ownerInList = filteredUsers.some(
+        u => u.user && u.user._id === server.ownerId,
+      );
+
+      if (!ownerInList) {
+        const owner = await ctx.db.get(server.ownerId);
+        if (owner) {
+          filteredUsers.unshift({
+            permissionId: 'owner' as any,
+            user: owner,
+            canView: true,
+            canSend: true,
+            type: 'user' as const,
+          });
+        }
+      }
+    }
+
+    return {
+      roles: rolesWithPermissions.filter(
+        r => r.role !== null && !r.role.isDefault,
+      ),
+      users: filteredUsers,
+    };
+  },
+});
+
 export const addCategoryPermission = mutation({
   args: {
     categoryId: v.id('channelCategories'),
@@ -1726,6 +1815,109 @@ export const addCategoryUserPermission = mutation({
   },
 });
 
+export const addChannelPermission = mutation({
+  args: {
+    channelId: v.id('channels'),
+    roleId: v.id('roles'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) throw new Error('Channel not found');
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    const existing = await ctx.db
+      .query('channelPermissions')
+      .withIndex('by_channel', q => q.eq('channelId', args.channelId))
+      .filter(q => q.eq(q.field('roleId'), args.roleId))
+      .first();
+
+    if (existing) {
+      throw new Error('Permission already exists');
+    }
+
+    const permissionId = await ctx.db.insert('channelPermissions', {
+      channelId: args.channelId,
+      roleId: args.roleId,
+      userId: undefined,
+      canView: true,
+      canSend: true,
+    });
+
+    return { success: true, permissionId };
+  },
+});
+
+export const addChannelUserPermission = mutation({
+  args: {
+    channelId: v.id('channels'),
+    userId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) throw new Error('Channel not found');
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    const targetMembership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', args.userId),
+      )
+      .first();
+
+    if (!targetMembership) {
+      throw new Error('User is not a member of this server');
+    }
+
+    const existing = await ctx.db
+      .query('channelPermissions')
+      .withIndex('by_channel', q => q.eq('channelId', args.channelId))
+      .filter(q => q.eq(q.field('userId'), args.userId))
+      .first();
+
+    if (existing) {
+      throw new Error('Permission already exists');
+    }
+
+    const permissionId = await ctx.db.insert('channelPermissions', {
+      channelId: args.channelId,
+      roleId: undefined,
+      userId: args.userId,
+      canView: true,
+      canSend: true,
+    });
+
+    return { success: true, permissionId };
+  },
+});
+
 export const removeCategoryPermissionById = mutation({
   args: {
     permissionId: v.id('categoryPermissions'),
@@ -1742,6 +1934,38 @@ export const removeCategoryPermissionById = mutation({
       .query('serverMembers')
       .withIndex('by_server_user', q =>
         q.eq('serverId', category.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('Insufficient permissions');
+    }
+
+    await ctx.db.delete(args.permissionId);
+
+    return { success: true };
+  },
+});
+
+export const removeChannelPermissionById = mutation({
+  args: {
+    permissionId: v.id('channelPermissions'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const permission = await ctx.db.get(args.permissionId);
+    if (!permission) throw new Error('Permission not found');
+
+    const channel = await ctx.db.get(permission.channelId);
+    if (!channel) throw new Error('Channel not found');
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
       )
       .first();
 
@@ -2708,6 +2932,60 @@ export const searchUsersAndRoles = query({
         color: role.color,
         type: 'role' as const,
       })),
+    };
+  },
+});
+
+export const getChannelInvites = query({
+  args: {
+    channelId: v.id('channels'),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const channel = await ctx.db.get(args.channelId);
+
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) {
+      throw new Error('Not a member of this server');
+    }
+
+    const invitesResult = await ctx.db
+      .query('serverInvites')
+      .withIndex('by_server', q => q.eq('serverId', channel.serverId))
+      .filter(q => q.eq(q.field('channelId'), args.channelId))
+      .order('desc')
+      .paginate(args.paginationOpts);
+
+    const invitesWithInviter = await Promise.all(
+      invitesResult.page.map(async invite => {
+        const inviter = await ctx.db.get(invite.inviterId);
+        return {
+          ...invite,
+          inviter: inviter
+            ? {
+                displayName: inviter.displayName,
+                username: inviter.username,
+                avatarUrl: inviter.avatarUrl,
+              }
+            : null,
+        };
+      }),
+    );
+
+    return {
+      ...invitesResult,
+      page: invitesWithInviter,
     };
   },
 });
