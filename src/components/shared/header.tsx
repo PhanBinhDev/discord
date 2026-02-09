@@ -49,7 +49,7 @@ export default function Header() {
         <div className="relative">
           <Image
             src="/logo.png"
-            alt="Facetime"
+            alt="Discord"
             width={32}
             height={32}
             className="rounded-lg"

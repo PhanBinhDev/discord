@@ -28,6 +28,9 @@ const DashboardPage = () => {
           </Button>
         </Link>
       </div>
+      <div className="flex-1">
+        <></>
+      </div>
     </div>
   );
 };
