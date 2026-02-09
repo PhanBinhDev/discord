@@ -225,7 +225,19 @@
             "uses": "Uses",
             "expires": "Expires",
             "neverExpires": "Never",
-            "expired": "Expired"
+            "expired": "Expired",
+            "copied": "Invite link copied!",
+            "status": "Status",
+            "statusValue": {
+              "active": "Active",
+              "revoked": "Revoked",
+              "expired": "Expired"
+            },
+            "temporary": "Temporary",
+            "temporaryValues": {
+              "yes": "Yes",
+              "no": "No"
+            }
           },
           "create": {
             "title": "Create Invite",
@@ -245,11 +257,51 @@
             "success": "Invite created successfully!",
             "error": "Failed to create invite. Please try again."
           },
-          "noInvites": "No invites have been created for this channel."
+          "noInvites": "No invites have been created for this channel.",
+          "revokeTitle": "Revoke Invite",
+          "revokeDescription": "Are you sure you want to revoke this invite? People will no longer be able to use it to join the channel.",
+          "revokeConfirm": "Revoke Invite",
+          "revokeSuccess": "Invite revoked successfully!",
+          "revokeError": "Failed to revoke invite. Please try again.",
+          "activateTitle": "Activate Invite",
+          "activateDescription": "Are you sure you want to activate this invite? People will be able to use it again to join the channel.",
+          "activateInvite": "Activate Invite",
+          "activateSuccess": "Invite activated successfully!",
+          "activateError": "Failed to activate invite. Please try again.",
+          "deleteTitle": "Delete Invite",
+          "deleteDescription": "Are you sure you want to delete this invite? This action cannot be undone.",
+          "deleteInvite": "Delete Invite",
+          "deleteSuccess": "Invite deleted successfully!",
+          "deleteError": "Failed to delete invite. Please try again."
         },
         "integrate": {
           "title": "Integrations",
-          "description": "Manage integrations for this channel."
+          "description": "Manage integrations for this channel.",
+          "webhooks": "Webhooks",
+          "bots": "Bots",
+          "webhooksDescription": "Webhooks allow external services to send messages into this channel.",
+          "botsDescription": "Bots can perform automated tasks and interact with users in this channel.",
+          "createWebhook": "New Webhook",
+          "createBot": "Create Bot",
+          "postsTo": "Posts to",
+          "createdOn": "Created on",
+          "by": "by",
+          "minSize": "Min size",
+          "webhookName": "Name",
+          "channel": "Channel",
+          "copyWebhookUrl": "Copy Webhook URL",
+          "deleteWebhook": "Delete Webhook",
+          "webhookUrlCopied": "Webhook URL copied!",
+          "createWebhookSuccess": "Webhook created successfully!",
+          "createWebhookError": "Failed to create webhook. Please try again.",
+          "updateWebhookSuccess": "Webhook updated successfully!",
+          "updateWebhookError": "Failed to update webhook. Please try again.",
+          "deleteWebhookSuccess": "Webhook deleted successfully!",
+          "deleteWebhookError": "Failed to delete webhook. Please try again.",
+          "noWebhooks": "No webhooks have been created for this channel.",
+          "noBots": "No bots have been added to this channel.",
+          "createBotSuccess": "Bot created successfully!",
+          "createBotError": "Failed to create bot. Please try again."
         },
         "delete": {
           "title": "Delete Channel",

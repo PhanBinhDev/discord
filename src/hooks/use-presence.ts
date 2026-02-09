@@ -27,8 +27,6 @@ export function usePresence() {
 
       if (timeSinceActivity < 2 * 60 * 1000) {
         heartbeat().catch(error => {
-          console.log('Failed to send heartbeat', error);
-
           if (
             error?.data?.status === 401 ||
             error?.message?.includes('not authenticated')
@@ -41,10 +39,8 @@ export function usePresence() {
 
     sendHeartbeat();
 
-    // Setup interval
     intervalRef.current = setInterval(sendHeartbeat, 30 * 1000);
 
-    // Cleanup
     return () => {
       events.forEach(event => {
         window.removeEventListener(event, updateActivity);
@@ -53,7 +49,7 @@ export function usePresence() {
         clearInterval(intervalRef.current);
       }
     };
-  }, [heartbeat]);
+  }, [heartbeat, signOut]);
 }
 
 /**

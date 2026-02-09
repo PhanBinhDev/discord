@@ -38,9 +38,21 @@ export type ModalType =
   | 'ModalEditCategory'
   | 'ModalDeleteCategory'
   | 'ModalAddMemberRoles'
-  | 'ModalCreateInviteChannel';
+  | 'ModalCreateInviteChannel'
+  | 'ModalActionInvite';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
+export type ActionInvite = 'revoke' | 'delete' | 'activate';
+export type ActionInviteConfig = {
+  title: DictKey;
+  description: DictKey;
+  variant: 'default' | 'destructive';
+};
+
+export type IntegrationStep = {
+  id: 'webhooks' | 'bots';
+  step: number;
+};
 
 export type StatusMapping = {
   label: DictKey;

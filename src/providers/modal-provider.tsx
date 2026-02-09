@@ -1,5 +1,6 @@
 'use client';
 
+import ModalActionInvite from '@/components/modals/modal-action-invite';
 import ModalAddMemberRoles from '@/components/modals/modal-add-members-roles';
 import ModalCreateCategory from '@/components/modals/modal-create-category';
 import ModalCreateChannel from '@/components/modals/modal-create-channel';
@@ -39,6 +40,7 @@ const ModalsProvider = () => {
       {isModalOpen('ModalEditChannel') && <ModalEditChannel />}
       {isModalOpen('ModalDeleteChannel') && <ModalRemoveChannel />}
       {isModalOpen('ModalCreateInviteChannel') && <ModalCreateInviteChannel />}
+      {isModalOpen('ModalActionInvite') && <ModalActionInvite />}
     </>
   );
 };

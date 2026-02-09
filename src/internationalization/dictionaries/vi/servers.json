@@ -225,7 +225,19 @@
             "uses": "Lượt dùng",
             "expires": "Hết hạn",
             "neverExpires": "Không bao giờ",
-            "expired": "Đã hết hạn"
+            "expired": "Đã hết hạn",
+            "copied": "Đã sao chép liên kết mời!",
+            "status": "Trạng thái",
+            "statusValue": {
+              "active": "Hoạt động",
+              "revoked": "Thu hồi",
+              "expired": "Hết hạn"
+            },
+            "temporary": "Tạm thời",
+            "temporaryValues": {
+              "yes": "Có",
+              "no": "Không"
+            }
           },
           "create": {
             "title": "Tạo lời mời mới",
@@ -245,11 +257,51 @@
             "success": "Tạo lời mời thành công!",
             "error": "Tạo lời mời thất bại. Vui lòng thử lại."
           },
-          "noInvites": "Không có lời mời nào được tạo cho kênh này."
+          "noInvites": "Không có lời mời nào được tạo cho kênh này.",
+          "revokeTitle": "Thu hồi lời mời",
+          "revokeDescription": "Bạn có chắc chắn muốn thu hồi lời mời này không? Mọi người sẽ không thể sử dụng nó để tham gia kênh nữa.",
+          "revokeConfirm": "Thu hồi lời mời",
+          "revokeSuccess": "Thu hồi lời mời thành công!",
+          "revokeError": "Thu hồi lời mời thất bại. Vui lòng thử lại.",
+          "activateTitle": "Kích hoạt lại lời mời",
+          "activateDescription": "Bạn có chắc chắn muốn kích hoạt lại lời mời này không? Mọi người sẽ có thể sử dụng nó để tham gia kênh.",
+          "activateInvite": "Kích hoạt lại lời mời",
+          "activateSuccess": "Kích hoạt lại lời mời thành công!",
+          "activateError": "Kích hoạt lại lời mời thất bại. Vui lòng thử lại.",
+          "deleteTitle": "Xóa lời mời",
+          "deleteDescription": "Bạn có chắc chắn muốn xóa lời mời này không? Hành động này không thể hoàn tác.",
+          "deleteInvite": "Xóa lời mời",
+          "deleteSuccess": "Xóa lời mời thành công!",
+          "deleteError": "Xóa lời mời thất bại. Vui lòng thử lại."
         },
         "integrate": {
           "title": "Tích hợp",
-          "description": "Quản lý các tích hợp cho kênh này."
+          "description": "Quản lý các tích hợp cho kênh này.",
+          "webhooks": "Webhooks",
+          "bots": "Bots",
+          "webhooksDescription": "Webhooks cho phép các dịch vụ bên ngoài gửi tin nhắn vào kênh này.",
+          "botsDescription": "Bots có thể thực hiện các tác vụ tự động và tương tác với người dùng trong kênh này.",
+          "createWebhook": "Tạo Webhook",
+          "createBot": "Tạo Bot",
+          "postsTo": "Đăng vào",
+          "createdOn": "Tạo vào",
+          "by": "bởi",
+          "minSize": "Kích thước tối thiểu",
+          "webhookName": "Tên",
+          "channel": "Kênh",
+          "copyWebhookUrl": "Sao chép URL Webhook",
+          "deleteWebhook": "Xóa Webhook",
+          "webhookUrlCopied": "Đã sao chép URL Webhook!",
+          "createWebhookSuccess": "Tạo Webhook thành công!",
+          "createWebhookError": "Tạo Webhook thất bại. Vui lòng thử lại.",
+          "updateWebhookSuccess": "Cập nhật Webhook thành công!",
+          "updateWebhookError": "Cập nhật Webhook thất bại. Vui lòng thử lại.",
+          "deleteWebhookSuccess": "Xóa Webhook thành công!",
+          "deleteWebhookError": "Xóa Webhook thất bại. Vui lòng thử lại.",
+          "noWebhooks": "Chưa có webhook nào được tạo cho kênh này.",
+          "noBots": "Chưa có bot nào được thêm vào kênh này.",
+          "createBotSuccess": "Tạo Bot thành công!",
+          "createBotError": "Tạo Bot thất bại. Vui lòng thử lại."
         },
         "delete": {
           "title": "Xóa kênh",

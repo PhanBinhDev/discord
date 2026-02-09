@@ -1,6 +1,7 @@
 'use client';
 
-import { columns } from '@/components/columns/invite';
+import IntegrationChannel from '@/app/(dashboard)/servers/[serverId]/_components/integration';
+import { createInviteColumns } from '@/components/columns/invite';
 import SelectEmoji from '@/components/shared/select-emoji';
 import { DataTable } from '@/components/shared/table/data-table';
 import { TopicEditor } from '@/components/shared/topic-editor';
@@ -140,6 +141,17 @@ const ModalEditChannel = () => {
     [results],
   );
 
+  const columns = useMemo(
+    () =>
+      createInviteColumns({
+        onActionInvite: (inviteId, type) => {
+          openModal('ModalActionInvite', { inviteId, type });
+        },
+        dict,
+      }),
+    [openModal, dict],
+  );
+
   const canLoadMore = status === 'CanLoadMore' && !isLoading;
 
   const { mutate: updateChannel, pending } = useApiMutation(
@@ -151,6 +163,10 @@ const ModalEditChannel = () => {
 
   const { mutate: removePermission, pending: removingPermission } =
     useApiMutation(api.servers.removeChannelPermissionById);
+
+  const { mutate: createChannelInvite } = useApiMutation(
+    api.servers.createChannelInvite,
+  );
 
   const isSyncedWithCategory = useMemo(() => {
     if (!channel?.category) return true;
@@ -225,6 +241,18 @@ const ModalEditChannel = () => {
   const triggerShake = () => {
     setShake(true);
     setTimeout(() => setShake(false), 400);
+  };
+
+  const handleCreateInviteLink = () => {
+    createChannelInvite({
+      channelId: channel._id,
+    });
+
+    openModal('ModalCreateInviteChannel', {
+      channel,
+      serverId: channel.serverId,
+      serverName: 'Server name',
+    });
   };
 
   return (
@@ -747,13 +775,7 @@ const ModalEditChannel = () => {
                               <Button
                                 variant="link"
                                 className="px-0.5"
-                                onClick={() => {
-                                  openModal('ModalCreateInviteChannel', {
-                                    channel,
-                                    serverId: channel.serverId,
-                                    serverName: 'Server name',
-                                  });
-                                }}
+                                onClick={handleCreateInviteLink}
                               >
                                 {dict?.servers.channel.edit.invite.createNew}
                               </Button>
@@ -789,10 +811,13 @@ const ModalEditChannel = () => {
                       ),
                       emptyText: {
                         value: 'servers.channel.edit.invite.noInvites',
-                      }
+                      },
                     }}
                   />
                 </TabsContent>
+                <IntegrationChannel
+                  channel={channel!}
+                />
               </form>
             </Form>
           </div>

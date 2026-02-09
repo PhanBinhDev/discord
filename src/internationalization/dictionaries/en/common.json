@@ -92,6 +92,7 @@
     "invite": "Invite",
     "discard": "Discard",
     "saveChanges": "Save Changes",
-    "unsavedChanges": "Be careful - you have unsaved changes!"  
+    "unsavedChanges": "Be careful - you have unsaved changes!",
+    "comingSoon": "Coming soon"
   }
 }

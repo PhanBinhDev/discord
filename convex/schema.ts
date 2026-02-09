@@ -119,7 +119,6 @@ const servers = defineTable({
     filterFields: ['name', 'description'],
   });
 
-// Server Members Table
 const serverMembers = defineTable({
   serverId: v.id('servers'),
   userId: v.id('users'),
@@ -131,19 +130,19 @@ const serverMembers = defineTable({
   isBanned: v.boolean(),
   bannedAt: v.optional(v.number()),
   bannedReason: v.optional(v.string()),
+  isTemporary: v.optional(v.boolean()),
 })
   .index('by_server', ['serverId'])
   .index('by_user', ['userId'])
   .index('by_server_user', ['serverId', 'userId'])
   .index('by_role', ['role']);
 
-// Roles Table
 const roles = defineTable({
   serverId: v.id('servers'),
   name: v.string(),
   color: v.optional(v.string()),
   position: v.number(),
-  permissions: v.number(), // Bitfield
+  permissions: v.number(),
   isHoisted: v.boolean(),
   isMentionable: v.boolean(),
   isDefault: v.boolean(),
@@ -151,7 +150,6 @@ const roles = defineTable({
   .index('by_server', ['serverId'])
   .index('by_position', ['serverId', 'position']);
 
-// User Roles (Many-to-Many)
 const userRoles = defineTable({
   userId: v.id('users'),
   roleId: v.id('roles'),
@@ -163,7 +161,6 @@ const userRoles = defineTable({
   .index('by_server', ['serverId'])
   .index('by_user_server', ['userId', 'serverId']);
 
-// Channel Categories Table
 const channelCategories = defineTable({
   serverId: v.id('servers'),
   name: v.string(),
@@ -182,9 +179,9 @@ const channels = defineTable({
   position: v.number(),
   isPrivate: v.boolean(),
   isNsfw: v.boolean(),
-  slowMode: v.optional(v.number()), 
-  userLimit: v.optional(v.number()), 
-  bitrate: v.optional(v.number()), 
+  slowMode: v.optional(v.number()),
+  userLimit: v.optional(v.number()),
+  bitrate: v.optional(v.number()),
   updatedAt: v.number(),
 })
   .index('by_server', ['serverId'])
@@ -192,7 +189,6 @@ const channels = defineTable({
   .index('by_type', ['type'])
   .index('by_position', ['serverId', 'position']);
 
-// Messages Table
 const messages = defineTable({
   channelId: v.id('channels'),
   serverId: v.optional(v.id('servers')),
@@ -227,7 +223,6 @@ const messages = defineTable({
     filterFields: ['channelId', 'userId'],
   });
 
-// Direct Messages (DMs)
 const directMessages = defineTable({
   senderId: v.id('users'),
   receiverId: v.id('users'),

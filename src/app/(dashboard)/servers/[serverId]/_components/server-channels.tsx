@@ -27,17 +27,19 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
   const params = useParams();
   const channelId = params?.channelId as Id<'channels'> | undefined;
 
-  const { data: categories } = useQuery(
-    convexQuery(api.servers.getServerCategories, {
+  const { data: categories } = useQuery({
+    ...convexQuery(api.servers.getServerCategories, {
       serverId: server?._id as Id<'servers'>,
     }),
-  );
+    enabled: !!server,
+  });
 
-  const { data: channelsData } = useQuery(
-    convexQuery(api.servers.getAccessibleChannels, {
+  const { data: channelsData } = useQuery({
+    ...convexQuery(api.servers.getAccessibleChannels, {
       serverId: server?._id as Id<'servers'>,
     }),
-  );
+    enabled: !!server,
+  });
 
   const sortedItems = useMemo((): RenderItem[] => {
     if (!categories) return [];

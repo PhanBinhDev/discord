@@ -1,18 +1,31 @@
 'use client';
 
-import { Doc } from '@/convex/_generated/dataModel';
+import { Doc, Id } from '@/convex/_generated/dataModel';
 import { type ColumnDef } from '@tanstack/react-table';
 
+import { DataTableColumnFilter } from '@/components/shared/table/data-table-column-filter';
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header';
 import { DataTableViewOptions } from '@/components/shared/table/data-table-view-options';
 import TranslateText from '@/components/shared/translate/translate-text';
 import UserAvatar from '@/components/shared/user-avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { IconCopy, IconTrash } from '@tabler/icons-react';
+import { Hint } from '@/components/ui/hint';
+import { Dict, DictKey } from '@/internationalization/get-dictionaries';
+import { ActionInvite } from '@/types';
+import { IconBan, IconCheck, IconCopy, IconTrash } from '@tabler/icons-react';
 import moment from 'moment';
+import { toast } from 'sonner';
 
-export const columns: ColumnDef<Doc<'serverInvites'>>[] = [
+export interface InviteColumnsProps {
+  onActionInvite: (inviteId: Id<'serverInvites'>, type: ActionInvite) => void;
+  dict: Dict | null;
+}
+
+export const createInviteColumns = ({
+  onActionInvite,
+  dict,
+}: InviteColumnsProps): ColumnDef<Doc<'serverInvites'>>[] => [
   {
     accessorKey: 'inviter',
     meta: {
@@ -83,7 +96,7 @@ export const columns: ColumnDef<Doc<'serverInvites'>>[] = [
               navigator.clipboard.writeText(
                 `${window.location.origin}/invite/${code}`,
               );
-              // TODO: Show toast
+              toast.success(dict?.servers.channel.edit.invite.columns.copied);
             }}
           >
             <IconCopy className="size-4" />
@@ -152,12 +165,93 @@ export const columns: ColumnDef<Doc<'serverInvites'>>[] = [
           >
             {moment(expiresAt).format('lll')}
           </span>
-          {isExpired && (
-            <Badge variant="destructive" className="w-fit">
-              <TranslateText value="servers.channel.edit.invite.columns.expired" />
-            </Badge>
-          )}
         </div>
+      );
+    },
+  },
+  {
+    accessorKey: 'status',
+    meta: {
+      translationKey: 'servers.channel.edit.invite.columns.status',
+    },
+    enableSorting: false,
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
+    },
+    header: ({ column }) => (
+      <DataTableColumnFilter
+        column={column}
+        title="servers.channel.edit.invite.columns.status"
+        options={[
+          {
+            label: 'servers.channel.edit.invite.columns.statusValue.active',
+            value: 'active',
+          },
+          {
+            label: 'servers.channel.edit.invite.columns.statusValue.expired',
+            value: 'expired',
+          },
+          {
+            label: 'servers.channel.edit.invite.columns.statusValue.revoked',
+            value: 'revoked',
+          },
+        ]}
+      />
+    ),
+    cell: ({ row }) => {
+      const status = row.getValue('status') as 'active' | 'expired' | 'revoked';
+
+      const variants = {
+        active: 'default',
+        expired: 'destructive',
+        revoked: 'secondary',
+      } as const;
+
+      return (
+        <Badge variant={variants[status] || 'outline'}>
+          <TranslateText
+            value={
+              `servers.channel.edit.invite.columns.statusValue.${status}` as DictKey
+            }
+          />
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: 'temporary',
+    meta: {
+      translationKey: 'servers.channel.edit.invite.columns.temporary',
+    },
+    enableSorting: false,
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
+    },
+    header: ({ column }) => (
+      <DataTableColumnFilter
+        column={column}
+        title="servers.channel.edit.invite.columns.temporary"
+        options={[
+          {
+            label: 'servers.channel.edit.invite.columns.temporaryValues.yes',
+            value: true,
+          },
+          {
+            label: 'servers.channel.edit.invite.columns.temporaryValues.no',
+            value: false,
+          },
+        ]}
+      />
+    ),
+    cell: ({ row }) => {
+      const temporary = row.getValue('temporary') as boolean;
+
+      return (
+        <Badge variant={temporary ? 'outline' : 'secondary'}>
+          <TranslateText
+            value={`servers.channel.edit.invite.columns.temporaryValues.${temporary ? 'yes' : 'no'}`}
+          />
+        </Badge>
       );
     },
   },
@@ -175,19 +269,61 @@ export const columns: ColumnDef<Doc<'serverInvites'>>[] = [
       );
     },
     cell: ({ row }) => {
+      const status = row.original.status;
+      const inviteId = row.original._id;
+
       return (
         <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => {
-              // TODO: Handle revoke invite
-              console.log('Revoke invite:', row.original._id);
-            }}
-          >
-            <IconTrash className="size-4" />
-          </Button>
+          {status === 'revoked' && (
+            <Hint
+              label={dict?.servers.channel.edit.invite.activateInvite}
+              side="top"
+              sideOffset={3}
+            >
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="hover:bg-green-500/10 hover:text-green-600"
+                onClick={() => onActionInvite(inviteId, 'activate')}
+              >
+                <IconCheck className="size-4" />
+              </Button>
+            </Hint>
+          )}
+
+          {status === 'expired' && (
+            <Hint
+              label={dict?.servers.channel.edit.invite.deleteInvite}
+              side="top"
+              sideOffset={3}
+            >
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => onActionInvite(inviteId, 'delete')}
+              >
+                <IconTrash className="size-4" />
+              </Button>
+            </Hint>
+          )}
+
+          {status === 'active' && (
+            <Hint
+              label={dict?.servers.channel.edit.invite.revokeTitle}
+              side="top"
+              sideOffset={3}
+            >
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => onActionInvite(inviteId, 'revoke')}
+              >
+                <IconBan className="size-4" />
+              </Button>
+            </Hint>
+          )}
         </div>
       );
     },

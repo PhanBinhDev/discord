@@ -38,7 +38,7 @@ import {
 import { ArrowLeftRight } from 'lucide-react';
 
 export const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
 export const TOPIC_CHANNEL_MAX_LENGTH = 990;
 export const DEFAULT_ROLE_COLOR = '#8e9297';
 export const MIN_LENGTH_CHANNEL_NAME = 1;

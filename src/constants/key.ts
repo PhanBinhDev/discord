@@ -1,4 +1,4 @@
-export const BASE_APP_KEY = 'facetime-app';
+export const BASE_APP_KEY = 'discord';
 
 export const LOCAL_STORAGE_KEY = {
   BOARD_VIEW_MODE: BASE_APP_KEY + '-board-view-mode',

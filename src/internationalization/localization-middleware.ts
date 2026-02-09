@@ -3,13 +3,11 @@ import { NextResponse } from 'next/server';
 import { i18n, Locale } from './i18n-config';
 
 function getLocale(request: NextRequest) {
-  // Lấy từ cookie
   const cookieLocale = request.cookies.get('locale')?.value;
   if (cookieLocale && i18n.locales.includes(cookieLocale as Locale)) {
     return cookieLocale as Locale;
   }
 
-  // Fallback sang Accept-Language header
   const acceptLanguage = request.headers.get('Accept-Language');
   if (acceptLanguage) {
     const preferredLocale = acceptLanguage.split(',')[0]?.split('-')[0];

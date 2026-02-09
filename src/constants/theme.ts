@@ -1,9 +1,7 @@
 export const THEMES = ['light', 'dark', 'system'] as const;
 export type Theme = (typeof THEMES)[number];
 
-// Discord's official color palette
 export const DISCORD_COLORS = {
-  // Brand Colors
   blurple: '#5865F2',
   green: '#57F287',
   yellow: '#FEE75C',
@@ -12,7 +10,6 @@ export const DISCORD_COLORS = {
   white: '#FFFFFF',
   black: '#000000',
 
-  // Extended Palette
   highlighted: '#7289DA',
   developerBlue: '#5A70D9',
   balanceAqua: '#45DDC0',
@@ -54,7 +51,6 @@ export const ACCENT_COLOR_VALUES: Record<AccentColor, string> = {
   purple: DISCORD_COLORS.breweryPurple,
 };
 
-// Utility function to apply accent color to root
 export function applyAccentColor(color: AccentColor) {
   const colorValue = ACCENT_COLOR_VALUES[color];
   if (typeof document !== 'undefined') {
@@ -66,10 +62,9 @@ export function applyAccentColor(color: AccentColor) {
   }
 }
 
-// Convert hex to RGB for CSS variables
 function hexToRgb(hex: string): string {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
-    : '88, 101, 242'; // Default blurple RGB
+    : '88, 101, 242';
 }

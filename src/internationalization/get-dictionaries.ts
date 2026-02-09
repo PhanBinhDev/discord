@@ -23,3 +23,21 @@ type DictKeys<T, K extends string = ''> = T extends object
   : never;
 
 export type DictKey = DictKeys<Dict>;
+
+export const getDictValue = (dict: Dict | null, key: DictKey): string => {
+  if (!dict) return key;
+
+  const keys = key.split('.');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let value: any = dict;
+
+  for (const k of keys) {
+    if (value && typeof value === 'object' && k in value) {
+      value = value[k];
+    } else {
+      return key;
+    }
+  }
+
+  return typeof value === 'string' ? value : key;
+};

@@ -67,8 +67,7 @@ export default async function RootLayout({ children }: Readonly<IChildren>) {
           <ConvexClientProvider>
             <ThemeProvider
               attribute="class"
-              defaultTheme="system"
-              enableSystem
+              defaultTheme="dark"
               disableTransitionOnChange
             >
               <MultisessionAppSupport>

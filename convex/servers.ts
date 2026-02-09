@@ -1223,9 +1223,9 @@ export const joinServer = mutation({
       isMuted: false,
       isDeafened: false,
       isBanned: false,
+      isTemporary,
     });
 
-    // Auto-assign @everyone role to new member
     const everyoneRole = await ctx.db
       .query('roles')
       .withIndex('by_server', q => q.eq('serverId', server._id))
@@ -2987,5 +2987,442 @@ export const getChannelInvites = query({
       ...invitesResult,
       page: invitesWithInviter,
     };
+  },
+});
+
+export const createChannelInvite = mutation({
+  args: {
+    channelId: v.id('channels'),
+    maxUses: v.optional(v.number()),
+    maxAge: v.optional(v.number()),
+    temporary: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const channel = await ctx.db.get(args.channelId);
+
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) {
+      throw new Error('Not a member of this server');
+    }
+
+    const allInvites = await ctx.db
+      .query('serverInvites')
+      .withIndex('by_server', q => q.eq('serverId', channel.serverId))
+      .filter(q =>
+        q.and(
+          q.eq(q.field('channelId'), args.channelId),
+          q.eq(q.field('status'), 'active'),
+          q.eq(q.field('inviterId'), user._id),
+        ),
+      )
+      .collect();
+
+    const maxUses = args.maxUses ?? 0;
+    const temporary = args.temporary ?? false;
+    const expiresAt = args.maxAge
+      ? Date.now() + args.maxAge * 1000
+      : Date.now() + EXPIRED_TIME;
+
+    const existingInvite = allInvites.find(invite => {
+      const sameMaxUses = (invite.maxUses ?? 0) === maxUses;
+      const sameTemporary = invite.temporary === temporary;
+
+      return (
+        sameMaxUses &&
+        sameTemporary &&
+        (!invite.expiresAt || invite.expiresAt > Date.now())
+      );
+    });
+
+    if (existingInvite) {
+      return {
+        code: existingInvite.code,
+        expiresAt: existingInvite.expiresAt,
+        maxUses: existingInvite.maxUses,
+        uses: existingInvite.uses,
+        temporary: existingInvite.temporary,
+        isNew: false,
+      };
+    }
+
+    const inviteCode = generateInviteCode();
+
+    await ctx.db.insert('serverInvites', {
+      serverId: channel.serverId,
+      channelId: args.channelId,
+      inviterId: user._id,
+      code: inviteCode,
+      uses: 0,
+      maxUses: maxUses || undefined,
+      temporary,
+      status: 'active',
+      expiresAt,
+    });
+
+    return {
+      code: inviteCode,
+      expiresAt,
+      maxUses: maxUses || undefined,
+      uses: 0,
+      temporary,
+      isNew: true,
+    };
+  },
+});
+
+export const revokeInvite = mutation({
+  args: {
+    inviteId: v.id('serverInvites'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const invite = await ctx.db.get(args.inviteId);
+
+    if (!invite) {
+      throw new Error('Invite not found');
+    }
+
+    const channel = await ctx.db.get(invite.channelId);
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) {
+      throw new Error('Not a member of this server');
+    }
+
+    // Only owner/admin or invite creator can revoke
+    if (
+      membership.role !== 'owner' &&
+      membership.role !== 'admin' &&
+      invite.inviterId !== user._id
+    ) {
+      throw new Error('You do not have permission to revoke this invite');
+    }
+
+    await ctx.db.patch(args.inviteId, {
+      status: 'revoked',
+    });
+
+    return { success: true };
+  },
+});
+
+export const activateInvite = mutation({
+  args: {
+    inviteId: v.id('serverInvites'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const invite = await ctx.db.get(args.inviteId);
+
+    if (!invite) {
+      throw new Error('Invite not found');
+    }
+
+    if (invite.status !== 'revoked') {
+      throw new Error('Can only activate revoked invites');
+    }
+
+    const channel = await ctx.db.get(invite.channelId);
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) {
+      throw new Error('Not a member of this server');
+    }
+
+    // Only owner/admin or invite creator can activate
+    if (
+      membership.role !== 'owner' &&
+      membership.role !== 'admin' &&
+      invite.inviterId !== user._id
+    ) {
+      throw new Error('You do not have permission to activate this invite');
+    }
+
+    await ctx.db.patch(args.inviteId, {
+      status: 'active',
+    });
+
+    return { success: true };
+  },
+});
+
+export const deleteInvite = mutation({
+  args: {
+    inviteId: v.id('serverInvites'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const invite = await ctx.db.get(args.inviteId);
+
+    if (!invite) {
+      throw new Error('Invite not found');
+    }
+
+    const channel = await ctx.db.get(invite.channelId);
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (!membership || membership.isBanned) {
+      throw new Error('Not a member of this server');
+    }
+
+    // Only owner/admin or invite creator can delete
+    if (
+      membership.role !== 'owner' &&
+      membership.role !== 'admin' &&
+      invite.inviterId !== user._id
+    ) {
+      throw new Error('You do not have permission to delete this invite');
+    }
+
+    await ctx.db.delete(args.inviteId);
+
+    return { success: true };
+  },
+});
+
+export const getWebhooksByChannelId = query({
+  args: {
+    channelId: v.id('channels'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    const hasAccess = await canUserAccessChannel(
+      ctx,
+      user._id,
+      args.channelId,
+      channel.serverId,
+    );
+
+    if (!hasAccess) {
+      throw new Error('You do not have access to this channel');
+    }
+
+    const webhooks = await ctx.db
+      .query('webhooks')
+      .withIndex('by_channel', q => q.eq('channelId', args.channelId))
+      .collect();
+
+    return await Promise.all(
+      webhooks.map(async webhook => {
+        const creator = await ctx.db.get(webhook.creatorId);
+        return {
+          ...webhook,
+          creator: creator
+            ? {
+                _id: creator._id,
+                username: creator.username,
+                displayName: creator.displayName,
+                avatarUrl: creator.avatarUrl,
+              }
+            : null,
+        };
+      }),
+    );
+  },
+});
+
+export const createWebhook = mutation({
+  args: {
+    channelId: v.id('channels'),
+    name: v.string(),
+    avatarUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', channel.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      membership.isBanned ||
+      (membership.role !== 'owner' && membership.role !== 'admin')
+    ) {
+      throw new Error('You do not have permission to create webhooks');
+    }
+
+    const token = `${channel.serverId}_${channel._id}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+    const webhookId = await ctx.db.insert('webhooks', {
+      channelId: args.channelId,
+      serverId: channel.serverId,
+      creatorId: user._id,
+      name: args.name,
+      avatarUrl: args.avatarUrl,
+      token,
+      isActive: true,
+    });
+
+    return webhookId;
+  },
+});
+
+export const updateWebhook = mutation({
+  args: {
+    webhookId: v.id('webhooks'),
+    name: v.optional(v.string()),
+    avatarUrl: v.optional(v.string()),
+    isActive: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    const webhook = await ctx.db.get(args.webhookId);
+    if (!webhook) {
+      throw new Error('Webhook not found');
+    }
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', webhook.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      membership.isBanned ||
+      (membership.role !== 'owner' &&
+        membership.role !== 'admin' &&
+        webhook.creatorId !== user._id)
+    ) {
+      throw new Error('You do not have permission to update this webhook');
+    }
+
+    const updates: Partial<Doc<'webhooks'>> = {};
+    if (args.name !== undefined) updates.name = args.name;
+    if (args.avatarUrl !== undefined) updates.avatarUrl = args.avatarUrl;
+    if (args.isActive !== undefined) updates.isActive = args.isActive;
+
+    await ctx.db.patch(args.webhookId, updates);
+
+    return { success: true };
+  },
+});
+
+export const deleteWebhook = mutation({
+  args: {
+    webhookId: v.id('webhooks'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    const webhook = await ctx.db.get(args.webhookId);
+    if (!webhook) {
+      throw new Error('Webhook not found');
+    }
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', webhook.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      membership.isBanned ||
+      (membership.role !== 'owner' &&
+        membership.role !== 'admin' &&
+        webhook.creatorId !== user._id)
+    ) {
+      throw new Error('You do not have permission to delete this webhook');
+    }
+
+    await ctx.db.delete(args.webhookId);
+
+    return { success: true };
+  },
+});
+
+export const regenerateWebhookToken = mutation({
+  args: {
+    webhookId: v.id('webhooks'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    const webhook = await ctx.db.get(args.webhookId);
+    if (!webhook) {
+      throw new Error('Webhook not found');
+    }
+
+    const membership = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_server_user', q =>
+        q.eq('serverId', webhook.serverId).eq('userId', user._id),
+      )
+      .first();
+
+    if (
+      !membership ||
+      membership.isBanned ||
+      (membership.role !== 'owner' &&
+        membership.role !== 'admin' &&
+        webhook.creatorId !== user._id)
+    ) {
+      throw new Error(
+        'You do not have permission to regenerate this webhook token',
+      );
+    }
+
+    const token = `${webhook.serverId}_${webhook.channelId}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+    await ctx.db.patch(args.webhookId, { token });
+
+    return { token };
   },
 });
