@@ -7,8 +7,31 @@ import { TablerIcon } from '@tabler/icons-react';
 import { FunctionReference } from 'convex/server';
 import { LucideIcon } from 'lucide-react';
 
+export type PaginatedQueryStatus =
+  | 'LoadingFirstPage'
+  | 'CanLoadMore'
+  | 'LoadingMore'
+  | 'Exhausted';
+export interface PaginatedQueryResult<Item> {
+  results: ReadonlyArray<Item>;
+  status: PaginatedQueryStatus;
+  isLoading: boolean;
+  isFetchingNextPage: boolean;
+  hasNextPage: boolean;
+  loadMore: () => void;
+}
+
 export type ApiReturn<T extends FunctionReference<any>> =
   T extends FunctionReference<any, any, any, infer Return> ? Return : never;
+
+export type ApiPaginatedReturn<T extends FunctionReference<any>> =
+  T extends FunctionReference<any, any, any, infer Return>
+    ? Return extends { page: infer Page }
+      ? Page extends Array<infer Item>
+        ? NonNullable<Item>
+        : never
+      : never
+    : never;
 
 export type ExtractArgs<T> =
   T extends FunctionReference<'mutation', 'public', infer Args> ? Args : never;
@@ -39,7 +62,8 @@ export type ModalType =
   | 'ModalDeleteCategory'
   | 'ModalAddMemberRoles'
   | 'ModalCreateInviteChannel'
-  | 'ModalActionInvite';
+  | 'ModalActionInvite'
+  | 'ModalUserDetails';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
 export type ActionInvite = 'revoke' | 'delete' | 'activate';
@@ -169,14 +193,23 @@ export type TranslateTextKey = {
   value: DictKey;
   params?: Record<string, string | number>;
 };
-
 export type ChannelManageNavItemsKey =
   | 'general'
   | 'permissions'
   | 'integrations'
   | 'invite'
   | 'delete';
-
 export type CategoryMenuItemKey = 'markAsRead' | 'edit' | 'delete';
-
 export type CategoryManageNavItemsKey = 'general' | 'permissions' | 'delete';
+export type SearchFriendsType = 'online' | 'all' | 'pending';
+export type UserDetailsTabKey = 'activity' | 'friend' | 'server';
+
+export type UserDetailsTabType = {
+  label: TranslateTextKey;
+  key: UserDetailsTabKey;
+};
+
+export type GetUserDetailsTabType = {
+  commonFriends?: number;
+  commonServers?: number;
+};

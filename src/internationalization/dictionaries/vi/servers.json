@@ -5,8 +5,37 @@
       "create": "Tạo DM",
       "selectFriend": "Chọn Bạn Bè",
       "noFriends": "Bạn không có bạn bè nào để thêm vào!",
-      "addFriend": "Thêm Bạn",
-      "friends": "Bạn bè"
+      "noResult": {
+        "pending": "Bạn không có yêu cầu kết bạn đang chờ!",
+        "online": "Bạn không có bạn bè nào đang trực tuyến!",
+        "all": "Bạn không có bạn bè nào!"
+      },
+      "addFriend": {
+        "title": "Thêm Bạn",
+        "description": "Bạn có thể thêm bạn bè bằng tên người dùng Discord của họ.",
+        "success": "Yêu cầu kết bạn đã được gửi!",
+        "error": "Không thể gửi yêu cầu kết bạn. Tên người dùng không hợp lệ hoặc đã gửi yêu cầu.",
+        "placeholder": "Nhập tên người dùng",
+        "sendRequest": "Gửi Yêu Cầu Kết Bạn",
+        "usernameRequired": "Tên người dùng là bắt buộc.",
+        "errors": {
+          "userNotFound": "Không tìm thấy người dùng. Vui lòng kiểm tra lại tên người dùng và thử lại.",
+          "cannotAddSelf": "Bạn không thể gửi yêu cầu kết bạn cho chính mình.",
+          "userNotAcceptingRequests": "Người dùng này không chấp nhận yêu cầu kết bạn.",
+          "alreadyFriends": "Bạn đã là bạn bè với người dùng này.",
+          "requestAlreadySent": "Yêu cầu kết bạn đã được gửi đến người dùng này.",
+          "cannotSendRequest": "Không thể gửi yêu cầu kết bạn đến người dùng này."
+        }
+      },
+      "friends": "Bạn bè",
+      "online": "Trực tuyến",
+      "all": "Tất cả",
+      "pending": "Đang chờ",
+      "incomingFriendRequest": "Yêu cầu kết bạn đến",
+      "accepted": "Yêu cầu kết bạn đã được chấp nhận",
+      "rejected": "Yêu cầu kết bạn đã bị từ chối",
+      "failedToAccept": "Không thể chấp nhận yêu cầu kết bạn",
+      "failedToReject": "Không thể từ chối yêu cầu kết bạn"
     },
     "noServers": "Chưa có máy chủ nào",
     "createOrJoin": "Tạo hoặc tham gia máy chủ để bắt đầu",
@@ -372,6 +401,17 @@
             "description": "Quản lý quyền cho các thành viên và vai trò trong danh mục này."
           }
         }
+      }
+    },
+    "userDetails": {
+      "title": "Chi tiết người dùng",
+      "description": "Xem thông tin chi tiết về người dùng.",
+      "tabs": {
+        "activity": "Hoạt động",
+        "noCommonFriends": "Không có bạn chung",
+        "commonFriends": "{{count}} bạn chung",
+        "noCommonServers": "Không có máy chủ chung",
+        "commonServers": "{{count}} máy chủ chung"
       }
     }
   }

@@ -65,8 +65,8 @@ import { useDirty } from '@/hooks/use-dirty';
 import useModal from '@/hooks/use-modal';
 import { ChannelWithCategory } from '@/types';
 import {
+  getUpdateChannelSchema,
   UpdateChannelFormValues,
-  updateChannelSchema,
 } from '@/validations/server';
 import { convexQuery } from '@convex-dev/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -102,7 +102,7 @@ const ModalEditChannel = () => {
   };
 
   const form = useForm({
-    resolver: zodResolver(updateChannelSchema),
+    resolver: zodResolver(getUpdateChannelSchema()),
     defaultValues: {
       name: channel?.name || '',
       isPrivate: channel?.isPrivate || false,
@@ -815,9 +815,7 @@ const ModalEditChannel = () => {
                     }}
                   />
                 </TabsContent>
-                <IntegrationChannel
-                  channel={channel!}
-                />
+                <IntegrationChannel channel={channel!} />
               </form>
             </Form>
           </div>

@@ -40,7 +40,7 @@ import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import useModal from '@/hooks/use-modal';
 import {
   CreateChannelFormValues,
-  createChannelSchema,
+  getCreateChannelSchema,
 } from '@/validations/server';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconShieldLockFilled } from '@tabler/icons-react';
@@ -61,7 +61,7 @@ const ModalCreateChannel = () => {
   );
 
   const createChannelForm = useForm({
-    resolver: zodResolver(createChannelSchema),
+    resolver: zodResolver(getCreateChannelSchema()),
     defaultValues: {
       name: '',
       isPrivate: false,

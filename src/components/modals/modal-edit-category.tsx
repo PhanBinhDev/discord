@@ -43,7 +43,7 @@ import { useApiMutation } from '@/hooks/use-api-mutation';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import { useDirty } from '@/hooks/use-dirty';
 import useModal from '@/hooks/use-modal';
-import { createCategorySchema } from '@/validations/server';
+import { getCreateCategorySchema } from '@/validations/server';
 import { convexQuery } from '@convex-dev/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
@@ -75,7 +75,7 @@ const ModalEditCategory = () => {
     });
 
   const form = useForm({
-    resolver: zodResolver(createCategorySchema),
+    resolver: zodResolver(getCreateCategorySchema()),
     defaultValues: {
       name: category?.name || '',
       isPrivate: category?.isPrivate || false,

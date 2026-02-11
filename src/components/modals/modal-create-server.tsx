@@ -26,7 +26,7 @@ import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import useModal from '@/hooks/use-modal';
 import { useUploadFile } from '@/hooks/use-upload-file';
 import { cn } from '@/lib/utils';
-import { ServerFormValues, serverSchema } from '@/validations/server';
+import { getServerSchema, ServerFormValues } from '@/validations/server';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconUpload } from '@tabler/icons-react';
 import Image from 'next/image';
@@ -45,7 +45,7 @@ export const ModalCreateServer = () => {
   const { mutateAsync: uploadFile } = useUploadFile();
 
   const serverForm = useForm({
-    resolver: zodResolver(serverSchema),
+    resolver: zodResolver(getServerSchema()),
     defaultValues: {
       name: '',
       isPublic: true,

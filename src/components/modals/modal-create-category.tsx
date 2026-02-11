@@ -31,7 +31,7 @@ import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import useModal from '@/hooks/use-modal';
 import {
   CreateCategoryFormValues,
-  createCategorySchema,
+  getCreateCategorySchema,
 } from '@/validations/server';
 import { convexQuery } from '@convex-dev/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -53,7 +53,7 @@ const ModalCreateCategory = () => {
   };
 
   const createChannelForm = useForm({
-    resolver: zodResolver(createCategorySchema),
+    resolver: zodResolver(getCreateCategorySchema()),
     defaultValues: {
       name: '',
       isPrivate: false,

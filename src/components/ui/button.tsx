@@ -29,9 +29,9 @@ const buttonVariants = cva(
           'bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white shadow-md hover:shadow-lg transition-all',
       },
       size: {
-        default: 'h-9 px-4 py-2 has-[>svg]:px-3',
-        sm: 'h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5',
-        lg: 'h-10 rounded-md px-6 has-[>svg]:px-4',
+        default: 'h-9 px-4 py-2',
+        sm: 'h-8 rounded-md gap-1.5 px-3',
+        lg: 'h-10 rounded-md px-6',
         icon: 'size-9',
         'icon-sm': 'size-8',
         'icon-lg': 'size-10',
@@ -78,7 +78,7 @@ function Button({
       {...props}
       disabled={loading || props.disabled}
     >
-      {loading && <Loader className="animate-spin mr-1" />}
+      {loading && <Loader className="animate-spin size-4" />}
       {children}
     </Comp>
   );

@@ -1,5 +1,6 @@
 import '@/styles/globals.css';
 import { enUS, viVN } from '@clerk/localizations';
+import { dark } from '@clerk/themes';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Noto_Sans } from 'next/font/google';
@@ -57,6 +58,7 @@ export default async function RootLayout({ children }: Readonly<IChildren>) {
             socialButtonsIconButton: '!rounded-md !py-2',
             form: '!gap-3',
           },
+          theme: dark,
         }}
         signInFallbackRedirectUrl={process.env.NEXT_PUBLIC_SIGN_IN_REDIRECT_URL}
         signUpFallbackRedirectUrl={process.env.NEXT_PUBLIC_SIGN_UP_REDIRECT_URL}

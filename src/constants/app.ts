@@ -18,9 +18,11 @@ import {
   ChannelIconType,
   ChannelManageNavItemsKey,
   ChannelTypeItem,
+  GetUserDetailsTabType,
   ServerMenu,
   StatusExpiredOption,
   StatusMapping,
+  UserDetailsTabType,
 } from '@/types';
 import {
   IconCalendarEvent,
@@ -310,3 +312,43 @@ export const ChannelManageNavItems: CategoryMenuNav<ChannelManageNavItemsKey>[] 
       icon: IconTrash,
     },
   ];
+
+export const DirectActionParams = {
+  ADD_FRIEND: 'add-friend',
+  PENDING_FRIEND_REQUESTS: 'pending-friend-requests',
+  ALL_FRIENDS: 'all-friends',
+  ONLINE_FRIENDS: 'online-friends',
+} as const;
+
+export const getUserDetailsTabs = (params: GetUserDetailsTabType) => {
+  return [
+    {
+      label: {
+        value: 'servers.userDetails.tabs.activity',
+      },
+      key: 'activity',
+    },
+    {
+      label: {
+        value: params.commonFriends
+          ? 'servers.userDetails.tabs.commonFriends'
+          : 'servers.userDetails.tabs.noCommonFriends',
+        params: {
+          count: params.commonFriends ?? 0,
+        },
+      },
+      key: 'friend',
+    },
+    {
+      label: {
+        value: params.commonServers
+          ? 'servers.userDetails.tabs.commonServers'
+          : 'servers.userDetails.tabs.noCommonServers',
+        params: {
+          count: params.commonServers ?? 0,
+        },
+      },
+      key: 'server',
+    },
+  ] as const satisfies UserDetailsTabType[];
+};

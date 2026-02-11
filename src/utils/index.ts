@@ -223,3 +223,10 @@ export function generateInviteCode(): string {
   }
   return code;
 }
+
+export const getUsernameDisplay = (user: {
+  username: string;
+  discriminator: string;
+}) => {
+  return `${user.username}#${user.discriminator}`;
+};
