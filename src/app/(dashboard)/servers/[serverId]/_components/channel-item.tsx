@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Hint } from '@/components/ui/hint';
 import { ChannelIconTypeMapping } from '@/constants/app';
+import { api } from '@/convex/_generated/api';
+import { useApiMutation } from '@/hooks/use-api-mutation';
 import { useClientDictionary } from '@/hooks/use-client-dictionary';
 import useModal from '@/hooks/use-modal';
 import { cn } from '@/lib/utils';
@@ -17,6 +19,9 @@ interface ChannelItemProps {
 const ChannelItem = ({ channel, isActive }: ChannelItemProps) => {
   const { dict } = useClientDictionary();
   const { openModal } = useModal();
+  const { mutate: updateLastViewedChannel } = useApiMutation(
+    api.servers.updateLastViewedChannel,
+  );
   const [showActions, setShowActions] = useState(false);
 
   const Icon = ChannelIconTypeMapping[channel.type]({
@@ -34,6 +39,13 @@ const ChannelItem = ({ channel, isActive }: ChannelItemProps) => {
         isActive && 'bg-accent text-accent-foreground',
         !isActive && 'text-muted-foreground',
       )}
+      onClick={event => {
+        if (event.defaultPrevented) return;
+        void updateLastViewedChannel({
+          serverId: channel.serverId,
+          channelId: channel._id,
+        });
+      }}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >

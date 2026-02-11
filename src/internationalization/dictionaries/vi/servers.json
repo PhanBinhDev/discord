@@ -408,10 +408,22 @@
       "description": "Xem thông tin chi tiết về người dùng.",
       "tabs": {
         "activity": "Hoạt động",
+        "noActivity": "Không có hoạt động gần đây",
         "noCommonFriends": "Không có bạn chung",
         "commonFriends": "{{count}} bạn chung",
         "noCommonServers": "Không có máy chủ chung",
         "commonServers": "{{count}} máy chủ chung"
+      },
+      "context": {
+        "profile": "Xem hồ sơ",
+        "message": "Gửi tin nhắn",
+        "addFriend": "Thêm bạn bè",
+        "removeFriend": "Xóa bạn bè",
+        "block": "Chặn",
+        "unblock": "Bỏ chặn",
+        "report": "Báo cáo",
+        "call": "Gọi thoại",
+        "inviteServer": "Mời vào máy chủ"
       }
     }
   }

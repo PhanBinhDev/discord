@@ -11,6 +11,7 @@ import IconVoiceChannel from '@/components/icons/voice-channel';
 import IconVoicePrivateActiveChannel from '@/components/icons/voice-private-active-channel';
 import IconVoicePrivateChannel from '@/components/icons/voice-private-channel';
 import {
+  ActionParams,
   CategoryManageNavItemsKey,
   CategoryMenuItem,
   CategoryMenuItemKey,
@@ -18,6 +19,7 @@ import {
   ChannelIconType,
   ChannelManageNavItemsKey,
   ChannelTypeItem,
+  FriendContextItem,
   GetUserDetailsTabType,
   ServerMenu,
   StatusExpiredOption,
@@ -34,10 +36,18 @@ import {
   IconSettings,
   IconShieldCog,
   IconTrash,
+  IconUserCircle,
   IconUsersPlus,
   IconWebhook,
 } from '@tabler/icons-react';
-import { ArrowLeftRight } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  MessageCircle,
+  Phone,
+  Shield,
+  UserMinus,
+  UserPlus,
+} from 'lucide-react';
 
 export const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
@@ -313,7 +323,7 @@ export const ChannelManageNavItems: CategoryMenuNav<ChannelManageNavItemsKey>[] 
     },
   ];
 
-export const DirectActionParams = {
+export const DirectActionParams: Record<string, ActionParams> = {
   ADD_FRIEND: 'add-friend',
   PENDING_FRIEND_REQUESTS: 'pending-friend-requests',
   ALL_FRIENDS: 'all-friends',
@@ -351,4 +361,45 @@ export const getUserDetailsTabs = (params: GetUserDetailsTabType) => {
       key: 'server',
     },
   ] as const satisfies UserDetailsTabType[];
+};
+
+export const FriendContextMenuItems = (): FriendContextItem[] => {
+  return [
+    {
+      key: 'profile',
+      label: 'servers.userDetails.context.profile',
+      action: 'profile',
+      icon: IconUserCircle,
+    },
+    {
+      key: 'message',
+      label: 'servers.userDetails.context.message',
+      action: 'message',
+      icon: MessageCircle,
+    },
+    {
+      key: 'call',
+      label: 'servers.userDetails.context.call',
+      action: 'call',
+      icon: Phone,
+    },
+    {
+      key: 'invite_server',
+      label: 'servers.userDetails.context.inviteServer',
+      action: 'invite_server',
+      icon: UserPlus,
+    },
+    {
+      key: 'remove_friend',
+      label: 'servers.userDetails.context.removeFriend',
+      action: 'remove_friend',
+      icon: UserMinus,
+    },
+    {
+      key: 'block',
+      label: 'servers.userDetails.context.block',
+      action: 'block',
+      icon: Shield,
+    },
+  ] as const;
 };

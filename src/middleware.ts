@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { DirectActionParams } from './constants/app';
 import { localizationMiddleware } from './internationalization/localization-middleware';
 
 export const config = {
@@ -31,6 +32,15 @@ export default clerkMiddleware(async (auth, req) => {
     homeUrl.searchParams.set('sign-in', 'true');
     homeUrl.searchParams.set('redirect', req.nextUrl.pathname);
     return NextResponse.redirect(homeUrl);
+  }
+
+  if (userId && req.nextUrl.pathname === '/') {
+    const action = req.nextUrl.searchParams.get('action');
+    if (!action) {
+      const redirectUrl = new URL('/', req.url);
+      redirectUrl.searchParams.set('action', DirectActionParams.ALL_FRIENDS);
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
   return localizationResponse || NextResponse.next();

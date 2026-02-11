@@ -408,10 +408,22 @@
       "description": "View detailed information about the user.",
       "tabs": {
         "activity": "Activity",
+        "noActivity": "No recent activity",
         "noCommonFriends": "No common friends",
         "commonFriends": "{{count}} common friends",
         "noCommonServers": "No common servers",
         "commonServers": "{{count}} common servers"
+      },
+      "context": {
+        "profile": "View Profile",
+        "message": "Send Message",
+        "addFriend": "Add Friend",
+        "removeFriend": "Remove Friend",
+        "block": "Block",
+        "unblock": "Unblock",
+        "report": "Report",
+        "call": "Voice Call",
+        "inviteServer": "Invite to Server"
       }
     }
   }

@@ -6,13 +6,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DirectActionParams } from '@/constants/app';
 import { api } from '@/convex/_generated/api';
+import { ActionParams } from '@/types';
 import { convexQuery } from '@convex-dev/react-query';
 import { IconUser } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Dot } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDebounceValue } from 'usehooks-ts';
 import FriendsList from '../_components/friends-list';
 import PendingRequestsList from '../_components/pending-requests-list';
@@ -31,8 +32,23 @@ const DashboardPage = () => {
   const params = useSearchParams();
   const router = useRouter();
   const action = params.get('action');
+  const validActions = useMemo(
+    () =>
+      new Set([
+        DirectActionParams.ADD_FRIEND,
+        DirectActionParams.ALL_FRIENDS,
+        DirectActionParams.ONLINE_FRIENDS,
+        DirectActionParams.PENDING_FRIEND_REQUESTS,
+      ]),
+    [],
+  );
 
   useEffect(() => {
+    if (!action || !validActions.has(action as ActionParams)) {
+      router.replace(`/?action=${DirectActionParams.ADD_FRIEND}`);
+      return;
+    }
+
     const hasPendingRequests = hasPending;
 
     if (
@@ -45,7 +61,7 @@ const DashboardPage = () => {
     if (!hasFriends && action !== DirectActionParams.ADD_FRIEND) {
       return router.replace(`/?action=${DirectActionParams.ADD_FRIEND}`);
     }
-  }, [action, hasFriends, hasPending, router]);
+  }, [action, hasFriends, hasPending, router, validActions]);
 
   const loading = isFriendsLoading || isPendingPendingRequests;
 

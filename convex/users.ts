@@ -984,11 +984,68 @@ export const getCommonDetails = query({
     const servers = serverDocs.filter((s): s is NonNullable<typeof s> =>
       Boolean(s),
     );
+
+    const lastViewedRecords = await ctx.db
+      .query('userLastViewedChannels')
+      .withIndex('by_user', q => q.eq('userId', current._id))
+      .collect();
+
+    const lastViewedByServer = new Map<Id<'servers'>, Id<'channels'>>();
+    for (const record of lastViewedRecords) {
+      lastViewedByServer.set(record.serverId, record.channelId);
+    }
+
+    const serversWithDefaults = await Promise.all(
+      servers.map(async server => {
+        const lastViewedChannelId = lastViewedByServer.get(server._id) || null;
+
+        let defaultChannelId = lastViewedChannelId;
+
+        if (!defaultChannelId) {
+          const channels = await ctx.db
+            .query('channels')
+            .withIndex('by_server', q => q.eq('serverId', server._id))
+            .collect();
+
+          const sortedChannels = [...channels].sort(
+            (a, b) => a.position - b.position,
+          );
+
+          const generalText = sortedChannels.find(
+            channel =>
+              channel.type === 'text' &&
+              !channel.isPrivate &&
+              channel.name.toLowerCase() === 'general',
+          );
+
+          const firstPublicText = sortedChannels.find(
+            channel => channel.type === 'text' && !channel.isPrivate,
+          );
+
+          const firstPublic = sortedChannels.find(
+            channel => !channel.isPrivate,
+          );
+
+          defaultChannelId =
+            generalText?._id ||
+            firstPublicText?._id ||
+            firstPublic?._id ||
+            sortedChannels[0]?._id ||
+            null;
+        }
+
+        return {
+          ...server,
+          lastViewedChannelId,
+          defaultChannelId,
+        };
+      }),
+    );
     return {
       commonFriends: totalCommonFriends,
       commonServers: totalCommonServers,
       friends,
-      servers,
+      servers: serversWithDefaults,
     };
   },
 });

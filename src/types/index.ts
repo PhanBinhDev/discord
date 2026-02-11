@@ -63,7 +63,8 @@ export type ModalType =
   | 'ModalAddMemberRoles'
   | 'ModalCreateInviteChannel'
   | 'ModalActionInvite'
-  | 'ModalUserDetails';
+  | 'ModalUserDetails'
+  | 'ModalInviteToServer';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
 export type ActionInvite = 'revoke' | 'delete' | 'activate';
@@ -203,6 +204,11 @@ export type CategoryMenuItemKey = 'markAsRead' | 'edit' | 'delete';
 export type CategoryManageNavItemsKey = 'general' | 'permissions' | 'delete';
 export type SearchFriendsType = 'online' | 'all' | 'pending';
 export type UserDetailsTabKey = 'activity' | 'friend' | 'server';
+export type ActionParams =
+  | 'add-friend'
+  | 'pending-friend-requests'
+  | 'all-friends'
+  | 'online-friends';
 
 export type UserDetailsTabType = {
   label: TranslateTextKey;
@@ -212,4 +218,21 @@ export type UserDetailsTabType = {
 export type GetUserDetailsTabType = {
   commonFriends?: number;
   commonServers?: number;
+};
+
+export type FriendContextAction =
+  | 'add_friend'
+  | 'remove_friend'
+  | 'block'
+  | 'start_dm'
+  | 'message'
+  | 'call'
+  | 'profile'
+  | 'invite_server';
+
+export type FriendContextItem = {
+  key: string;
+  label: DictKey;
+  icon: TablerIcon | LucideIcon;
+  action: FriendContextAction;
 };

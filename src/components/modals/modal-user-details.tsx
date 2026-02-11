@@ -1,20 +1,40 @@
 import TranslateText from '@/components/shared/translate/translate-text';
 import { Card } from '@/components/ui/card';
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getUserDetailsTabs } from '@/constants/app';
+import { FriendContextMenuItems, getUserDetailsTabs } from '@/constants/app';
 import { api } from '@/convex/_generated/api';
 import useModal from '@/hooks/use-modal';
 import { ApiPaginatedReturn } from '@/types';
+import { getUsernameDisplay } from '@/utils';
 import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
+import type { Route } from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
 import { VisuallyHidden } from 'radix-ui';
 import { useMemo } from 'react';
+import UserAvatar from '../shared/user-avatar';
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from '../ui/item';
 
 const ModalUserDetails = () => {
   const { isModalOpen, closeModal, getModalData } = useModal();
@@ -31,6 +51,8 @@ const ModalUserDetails = () => {
       commonServers: commonCounts?.commonServers,
     });
   }, [commonCounts]);
+
+  console.log('commonCounts', commonCounts);
 
   return (
     <Dialog
@@ -58,7 +80,7 @@ const ModalUserDetails = () => {
                   <TabsTrigger
                     key={tab.key}
                     value={tab.key}
-                    className="relative h-auto cursor-pointer rounded-md border-0 bg-transparent px-2.5 py-2 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                    className="relative h-auto cursor-pointer rounded-md border-0 bg-transparent px-2.5 py-2 text-sm font-medium text-muted-foreground hover:bg-muted-foreground/5 data-[state=active]:text-foreground data-[state=active]:shadow-none"
                   >
                     <TranslateText {...tab.label} />
                     <span className="pointer-events-none absolute -bottom-px left-0 right-0 h-1 bg-transparent data-[state=active]:bg-(--accent-color)" />
@@ -66,9 +88,138 @@ const ModalUserDetails = () => {
                 );
               })}
             </TabsList>
-            <TabsContent value="activity">Content</TabsContent>
-            <TabsContent value="friend">B</TabsContent>
-            <TabsContent value="server">C</TabsContent>
+            <TabsContent
+              value="activity"
+              className="p-4 flex items-center justify-center"
+            >
+              <div className="flex items-center justify-center">
+                <p className="text-muted-foreground">
+                  <TranslateText value="servers.userDetails.tabs.noActivity" />
+                </p>
+              </div>
+            </TabsContent>
+            <TabsContent value="friend">
+              {commonCounts?.friends.length === 0 ? (
+                <div className="flex items-center justify-center flex-1 h-full">
+                  <p className="text-muted-foreground">
+                    <TranslateText value="servers.userDetails.tabs.noCommonFriends" />
+                  </p>
+                </div>
+              ) : (
+                <ScrollArea className="h-full">
+                  <div className="space-y-3 py-2">
+                    {commonCounts?.friends.map(friend => (
+                      <ContextMenu key={friend._id}>
+                        <ContextMenuTrigger>
+                          <Item variant="outline" className="rounded-md p-3">
+                            <ItemMedia>
+                              <UserAvatar
+                                src={friend.avatarUrl}
+                                name={friend.displayName || friend.username}
+                                showTooltip={false}
+                                size={10}
+                                status={{ size: 4, status: friend.status }}
+                              />
+                            </ItemMedia>
+                            <ItemContent>
+                              <ItemTitle className="truncate">
+                                {friend.displayName || friend.username}
+                              </ItemTitle>
+                              <ItemDescription>
+                                {getUsernameDisplay(friend)}
+                              </ItemDescription>
+                            </ItemContent>
+                          </Item>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent className="rounded-md">
+                          {FriendContextMenuItems().map(item => {
+                            const ItemIcon = item.icon;
+                            const isSeparateGroup =
+                              item.action === 'remove_friend' ||
+                              item.action === 'block';
+
+                            return (
+                              <div key={item.key}>
+                                {isSeparateGroup && <ContextMenuSeparator />}
+                                <ContextMenuItem
+                                  className={`cursor-pointer flex items-center gap-2 ${item.action === 'block' ? 'text-destructive' : ''}`}
+                                  onClick={() => {
+                                    // Handle action here
+                                  }}
+                                >
+                                  <ItemIcon className="size-4" />
+                                  <TranslateText value={item.label} />
+                                </ContextMenuItem>
+                              </div>
+                            );
+                          })}
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </TabsContent>
+            <TabsContent value="server" className="flex">
+              {commonCounts?.servers.length === 0 ? (
+                <div className="flex items-center justify-center flex-1 h-full">
+                  <p className="text-muted-foreground">
+                    <TranslateText value="servers.userDetails.tabs.noCommonServers" />
+                  </p>
+                </div>
+              ) : (
+                <ScrollArea className="h-full flex-1">
+                  <div className="space-y-3 py-2">
+                    {commonCounts?.servers.map(server => {
+                      const targetChannelId =
+                        server.defaultChannelId ||
+                        server.lastViewedChannelId ||
+                        null;
+                      const serverHref = (
+                        targetChannelId
+                          ? `/servers/${server._id}/channels/${targetChannelId}`
+                          : `/servers/${server._id}`
+                      ) as Route;
+                      return (
+                        <Link
+                          key={server._id}
+                          href={serverHref}
+                          onClick={() => closeModal('ModalUserDetails')}
+                        >
+                          <Item
+                            variant="outline"
+                            className="rounded-md hover:bg-muted-foreground/10 p-3 cursor-pointer"
+                          >
+                            <ItemMedia variant="image">
+                              <Image
+                                src={server.iconUrl || '/icons/icon1.png'}
+                                alt={server.name}
+                                width={40}
+                                height={40}
+                              />
+                            </ItemMedia>
+                            <ItemContent>
+                              <ItemTitle className="truncate">
+                                {server.name}
+                              </ItemTitle>
+                              {server.description ? (
+                                <ItemDescription>
+                                  {server.description}
+                                </ItemDescription>
+                              ) : null}
+                              <div className="text-xs text-muted-foreground">
+                                {server.memberCount}{' '}
+                                <TranslateText value="servers.members" />
+                              </div>
+                            </ItemContent>
+                          </Item>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              )}
+            </TabsContent>
           </Tabs>
         </div>
       </DialogContent>
