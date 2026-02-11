@@ -5,8 +5,37 @@
       "create": "Create DM",
       "selectFriend": "Select Friends",
       "noFriends": "You don't have any friends to add!",
-      "addFriend": "Add Friend",
-      "friends": "Friends"
+      "noResult": {
+        "pending": "You don't have any pending friend requests!",
+        "online": "You don't have any friends online!",
+        "all": "You don't have any friends!"
+      },
+      "addFriend": {
+        "title": "Add Friend",
+        "description": "You can add friends using their Discord username.",
+        "placeholder": "Enter a username",
+        "sendRequest": "Send Friend Request",
+        "success": "Friend request sent successfully!",
+        "error": "Failed to send friend request. Please try again.",
+        "usernameRequired": "Username is required",
+        "errors": {
+          "userNotFound": "User not found. Please check the username and try again.",
+          "cannotAddSelf": "You cannot send a friend request to yourself.",
+          "userNotAcceptingRequests": "This user is not accepting friend requests.",
+          "alreadyFriends": "You are already friends with this user.",
+          "requestAlreadySent": "Friend request already sent to this user.",
+          "cannotSendRequest": "Cannot send friend request to this user."
+        }
+      },
+      "friends": "Friends",
+      "online": "Online",
+      "all": "All",
+      "pending": "Pending",
+      "incomingFriendRequest": "Incoming friend request",
+      "accepted": "Friend request accepted",
+      "rejected": "Friend request rejected",
+      "failedToAccept": "Failed to accept friend request",
+      "failedToReject": "Failed to reject friend request"
     },
     "noServers": "No servers yet",
     "createOrJoin": "Create or join a server to get started",
@@ -372,6 +401,17 @@
             "description": "Manage permissions for members and roles in this category."
           }
         }
+      }
+    },
+    "userDetails": {
+      "title": "User Details",
+      "description": "View detailed information about the user.",
+      "tabs": {
+        "activity": "Activity",
+        "noCommonFriends": "No common friends",
+        "commonFriends": "{{count}} common friends",
+        "noCommonServers": "No common servers",
+        "commonServers": "{{count}} common servers"
       }
     }
   }

@@ -801,3 +801,194 @@ export const searchUsers = query({
     return filteredResults;
   },
 });
+
+export const getCommonCounts = query({
+  args: { targetUserId: v.id('users') },
+  handler: async (ctx, args) => {
+    const current = await getCurrentUserOrThrow(ctx);
+
+    if (current._id === args.targetUserId) {
+      return { commonFriends: 0, commonServers: 0 };
+    }
+
+    const currentFriends = await ctx.db
+      .query('friends')
+      .filter(q =>
+        q.and(
+          q.or(
+            q.eq(q.field('userId1'), current._id),
+            q.eq(q.field('userId2'), current._id),
+          ),
+          q.eq(q.field('status'), 'accepted'),
+        ),
+      )
+      .collect();
+
+    const currentFriendIds = new Set(
+      currentFriends.map(f =>
+        f.userId1 === current._id ? f.userId2 : f.userId1,
+      ),
+    );
+
+    const targetFriends = await ctx.db
+      .query('friends')
+      .filter(q =>
+        q.and(
+          q.or(
+            q.eq(q.field('userId1'), args.targetUserId),
+            q.eq(q.field('userId2'), args.targetUserId),
+          ),
+          q.eq(q.field('status'), 'accepted'),
+        ),
+      )
+      .collect();
+
+    let commonFriends = 0;
+    for (const f of targetFriends) {
+      const friendId = f.userId1 === args.targetUserId ? f.userId2 : f.userId1;
+      if (
+        friendId !== current._id &&
+        friendId !== args.targetUserId &&
+        currentFriendIds.has(friendId)
+      ) {
+        commonFriends += 1;
+      }
+    }
+
+    const currentServers = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_user', q => q.eq('userId', current._id))
+      .collect();
+
+    const targetServers = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_user', q => q.eq('userId', args.targetUserId))
+      .collect();
+
+    const currentServerIds = new Set(currentServers.map(m => m.serverId));
+
+    let commonServers = 0;
+    for (const m of targetServers) {
+      if (currentServerIds.has(m.serverId)) {
+        commonServers += 1;
+      }
+    }
+
+    return { commonFriends, commonServers };
+  },
+});
+
+export const getCommonDetails = query({
+  args: {
+    targetUserId: v.id('users'),
+    friendsLimit: v.optional(v.number()),
+    serversLimit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const current = await getCurrentUserOrThrow(ctx);
+
+    if (current._id === args.targetUserId) {
+      return {
+        commonFriends: 0,
+        commonServers: 0,
+        friends: [],
+        servers: [],
+      };
+    }
+
+    const currentFriends = await ctx.db
+      .query('friends')
+      .filter(q =>
+        q.and(
+          q.or(
+            q.eq(q.field('userId1'), current._id),
+            q.eq(q.field('userId2'), current._id),
+          ),
+          q.eq(q.field('status'), 'accepted'),
+        ),
+      )
+      .collect();
+
+    const currentFriendIds = new Set(
+      currentFriends.map(f =>
+        f.userId1 === current._id ? f.userId2 : f.userId1,
+      ),
+    );
+
+    const targetFriends = await ctx.db
+      .query('friends')
+      .filter(q =>
+        q.and(
+          q.or(
+            q.eq(q.field('userId1'), args.targetUserId),
+            q.eq(q.field('userId2'), args.targetUserId),
+          ),
+          q.eq(q.field('status'), 'accepted'),
+        ),
+      )
+      .collect();
+
+    const mutualFriendIds: Id<'users'>[] = [];
+    for (const f of targetFriends) {
+      const friendId = f.userId1 === args.targetUserId ? f.userId2 : f.userId1;
+
+      if (
+        friendId !== current._id &&
+        friendId !== args.targetUserId &&
+        currentFriendIds.has(friendId)
+      ) {
+        mutualFriendIds.push(friendId);
+      }
+    }
+
+    const totalCommonFriends = mutualFriendIds.length;
+    const limitedFriendIds = args.friendsLimit
+      ? mutualFriendIds.slice(0, args.friendsLimit)
+      : mutualFriendIds;
+
+    const friendUsers = await Promise.all(
+      limitedFriendIds.map(id => ctx.db.get(id)),
+    );
+
+    const friends = friendUsers.filter((u): u is NonNullable<typeof u> =>
+      Boolean(u),
+    );
+    const currentServers = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_user', q => q.eq('userId', current._id))
+      .collect();
+
+    const targetServers = await ctx.db
+      .query('serverMembers')
+      .withIndex('by_user', q => q.eq('userId', args.targetUserId))
+      .collect();
+
+    const currentServerIds = new Set(currentServers.map(m => m.serverId));
+    const mutualServerIds: Id<'servers'>[] = [];
+
+    for (const m of targetServers) {
+      if (currentServerIds.has(m.serverId)) {
+        mutualServerIds.push(m.serverId);
+      }
+    }
+
+    const totalCommonServers = mutualServerIds.length;
+    const limitedServerIds = args.serversLimit
+      ? mutualServerIds.slice(0, args.serversLimit)
+      : mutualServerIds;
+
+    const serverDocs = await Promise.all(
+      limitedServerIds.map(id => ctx.db.get(id)),
+    );
+
+    const servers = serverDocs.filter((s): s is NonNullable<typeof s> =>
+      Boolean(s),
+    );
+    return {
+      commonFriends: totalCommonFriends,
+      commonServers: totalCommonServers,
+      friends,
+      servers,
+    };
+  },
+});
