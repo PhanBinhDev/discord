@@ -22,7 +22,7 @@ export function NavigationAction() {
           className="group flex items-center cursor-pointer"
         >
           <div
-            className="flex size-10 md:size-11 rounded-lg overflow-hidden items-center justify-center bg-background dark:bg-neutral-700"
+            className="flex size-11 rounded-lg overflow-hidden items-center justify-center bg-background dark:bg-neutral-700"
             style={{
               ['--tw-bg-opacity' as string]: '1',
             }}

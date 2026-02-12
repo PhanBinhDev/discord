@@ -1,10 +1,10 @@
 import TranslateText from '@/components/shared/translate/translate-text';
+import UserAvatar from '@/components/shared/user-avatar';
 import { Card } from '@/components/ui/card';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
-  ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import {
@@ -13,6 +13,13 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from '@/components/ui/item';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FriendContextMenuItems, getUserDetailsTabs } from '@/constants/app';
@@ -27,14 +34,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { VisuallyHidden } from 'radix-ui';
 import { useMemo } from 'react';
-import UserAvatar from '../shared/user-avatar';
-import {
-  Item,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from '../ui/item';
 
 const ModalUserDetails = () => {
   const { isModalOpen, closeModal, getModalData } = useModal();
@@ -51,8 +50,6 @@ const ModalUserDetails = () => {
       commonServers: commonCounts?.commonServers,
     });
   }, [commonCounts]);
-
-  console.log('commonCounts', commonCounts);
 
   return (
     <Dialog
@@ -134,18 +131,12 @@ const ModalUserDetails = () => {
                         <ContextMenuContent className="rounded-md">
                           {FriendContextMenuItems().map(item => {
                             const ItemIcon = item.icon;
-                            const isSeparateGroup =
-                              item.action === 'remove_friend' ||
-                              item.action === 'block';
 
                             return (
                               <div key={item.key}>
-                                {isSeparateGroup && <ContextMenuSeparator />}
                                 <ContextMenuItem
                                   className={`cursor-pointer flex items-center gap-2 ${item.action === 'block' ? 'text-destructive' : ''}`}
-                                  onClick={() => {
-                                    // Handle action here
-                                  }}
+                                  onClick={() => {}}
                                 >
                                   <ItemIcon className="size-4" />
                                   <TranslateText value={item.label} />

@@ -236,3 +236,5 @@ export type FriendContextItem = {
   icon: TablerIcon | LucideIcon;
   action: FriendContextAction;
 };
+
+export type HeaderLeftType = 'direct' | 'group' | 'server';

@@ -294,39 +294,73 @@ export const deleteUser = internalMutation({
       });
     }
 
-    const sentDMs = await ctx.db
-      .query('directMessages')
-      .withIndex('by_sender', q => q.eq('senderId', user._id))
+    const conversationMemberships = await ctx.db
+      .query('conversationMembers')
+      .withIndex('by_user', q => q.eq('userId', user._id))
       .collect();
 
-    const receivedDMs = await ctx.db
-      .query('directMessages')
-      .withIndex('by_receiver', q => q.eq('receiverId', user._id))
-      .collect();
+    for (const membership of conversationMemberships) {
+      const userMessages = await ctx.db
+        .query('conversationMessages')
+        .withIndex('by_conversation', q =>
+          q.eq('conversationId', membership.conversationId),
+        )
+        .filter(q => q.eq(q.field('senderId'), user._id))
+        .collect();
 
-    for (const dm of sentDMs) {
-      if (dm.attachments) {
-        for (const attachment of dm.attachments) {
-          if (attachment.storageId) {
-            try {
-              await ctx.storage.delete(attachment.storageId);
-            } catch (error) {
-              console.error('Failed to delete DM attachment:', error);
+      for (const message of userMessages) {
+        if (message.attachments) {
+          for (const attachment of message.attachments) {
+            if (attachment.storageId) {
+              try {
+                await ctx.storage.delete(attachment.storageId);
+              } catch (error) {
+                console.error(
+                  'Failed to delete conversation message attachment:',
+                  error,
+                );
+              }
             }
           }
         }
+
+        await ctx.db.patch(message._id, {
+          senderId: deletedUser._id,
+          attachments: undefined,
+          content: '[Message deleted]',
+        });
       }
 
-      await ctx.db.patch(dm._id, {
-        senderId: deletedUser._id,
-        attachments: undefined,
+      await ctx.db.patch(membership._id, {
+        leftAt: Date.now(),
       });
-    }
 
-    for (const dm of receivedDMs) {
-      await ctx.db.patch(dm._id, {
-        receiverId: deletedUser._id,
-      });
+      const conversation = await ctx.db.get(membership.conversationId);
+      if (conversation) {
+        const remainingMembers = await ctx.db
+          .query('conversationMembers')
+          .withIndex('by_conversation', q =>
+            q.eq('conversationId', membership.conversationId),
+          )
+          .filter(q => q.eq(q.field('leftAt'), undefined))
+          .collect();
+
+        if (remainingMembers.length === 0) {
+          await ctx.db.patch(membership.conversationId, {
+            isActive: false,
+          });
+        } else if (
+          conversation.type === 'group' &&
+          conversation.ownerId === user._id
+        ) {
+          await ctx.db.patch(membership.conversationId, {
+            ownerId: remainingMembers[0].userId,
+          });
+          await ctx.db.patch(remainingMembers[0]._id, {
+            role: 'owner',
+          });
+        }
+      }
     }
 
     const reactions = await ctx.db

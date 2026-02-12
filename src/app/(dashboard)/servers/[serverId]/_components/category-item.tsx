@@ -156,4 +156,8 @@ const CategoryItem = ({
   );
 };
 
+export const CategoryItemSkeleton = () => {
+  return <></>;
+};
+
 export default CategoryItem;

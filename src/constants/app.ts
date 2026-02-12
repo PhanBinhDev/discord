@@ -49,6 +49,8 @@ import {
   UserPlus,
 } from 'lucide-react';
 
+export const MAX_GROUP_MEMBER = 10;
+export const DEFAULT_ICON_URL = '/default-icon.png';
 export const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
 export const TOPIC_CHANNEL_MAX_LENGTH = 990;

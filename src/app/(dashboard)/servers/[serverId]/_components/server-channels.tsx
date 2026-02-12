@@ -1,5 +1,6 @@
 'use client';
 
+import ServerCategorySkeleton from '@/components/skeletons/server-category';
 import { DragType } from '@/constants/app';
 import { LOCAL_STORAGE_KEY } from '@/constants/key';
 import { api } from '@/convex/_generated/api';
@@ -27,14 +28,14 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
   const params = useParams();
   const channelId = params?.channelId as Id<'channels'> | undefined;
 
-  const { data: categories } = useQuery({
+  const { data: categories, isLoading: isLoadingCategories } = useQuery({
     ...convexQuery(api.servers.getServerCategories, {
       serverId: server?._id as Id<'servers'>,
     }),
     enabled: !!server,
   });
 
-  const { data: channelsData } = useQuery({
+  const { data: channelsData, isLoading: isLoadingChannels } = useQuery({
     ...convexQuery(api.servers.getAccessibleChannels, {
       serverId: server?._id as Id<'servers'>,
     }),
@@ -132,10 +133,12 @@ const ServerChannels = memo(({ server }: ServerChannelsProps) => {
     [setCollapsedCategoriesArray],
   );
 
-  if (!server) {
+  if (!server) return null;
+
+  if (isLoadingCategories || isLoadingChannels) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
-        Select a server
+      <div className="flex flex-col gap-1 py-2 flex-1 overflow-y-auto max-h-[calc(100vh-265px)]">
+        <ServerCategorySkeleton lines={6} />
       </div>
     );
   }

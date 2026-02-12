@@ -5,6 +5,8 @@
       "create": "Tạo DM",
       "selectFriend": "Chọn Bạn Bè",
       "noFriends": "Bạn không có bạn bè nào để thêm vào!",
+      "selectFriendsToAdd": "Bạn có thể thêm {{remain}} bạn bè",
+      "selectLimits": "Nhóm này giới hạn 10 thành viên",
       "noResult": {
         "pending": "Bạn không có yêu cầu kết bạn đang chờ!",
         "online": "Bạn không có bạn bè nào đang trực tuyến!",
@@ -27,6 +29,9 @@
           "cannotSendRequest": "Không thể gửi yêu cầu kết bạn đến người dùng này."
         }
       },
+      "addDM": {
+        "placeholder": "Nhập tên người dùng của một người bạn"
+      },
       "friends": "Bạn bè",
       "online": "Trực tuyến",
       "all": "Tất cả",
@@ -35,7 +40,28 @@
       "accepted": "Yêu cầu kết bạn đã được chấp nhận",
       "rejected": "Yêu cầu kết bạn đã bị từ chối",
       "failedToAccept": "Không thể chấp nhận yêu cầu kết bạn",
-      "failedToReject": "Không thể từ chối yêu cầu kết bạn"
+      "failedToReject": "Không thể từ chối yêu cầu kết bạn",
+      "created": "Tin nhắn trực tiếp đã được tạo",
+      "createError": "Tạo tin nhắn trực tiếp thất bại. Vui lòng thử lại.",
+      "conversation": {
+        "header": {
+          "placeholder": "Tìm kiếm {{conversationName}}",
+          "hints": {
+            "showUserProfile": "Hiển thị hồ sơ người dùng",
+            "hiddenUserProfile": "Ẩn hồ sơ người dùng",
+            "addFriend": "Thêm bạn bè vào DM",
+            "pinnedMessages": "Tin nhắn được ghim",
+            "startCallVideo": "Bắt đầu cuộc gọi video",
+            "startCallVoice": "Bắt đầu cuộc gọi thoại",
+            "showMembersList": "Hiển thị danh sách thành viên",
+            "hiddenMembersList": "Ẩn danh sách thành viên",
+            "notificationSettings": "Cài đặt thông báo"
+          },
+           "pinned": {
+            "title": "Tin nhắn được ghim"
+          }
+        }
+      }
     },
     "noServers": "Chưa có máy chủ nào",
     "createOrJoin": "Tạo hoặc tham gia máy chủ để bắt đầu",

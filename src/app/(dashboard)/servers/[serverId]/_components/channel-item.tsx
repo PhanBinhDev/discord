@@ -88,4 +88,8 @@ const ChannelItem = ({ channel, isActive }: ChannelItemProps) => {
   );
 };
 
+export const ChannelItemSkeleton = () => {
+  return <></>;
+};
+
 export default ChannelItem;

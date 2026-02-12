@@ -51,6 +51,17 @@ export const DMPermission = v.union(
   v.literal('none'),
 );
 
+export const ConversationType = v.union(
+  v.literal('direct'),
+  v.literal('group'),
+);
+
+export const ConversationRole = v.union(
+  v.literal('owner'),
+  v.literal('moderator'),
+  v.literal('member'),
+);
+
 export type UserStatus = typeof UserStatus.type;
 export type ChannelType = typeof ChannelType.type;
 export type MessageType = typeof MessageType.type;
@@ -58,7 +69,8 @@ export type MemberRole = typeof MemberRole.type;
 export type InviteStatus = typeof InviteStatus.type;
 export type FriendRequestStatus = typeof FriendRequestStatus.type;
 export type DMPermission = typeof DMPermission.type;
-
+export type ConversationType = typeof ConversationType.type;
+export type ConversationRole = typeof ConversationRole.type;
 const users = defineTable({
   clerkId: v.string(),
   email: v.string(),
@@ -223,9 +235,40 @@ const messages = defineTable({
     filterFields: ['channelId', 'userId'],
   });
 
-const directMessages = defineTable({
+const conversations = defineTable({
+  type: ConversationType,
+  name: v.optional(v.string()),
+  iconUrl: v.optional(v.string()),
+  iconStorageId: v.optional(v.id('_storage')),
+  ownerId: v.optional(v.id('users')),
+  isActive: v.boolean(),
+  lastMessageAt: v.optional(v.number()),
+  createdBy: v.id('users'),
+})
+  .index('by_type', ['type'])
+  .index('by_owner', ['ownerId'])
+  .index('by_last_message', ['lastMessageAt']);
+
+const conversationMembers = defineTable({
+  conversationId: v.id('conversations'),
+  userId: v.id('users'),
+  joinedAt: v.number(),
+  lastReadAt: v.optional(v.number()),
+  lastReadMessageId: v.optional(v.id('conversationMessages')),
+  role: v.optional(ConversationRole),
+  nickname: v.optional(v.string()),
+  isMuted: v.boolean(),
+  isPinned: v.boolean(),
+  leftAt: v.optional(v.number()),
+  hiddenAt: v.optional(v.number()),
+})
+  .index('by_conversation', ['conversationId'])
+  .index('by_user', ['userId'])
+  .index('by_conversation_user', ['conversationId', 'userId']);
+
+const conversationMessages = defineTable({
+  conversationId: v.id('conversations'),
   senderId: v.id('users'),
-  receiverId: v.id('users'),
   content: v.string(),
   type: MessageType,
   attachments: v.optional(
@@ -239,15 +282,24 @@ const directMessages = defineTable({
       }),
     ),
   ),
-  isRead: v.boolean(),
-  readAt: v.optional(v.number()),
+  replyToId: v.optional(v.id('conversationMessages')),
   editedAt: v.optional(v.number()),
   deletedAt: v.optional(v.number()),
 })
+  .index('by_conversation', ['conversationId'])
   .index('by_sender', ['senderId'])
-  .index('by_receiver', ['receiverId'])
-  .index('by_conversation', ['senderId', 'receiverId']);
+  .index('by_reply', ['replyToId']);
 
+const typingIndicators = defineTable({
+  conversationId: v.id('conversations'),
+  userId: v.id('users'),
+  startedAt: v.number(),
+  expiresAt: v.number(),
+})
+  .index('by_conversation', ['conversationId'])
+  .index('by_user', ['userId'])
+  .index('by_conversation_user', ['conversationId', 'userId'])
+  .index('by_expires', ['expiresAt']);
 const reactions = defineTable({
   messageId: v.id('messages'),
   userId: v.id('users'),
@@ -290,7 +342,6 @@ const serverCategoryMapping = defineTable({
   .index('by_server', ['serverId'])
   .index('by_category', ['categoryId']);
 
-// Server Boosts Table
 const serverBoosts = defineTable({
   serverId: v.id('servers'),
   userId: v.id('users'),
@@ -463,7 +514,11 @@ const schema = defineSchema({
 
   // Messaging
   messages,
-  directMessages,
+
+  conversationMessages,
+  typingIndicators,
+  conversations,
+  conversationMembers,
   reactions,
 
   // Moderation

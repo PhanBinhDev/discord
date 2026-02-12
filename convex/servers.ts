@@ -192,6 +192,8 @@ async function canUserAccessChannel(
   return false;
 }
 
+// Replace the inviteUserToServer mutation (lines 195-368) with:
+
 export const inviteUserToServer = mutation({
   args: {
     serverId: v.id('servers'),
@@ -231,11 +233,9 @@ export const inviteUserToServer = mutation({
     }
 
     const server = await ctx.db.get(args.serverId);
-
     if (!server) throw new Error('Server not found');
 
     const targetUser = await ctx.db.get(args.targetUserId);
-
     if (!targetUser) throw new Error('Target user not found');
 
     const friendship = await ctx.db
@@ -282,15 +282,71 @@ export const inviteUserToServer = mutation({
 
     const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${inviteCode}`;
 
+    // Send via conversation system if friends or can send DM
     if (areFriends) {
-      await ctx.db.insert('directMessages', {
+      // Get or create direct conversation
+      const user1Conversations = await ctx.db
+        .query('conversationMembers')
+        .withIndex('by_user', q => q.eq('userId', currentUser._id))
+        .collect();
+
+      const user2Conversations = await ctx.db
+        .query('conversationMembers')
+        .withIndex('by_user', q => q.eq('userId', args.targetUserId))
+        .collect();
+
+      const user1ConvIds = new Set(user1Conversations.map(c => c.conversationId));
+      const sharedConvMember = user2Conversations.find(c =>
+        user1ConvIds.has(c.conversationId),
+      );
+
+      let conversationId: Id<'conversations'> | null = null;
+
+      if (sharedConvMember) {
+        const conversation = await ctx.db.get(sharedConvMember.conversationId);
+        if (conversation?.type === 'direct' && conversation.isActive) {
+          conversationId = conversation._id;
+        }
+      }
+
+      // Create new conversation if not exists
+      if (!conversationId) {
+        conversationId = await ctx.db.insert('conversations', {
+          type: 'direct',
+          isActive: true,
+          createdBy: currentUser._id,
+          lastMessageAt: Date.now(),
+        });
+
+        await ctx.db.insert('conversationMembers', {
+          conversationId,
+          userId: currentUser._id,
+          joinedAt: Date.now(),
+          isMuted: false,
+          isPinned: false,
+        });
+
+        await ctx.db.insert('conversationMembers', {
+          conversationId,
+          userId: args.targetUserId,
+          joinedAt: Date.now(),
+          isMuted: false,
+          isPinned: false,
+        });
+      }
+
+      // Send message
+      await ctx.db.insert('conversationMessages', {
+        conversationId,
         senderId: currentUser._id,
-        receiverId: args.targetUserId,
         content:
           args.inviteMessage ||
           `Hey! Join me on **${server.name}**!\n\n${inviteLink}`,
         type: 'text',
-        isRead: false,
+      });
+
+      await ctx.db.patch(conversationId, {
+        lastMessageAt: Date.now(),
       });
 
       await ctx.db.insert('notifications', {
@@ -319,14 +375,67 @@ export const inviteUserToServer = mutation({
         (await areInSameServer(ctx, currentUser._id, args.targetUserId)));
 
     if (canSendDM) {
-      await ctx.db.insert('directMessages', {
+      // Get or create direct conversation
+      const user1Conversations = await ctx.db
+        .query('conversationMembers')
+        .withIndex('by_user', q => q.eq('userId', currentUser._id))
+        .collect();
+
+      const user2Conversations = await ctx.db
+        .query('conversationMembers')
+        .withIndex('by_user', q => q.eq('userId', args.targetUserId))
+        .collect();
+
+      const user1ConvIds = new Set(user1Conversations.map(c => c.conversationId));
+      const sharedConvMember = user2Conversations.find(c =>
+        user1ConvIds.has(c.conversationId),
+      );
+
+      let conversationId: Id<'conversations'> | null = null;
+
+      if (sharedConvMember) {
+        const conversation = await ctx.db.get(sharedConvMember.conversationId);
+        if (conversation?.type === 'direct' && conversation.isActive) {
+          conversationId = conversation._id;
+        }
+      }
+
+      if (!conversationId) {
+        conversationId = await ctx.db.insert('conversations', {
+          type: 'direct',
+          isActive: true,
+          createdBy: currentUser._id,
+          lastMessageAt: Date.now(),
+        });
+
+        await ctx.db.insert('conversationMembers', {
+          conversationId,
+          userId: currentUser._id,
+          joinedAt: Date.now(),
+          isMuted: false,
+          isPinned: false,
+        });
+
+        await ctx.db.insert('conversationMembers', {
+          conversationId,
+          userId: args.targetUserId,
+          joinedAt: Date.now(),
+          isMuted: false,
+          isPinned: false,
+        });
+      }
+
+      await ctx.db.insert('conversationMessages', {
+        conversationId,
         senderId: currentUser._id,
-        receiverId: args.targetUserId,
         content:
           args.inviteMessage ||
           `Hey! Join me on **${server.name}**!\n\n${inviteLink}`,
         type: 'text',
-        isRead: false,
+      });
+
+      await ctx.db.patch(conversationId, {
+        lastMessageAt: Date.now(),
       });
 
       await ctx.db.insert('notifications', {

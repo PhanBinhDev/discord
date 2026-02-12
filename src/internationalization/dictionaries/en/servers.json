@@ -5,6 +5,8 @@
       "create": "Create DM",
       "selectFriend": "Select Friends",
       "noFriends": "You don't have any friends to add!",
+      "selectFriendsToAdd": "You can add {{count}} friends",
+      "selectLimits": "This group has a 10 members limit",
       "noResult": {
         "pending": "You don't have any pending friend requests!",
         "online": "You don't have any friends online!",
@@ -27,6 +29,9 @@
           "cannotSendRequest": "Cannot send friend request to this user."
         }
       },
+      "addDM": {
+        "placeholder": "Type the username of a friend"
+      },
       "friends": "Friends",
       "online": "Online",
       "all": "All",
@@ -35,7 +40,28 @@
       "accepted": "Friend request accepted",
       "rejected": "Friend request rejected",
       "failedToAccept": "Failed to accept friend request",
-      "failedToReject": "Failed to reject friend request"
+      "failedToReject": "Failed to reject friend request",
+      "created": "Direct message created",
+      "createError": "Failed to create direct message. Please try again.",
+      "conversation": {
+        "header": {
+          "placeholder": "Search {{conversationName}}",
+          "hints": {
+            "showUserProfile": "Show user profile",
+            "hiddenUserProfile": "Hide user profile",
+            "addFriend": "Add friends to DM",
+            "pinnedMessages": "Pinned messages",
+            "startCallVideo": "Start video call",
+            "startCallVoice": "Start voice call",
+            "showMembersList": "Show members list",
+            "hiddenMembersList": "Hide members list",
+            "notificationSettings": "Notification settings"
+          },
+          "pinned": {
+            "title": "Pinned Messages"
+          }
+        }
+      }
     },
     "noServers": "No servers yet",
     "createOrJoin": "Create or join a server to get started",

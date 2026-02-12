@@ -21,6 +21,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Conversations from './_components/conversations';
 
 const DirectLayout = ({ children }: IChildren) => {
   const pathname = usePathname();
@@ -119,6 +120,7 @@ const DirectLayout = ({ children }: IChildren) => {
             </Button>
           </Hint>
         </div>
+        <Conversations />
       </ResizablePanel>
       <ResizablePanel>{children}</ResizablePanel>
     </ResizablePanelGroup>

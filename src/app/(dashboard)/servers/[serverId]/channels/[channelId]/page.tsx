@@ -19,7 +19,7 @@ const ChannelIdPage = async ({}: ChannelIdPageProps) => {
   //   },
   // );
 
-  return <>ChannelID</>;
+  return <div className="flex flex-col">ok</div>;
 };
 
 export default ChannelIdPage;

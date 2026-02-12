@@ -37,7 +37,7 @@ export function NavigationSidebar() {
               )}
             />
             <Link href="/">
-              <Button className="bg-(--accent-color) rounded-lg size-10 md:size-11 p-2 mx-3 hover:bg-(--accent-color)">
+              <Button className="bg-(--accent-color) rounded-lg size-11 p-2 mx-3 hover:bg-(--accent-color)">
                 <IconBrandDiscordFilled className="size-7" />
               </Button>
             </Link>

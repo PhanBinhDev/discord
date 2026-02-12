@@ -15,9 +15,10 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { DEFAULT_LIMIT, FriendContextMenuItems } from '@/constants/app';
 import { api } from '@/convex/_generated/api';
+import { useApiMutation } from '@/hooks/use-api-mutation';
 import useModal from '@/hooks/use-modal';
 import { DictKey } from '@/internationalization/get-dictionaries';
-import { ApiPaginatedReturn } from '@/types';
+import { ApiPaginatedReturn, FriendContextAction } from '@/types';
 import { getUsernameDisplay } from '@/utils';
 import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
@@ -40,6 +41,30 @@ const FriendsList = memo(({ search, statusFilter }: FriendsListProps) => {
   const { data: servers, isLoading: isLoadingServers } = useQuery({
     ...convexQuery(api.servers.getUserServers),
   });
+
+  const { mutate: removeFriend } = useApiMutation(api.friends.removeFriend);
+
+  const handleClickContextItem = (
+    action: FriendContextAction,
+    data: {
+      friend: ApiPaginatedReturn<typeof api.friends.getFriends>;
+    },
+  ) => {
+    switch (action) {
+      case 'profile':
+        openModal('ModalUserDetails', {
+          user: data.friend,
+        });
+        break;
+      case 'remove_friend':
+        removeFriend({
+          friendId: data.friend.friendshipId,
+        });
+        break;
+      default:
+        break;
+    }
+  };
 
   if (status === 'LoadingFirstPage') {
     return (
@@ -152,7 +177,11 @@ const FriendsList = memo(({ search, statusFilter }: FriendsListProps) => {
                   <div key={item.key}>
                     <ContextMenuItem
                       className={`cursor-pointer flex items-center gap-2 ${item.action === 'block' ? 'text-destructive' : ''} group`}
-                      onClick={() => {}}
+                      onClick={() =>
+                        handleClickContextItem(item.action, {
+                          friend,
+                        })
+                      }
                     >
                       <ItemIcon className="size-4 group-hover:text-inherit" />
                       <TranslateText value={item.label} />

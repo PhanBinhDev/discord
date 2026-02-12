@@ -39,7 +39,7 @@ export function NavigationItem({
           />
           <div
             className={cn(
-              'relative group flex mx-3 size-10 md:size-11 rounded-lg transition-all overflow-hidden cursor-pointer',
+              'relative group flex mx-3 size-11 rounded-lg transition-all overflow-hidden cursor-pointer',
             )}
           >
             <Image
