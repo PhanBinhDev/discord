@@ -38,7 +38,7 @@ const ModalCreateDirectMessage = () => {
             className="w-full bg-(--accent-color) hover:bg-(--accent-hover) text-white"
             onClick={() => closeModal('ModalCreateDirectMessage')}
           >
-            <TranslateText value="servers.directMessage.addFriend" />
+            <TranslateText value="servers.directMessage.addFriend.title" />
           </Button>
         ) : (
           <div>Friend list here</div>
