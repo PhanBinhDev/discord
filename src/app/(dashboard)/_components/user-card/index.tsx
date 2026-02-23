@@ -18,10 +18,12 @@ import { useMemo, useState } from 'react';
 import Headset from './headset';
 import Microphone from './microphone';
 import UserCardPopover from './popover';
+import useModal from '@/hooks/use-modal';
 
 const UserCard = () => {
   const { width } = useSidebarWidth();
   const { dict } = useClientDictionary();
+  const { openModal } = useModal();
   const [isHovered, setIsHovered] = useState(false);
   const { data: currentUser, isLoading: isLoadingCurrentUser } = useQuery(
     convexQuery(api.users.currentUser),
@@ -132,11 +134,15 @@ const UserCard = () => {
           side="top"
           align="center"
           alignOffset={0}
+          asChild
         >
           <Button
             size={'icon'}
             variant={'ghost'}
             className="group hover:bg-muted-foreground/10"
+            onClick={() => {
+              openModal('ModalSettingsUser')
+            }}
           >
             <IconSettings className="size-5 transition-transform duration-300 group-hover:rotate-90" />
           </Button>

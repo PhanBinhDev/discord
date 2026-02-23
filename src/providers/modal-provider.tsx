@@ -2,6 +2,7 @@
 
 import ModalActionInvite from '@/components/modals/modal-action-invite';
 import ModalAddMemberRoles from '@/components/modals/modal-add-members-roles';
+import ModalConfirmLogout from '@/components/modals/modal-confirm-logout';
 import ModalCreateCategory from '@/components/modals/modal-create-category';
 import ModalCreateChannel from '@/components/modals/modal-create-channel';
 import ModalCreateDirectMessage from '@/components/modals/modal-create-direct-message';
@@ -13,6 +14,7 @@ import ModalInvitePeople from '@/components/modals/modal-invite-people';
 import ModalRemoveCategory from '@/components/modals/modal-remove-category';
 import ModalRemoveChannel from '@/components/modals/modal-remove-channel';
 import ModalSetUserStatus from '@/components/modals/modal-set-user-status';
+import ModalSettingsUser from '@/components/modals/modal-settings-user';
 import ModalUserDetails from '@/components/modals/modal-user-details';
 import useModal from '@/hooks/use-modal';
 import { useEffect, useState } from 'react';
@@ -43,6 +45,8 @@ const ModalsProvider = () => {
       {isModalOpen('ModalCreateInviteChannel') && <ModalCreateInviteChannel />}
       {isModalOpen('ModalActionInvite') && <ModalActionInvite />}
       {isModalOpen('ModalUserDetails') && <ModalUserDetails />}
+      {isModalOpen('ModalSettingsUser') && <ModalSettingsUser />}
+      {isModalOpen('ModalConfirmLogout') && <ModalConfirmLogout />}
     </>
   );
 };
