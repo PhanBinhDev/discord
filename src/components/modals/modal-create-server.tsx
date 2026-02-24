@@ -66,12 +66,12 @@ export const ModalCreateServer = () => {
         return;
       }
 
-      const result = await uploadFile(selectedFile);
+      const result = await uploadFile([selectedFile]);
 
       await createServer({
         ...values,
-        iconStorageId: result.storageId,
-        iconUrl: result.url || '',
+        iconStorageId: result[0].storageId,
+        iconUrl: result[0].url || '',
       });
       toast.success(dict?.servers.serverCreated);
       handleClose();
@@ -141,7 +141,7 @@ export const ModalCreateServer = () => {
                   <div className="text-center pointer-events-none flex flex-col items-center">
                     <IconUpload className="size-5 mb-2 text-muted-foreground group-hover:text-(--accent-color) transition-colors" />
                     <span className="text-xs uppercase font-semibold text-muted-foreground group-hover:text-(--accent-color)">
-                      <TranslateText value="common.upload" />
+                      <TranslateText value="common.upload.title" />
                     </span>
                   </div>
                 )}

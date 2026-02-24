@@ -1,5 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { FileWithPreview } from '@/types';
 import { useMutation } from '@tanstack/react-query';
 import { useMutation as useConvexMutation } from 'convex/react';
 
@@ -12,24 +13,32 @@ export function useUploadFile() {
   const generateUploadUrl = useConvexMutation(api.storage.generateUploadUrl);
 
   return useMutation({
-    mutationFn: async (file: File): Promise<UploadFileResult> => {
-      const uploadUrl = await generateUploadUrl();
+    mutationFn: async (
+      files: File[] | FileWithPreview[],
+    ): Promise<UploadFileResult[]> => {
+      const normalizedFiles: File[] = files.map(item =>
+        item instanceof File ? item : item.file,
+      );
 
-      const result = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
+      const uploads = normalizedFiles.map(async file => {
+        const uploadUrl = await generateUploadUrl();
+
+        const result = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': file.type },
+          body: file,
+        });
+
+        if (!result.ok) {
+          throw new Error('Failed to upload file');
+        }
+
+        const { storageId } = await result.json();
+
+        return { storageId };
       });
 
-      if (!result.ok) {
-        throw new Error('Failed to upload file');
-      }
-
-      console.log('Upload file response:', result);
-
-      const { storageId } = await result.json();
-
-      return { storageId };
+      return Promise.all(uploads);
     },
   });
 }

@@ -10,13 +10,14 @@ import { EmojiMartEmoji } from '@/types';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { IconMoodHappy } from '@tabler/icons-react';
-import { memo, useState } from 'react';
+import { memo, ReactNode, useState } from 'react';
 
 interface SelectEmojiProps {
   onSelect: (emoji: EmojiMartEmoji) => void;
   emojiSize?: number;
   emojiButtonSize?: number;
   disabled?: boolean;
+  children?: ReactNode;
 }
 
 const SelectEmoji = memo(
@@ -25,31 +26,33 @@ const SelectEmoji = memo(
     emojiSize = 32,
     emojiButtonSize = 36,
     disabled = false,
+    children,
   }: SelectEmojiProps) => {
     const { locale } = useClientDictionary();
     const [open, setOpen] = useState(false);
 
     const handleEmojiSelect = (emoji: EmojiMartEmoji) => {
-      console.log('Selected emoji:', emoji);
       onSelect(emoji);
       setOpen(false);
     };
 
+    const defaultTrigger = (
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        className="hover:bg-accent/50 transition-colors"
+        onClick={e => {
+          e.stopPropagation();
+        }}
+        disabled={disabled}
+      >
+        <IconMoodHappy className="text-var(--accent-color) w-5 h-5" />
+      </Button>
+    );
+
     return (
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            className="hover:bg-accent/50 transition-colors"
-            onClick={e => {
-              e.stopPropagation();
-            }}
-            disabled={disabled}
-          >
-            <IconMoodHappy className="text-var(--accent-color) w-5 h-5" />
-          </Button>
-        </PopoverTrigger>
+        <PopoverTrigger asChild>{children || defaultTrigger}</PopoverTrigger>
         <PopoverContent
           className="w-[320px] sm:w-[352px] p-0 shadow-2xl overflow-hidden"
           onClick={e => e.stopPropagation()}

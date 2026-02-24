@@ -60,6 +60,24 @@
            "pinned": {
             "title": "Tin nhắn được ghim"
           }
+        },
+        "input": {
+          "placeholder": "Nhắn tin cho {{conversationName}}",
+          "uploadFile": "Tải lên một tập tin",
+          "createPoll": "Tạo cuộc thăm dò",
+          "sendMessage": "Gửi tin nhắn",
+          "messageRequired": "Tin nhắn không được để trống",
+          "messageTooLong": "Tin nhắn không được vượt quá {{max}} ký tự",
+          "fileTooLarge": "Tập tin không được vượt quá {{max}} MB",
+          "attachmentTooLarge": "Tập tin đính kèm không được vượt quá {{max}} MB",
+          "tooManyAttachments": "Bạn chỉ có thể đính kèm tối đa {{max}} tập tin",
+          "messageOrAttachment": "Tin nhắn hoặc tập tin đính kèm là bắt buộc",
+          "typing": {
+            "isTyping": "đang nhập...",
+            "areTyping": "đang nhập...",
+            "and": "và",
+            "several": "Nhiều người đang nhập..."
+          }
         }
       }
     },

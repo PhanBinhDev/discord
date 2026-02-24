@@ -82,7 +82,12 @@
       "toggleColumns": "Toggle columns"
     },
     "searchPlaceholder": "Type to search...",
-    "upload": "Upload",
+    "upload": {
+      "title": "Upload",
+      "dragOrDrop": "Drag and drop files here, or click to browse",
+      "supportedFormats": "Support for multiple file types up to {{maxSize}} each",
+      "selectFiles": "Select files"
+    },
     "status": {
       "online": "Online",
       "offline": "Offline",
@@ -93,6 +98,10 @@
     "discard": "Discard",
     "saveChanges": "Save Changes",
     "unsavedChanges": "Be careful - you have unsaved changes!",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "uploadFile": {
+      "title": "Upload File",
+      "description": "Select a file from your device to upload."
+    }
   }
 }

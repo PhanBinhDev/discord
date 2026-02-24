@@ -60,6 +60,24 @@
           "pinned": {
             "title": "Pinned Messages"
           }
+        },
+        "input": {
+          "placeholder": "Message {{conversationName}}",
+          "uploadFile": "Upload a File",
+          "createPoll": "Create Poll",
+          "sendMessage": "Send Message",
+          "messageRequired": "Message cannot be empty",
+          "messageTooLong": "Message must be {{max}} characters or less",
+          "fileTooLarge": "File must be {{max}} MB or less",
+          "attachmentTooLarge": "Attachment must be {{max}} MB or less",
+          "tooManyAttachments": "You can only attach up to {{max}} files",
+          "messageOrAttachment": "Message or attachment is required",
+          "typing": {
+            "isTyping": "is typing...",
+            "areTyping": "are typing...",
+            "and": "and",
+            "several": "Several people are typing..."
+          }
         }
       }
     },

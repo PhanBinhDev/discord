@@ -193,13 +193,11 @@ export const sendMessage = mutation({
 
     let conversationId = args.conversationId;
 
-    // If no conversationId, create/get direct conversation
     if (!conversationId && args.receiverId) {
       if (user._id === args.receiverId) {
         throw new ConvexError('Cannot send message to yourself');
       }
 
-      // Check permissions
       const permissionCheck = await canSendDM(ctx, user._id, args.receiverId);
       if (!permissionCheck.canSend) {
         throw new ConvexError(permissionCheck.reason || 'Cannot send message');
@@ -234,13 +232,31 @@ export const sendMessage = mutation({
       throw new ConvexError('Conversation is not active');
     }
 
+    const hasContent = args.content.trim().length > 0;
+    const hasAttachments = (args.attachments?.length ?? 0) > 0;
+    const resolvedType =
+      args.type || (hasContent ? 'text' : hasAttachments ? 'file' : 'text');
+
+    // Get URLs for attachments with storageId
+    const attachmentsWithUrls = args.attachments
+      ? await Promise.all(
+          args.attachments.map(async att => {
+            if (att.storageId && !att.url) {
+              const url = await ctx.storage.getUrl(att.storageId);
+              return { ...att, url: url ?? att.url };
+            }
+            return att;
+          }),
+        )
+      : undefined;
+
     // Create message
     const messageId = await ctx.db.insert('conversationMessages', {
       conversationId,
       senderId: user._id,
       content: args.content,
-      type: args.type || 'text',
-      attachments: args.attachments,
+      type: resolvedType,
+      attachments: attachmentsWithUrls,
       replyToId: args.replyToId,
     });
 
@@ -657,6 +673,10 @@ export const startTyping = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
 
+    console.log(
+      `User ${user._id} started typing in conversation ${args.conversationId}`,
+    );
+
     const existing = await ctx.db
       .query('typingIndicators')
       .withIndex('by_conversation_user', q =>
@@ -664,7 +684,7 @@ export const startTyping = mutation({
       )
       .first();
 
-    const expiresAt = Date.now() + 5000; // 5 seconds
+    const expiresAt = Date.now() + 10_000;
 
     if (existing) {
       await ctx.db.patch(existing._id, { startedAt: Date.now(), expiresAt });
@@ -675,6 +695,29 @@ export const startTyping = mutation({
         startedAt: Date.now(),
         expiresAt,
       });
+    }
+
+    return { success: true };
+  },
+});
+
+/**
+ * Stop typing indicator (called when user clears input)
+ */
+export const stopTyping = mutation({
+  args: { conversationId: v.id('conversations') },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    const existing = await ctx.db
+      .query('typingIndicators')
+      .withIndex('by_conversation_user', q =>
+        q.eq('conversationId', args.conversationId).eq('userId', user._id),
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.delete(existing._id);
     }
 
     return { success: true };
@@ -815,7 +858,7 @@ export const getConversations = query({
   },
 });
 
-export const getMessages = mutation({
+export const getMessages = query({
   args: {
     conversationId: v.id('conversations'),
     limit: v.optional(v.number()),
@@ -832,13 +875,6 @@ export const getMessages = mutation({
       .first();
 
     if (!membership || membership.leftAt) return [];
-
-    // Unhide conversation when user opens it to read messages
-    if (membership.hiddenAt) {
-      await ctx.db.patch(membership._id, {
-        hiddenAt: undefined,
-      });
-    }
 
     const limit = args.limit || 50;
 

@@ -9,6 +9,7 @@ import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
+import ChatMessages from '../../_components/chat-messages';
 
 interface ConversationPageProps {
   params: Promise<{
@@ -46,7 +47,8 @@ const ConversationPage = (props: ConversationPageProps) => {
         type={conversationDetails?.type as ConversationType}
         conversation={conversationDetails!}
       />
-      <ChatInput />
+      <ChatMessages conversation={conversationDetails!} />
+      <ChatInput conversation={conversationDetails!} />
     </div>
   );
 };

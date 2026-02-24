@@ -13,6 +13,7 @@ import ModalInvitePeople from '@/components/modals/modal-invite-people';
 import ModalRemoveCategory from '@/components/modals/modal-remove-category';
 import ModalRemoveChannel from '@/components/modals/modal-remove-channel';
 import ModalSetUserStatus from '@/components/modals/modal-set-user-status';
+import ModalUploadFile from '@/components/modals/modal-upload-file';
 import ModalUserDetails from '@/components/modals/modal-user-details';
 import useModal from '@/hooks/use-modal';
 import { useEffect, useState } from 'react';
@@ -43,6 +44,7 @@ const ModalsProvider = () => {
       {isModalOpen('ModalCreateInviteChannel') && <ModalCreateInviteChannel />}
       {isModalOpen('ModalActionInvite') && <ModalActionInvite />}
       {isModalOpen('ModalUserDetails') && <ModalUserDetails />}
+      {isModalOpen('ModalUploadFile') && <ModalUploadFile />}
     </>
   );
 };

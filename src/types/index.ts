@@ -64,7 +64,8 @@ export type ModalType =
   | 'ModalCreateInviteChannel'
   | 'ModalActionInvite'
   | 'ModalUserDetails'
-  | 'ModalInviteToServer';
+  | 'ModalInviteToServer'
+  | 'ModalUploadFile';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
 export type ActionInvite = 'revoke' | 'delete' | 'activate';
@@ -238,3 +239,9 @@ export type FriendContextItem = {
 };
 
 export type HeaderLeftType = 'direct' | 'group' | 'server';
+
+export type FileWithPreview = {
+  file: File;
+  id: string;
+  preview?: string;
+};

@@ -1,7 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Doc, Id, TableNames } from '@/convex/_generated/dataModel';
 import { Dict } from '@/internationalization/get-dictionaries';
-import { ChannelWithCategory, FlattenedItem, NavItem, TreeItem } from '@/types';
+import {
+  ChannelWithCategory,
+  FileMetadata,
+  FlattenedItem,
+  NavItem,
+  TreeItem,
+} from '@/types';
+import {
+  FileArchiveIcon,
+  FileSpreadsheetIcon,
+  FileTextIcon,
+  HeadphonesIcon,
+  ImageIcon,
+  VideoIcon,
+} from 'lucide-react';
 
 export function getByPath(
   obj: Dict | undefined | null,
@@ -229,4 +243,17 @@ export const getUsernameDisplay = (user: {
   discriminator: string;
 }) => {
   return `${user.username}#${user.discriminator}`;
+};
+
+export const getFileIcon = (file: File | FileMetadata) => {
+  const type = file instanceof File ? file.type : file.type;
+  if (type.startsWith('image/')) return ImageIcon;
+  if (type.startsWith('video/')) return VideoIcon;
+  if (type.startsWith('audio/')) return HeadphonesIcon;
+  if (type.includes('pdf')) return FileTextIcon;
+  if (type.includes('word') || type.includes('doc')) return FileTextIcon;
+  if (type.includes('excel') || type.includes('sheet'))
+    return FileSpreadsheetIcon;
+  if (type.includes('zip') || type.includes('rar')) return FileArchiveIcon;
+  return FileTextIcon;
 };

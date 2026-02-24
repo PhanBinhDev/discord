@@ -49,6 +49,12 @@ import {
   UserPlus,
 } from 'lucide-react';
 
+export const TYPING_THROTTLE = 5000; // in ms
+export const STOP_TYPING_DEBOUNCE = 3000; // in ms
+export const DEFAULT_MESSAGES_LIMIT = 30;
+export const MAX_MESSAGE_LENGTH = 2000;
+export const MAX_ATTACHMENT_SIZE = 25 * 1024 * 1024; // 25MB
+export const MAX_ATTACHMENTS = 10;
 export const MAX_GROUP_MEMBER = 10;
 export const DEFAULT_ICON_URL = '/default-icon.png';
 export const APP_URL =
