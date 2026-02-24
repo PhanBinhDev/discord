@@ -259,6 +259,14 @@ export type FriendContextItem = {
 
 export type HeaderLeftType = 'direct' | 'group' | 'server';
 
+export type FileMetadata = {
+  name: string;
+  size: number;
+  type: string;
+  url: string;
+  id: string;
+};
+
 export type FileWithPreview = {
   file: File;
   id: string;

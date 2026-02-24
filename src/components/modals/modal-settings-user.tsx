@@ -1,4 +1,5 @@
 import TranslateText from '@/components/shared/translate/translate-text';
+import UserAvatar from '@/components/shared/user-avatar';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,7 +19,6 @@ import { IconX } from '@tabler/icons-react';
 import { VisuallyHidden } from 'radix-ui';
 import { Fragment } from 'react';
 import { useForm } from 'react-hook-form';
-import UserAvatar from '../shared/user-avatar';
 
 const ModalSettingsUser = () => {
   const { closeModal, isModalOpen, openModal } = useModal();
@@ -75,9 +75,7 @@ const ModalSettingsUser = () => {
           <div className="flex flex-col min-w-[200px] border-r border-muted-foreground/10 bg-muted/30 h-full">
             <div className="w-full p-2 flex flex-col">
               <div className="flex">
-                <UserAvatar
-                  src={}
-                />
+                <UserAvatar />
               </div>
             </div>
             <TabsList className="flex flex-col w-full rounded-none p-4 bg-transparent gap-1 h-auto">

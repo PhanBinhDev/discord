@@ -19,6 +19,8 @@ const ChatMessages = ({ conversation }: ChatMessagesProps) => {
     enabled: !!conversation?._id,
   });
 
+  console.log(messages);
+
   return <ScrollArea className="flex-1">hello</ScrollArea>;
 };
 

@@ -1,13 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Doc, Id, TableNames } from '@/convex/_generated/dataModel';
 import { Dict } from '@/internationalization/get-dictionaries';
-import {
-  ChannelWithCategory,
-  FileMetadata,
-  FlattenedItem,
-  NavItem,
-  TreeItem,
-} from '@/types';
+import { ChannelWithCategory, FlattenedItem, NavItem, TreeItem } from '@/types';
 import {
   FileArchiveIcon,
   FileSpreadsheetIcon,
@@ -245,8 +239,8 @@ export const getUsernameDisplay = (user: {
   return `${user.username}#${user.discriminator}`;
 };
 
-export const getFileIcon = (file: File | FileMetadata) => {
-  const type = file instanceof File ? file.type : file.type;
+export const getFileIcon = (file: File) => {
+  const type = file.type;
   if (type.startsWith('image/')) return ImageIcon;
   if (type.startsWith('video/')) return VideoIcon;
   if (type.startsWith('audio/')) return HeadphonesIcon;
