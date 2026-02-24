@@ -65,6 +65,7 @@ export type ModalType =
   | 'ModalActionInvite'
   | 'ModalUserDetails'
   | 'ModalInviteToServer'
+  | 'ModalConfirmLogout'
   | 'ModalUploadFile';
 
 export type PaginationMode = 'offset' | 'button-load-more' | 'infinite-scroll';
@@ -187,6 +188,11 @@ export type CategoryMenuNav<T extends string> = {
   icon: TablerIcon | LucideIcon;
 };
 
+export type SettingsCategoryMenuNav =
+  CategoryMenuNav<SettingsUserNavItemsKey> & {
+    group: SettingsUserNavItemsGroup;
+  };
+
 export type CategoryMenuItem<T extends string> = CategoryMenuNav<T> & {
   action: CategoryMenuItemKey;
 };
@@ -201,6 +207,19 @@ export type ChannelManageNavItemsKey =
   | 'integrations'
   | 'invite'
   | 'delete';
+export type SettingsUserNavItemsKey =
+  | 'my-account'
+  | 'authorized-apps'
+  | 'devices'
+  | 'notifications'
+  | 'nitro'
+  | 'gift-cards'
+  | 'logout';
+export type SettingsUserNavItemsGroup =
+  | 'userSettings'
+  | 'billingSettings'
+  | 'appSettings'
+  | 'dangerZone';
 export type CategoryMenuItemKey = 'markAsRead' | 'edit' | 'delete';
 export type CategoryManageNavItemsKey = 'general' | 'permissions' | 'delete';
 export type SearchFriendsType = 'online' | 'all' | 'pending';

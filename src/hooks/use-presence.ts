@@ -1,11 +1,12 @@
 'use client';
 
 import { api } from '@/convex/_generated/api';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { useMutation, useQuery } from 'convex/react';
 import { useEffect, useRef } from 'react';
 
 export function usePresence() {
+  const { user } = useUser();
   const heartbeat = useMutation(api.users.heartbeat);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { signOut } = useAuth();
@@ -16,12 +17,20 @@ export function usePresence() {
       lastActivityRef.current = Date.now();
     };
 
-    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    const events = [
+      'mousedown',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'mousemove',
+      'focus',
+    ];
     events.forEach(event => {
       window.addEventListener(event, updateActivity);
     });
 
     const sendHeartbeat = () => {
+      if (!user) return;
       const now = Date.now();
       const timeSinceActivity = now - lastActivityRef.current;
 
@@ -49,7 +58,7 @@ export function usePresence() {
         clearInterval(intervalRef.current);
       }
     };
-  }, [heartbeat, signOut]);
+  }, [heartbeat, signOut, user]);
 }
 
 /**

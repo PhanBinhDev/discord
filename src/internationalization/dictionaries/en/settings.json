@@ -2,6 +2,44 @@
   "settings": {
     "title": "Settings",
     "description": "Manage your account settings and preferences",
-    "logout": "Logout"
+    "logout": "Logout",
+    "logoutConfirm": {
+      "title": "Confirm Logout",
+      "description": "Are you sure you want to logout?"
+    },
+    "user": {
+      "title": "Modal Settings",
+      "description": "Manage your account settings and preferences",
+      "nav": {
+        "userSettings": {
+          "title": "User Settings",
+          "myAccount": "My Account",
+          "authorizedApps": "Authorized Apps",
+          "devices": "Devices",
+          "notifications": {
+            "title": "Notifications",
+            "overview": "Overview",
+            "sounds": "Sounds",
+            "badges": "Badges",
+            "email": "Email"
+          }
+        },
+        "billingSettings": {
+          "nitro": "Nitro",
+          "giftCards": "Gift Cards",
+          "serverBoosts": "Server Boosts",
+          "subscriptions": "Subscriptions",
+          "billings": "Billings"
+        },
+        "appSettings": {
+          "voiceAndVideo": {
+            "title": "Voice & Video",
+            "voice": "Voice",
+            "camera": "Camera"
+          }
+        },
+        "languageSettings": "Language & Time"
+      }
+    }
   }
 }

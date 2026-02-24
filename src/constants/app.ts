@@ -22,19 +22,26 @@ import {
   FriendContextItem,
   GetUserDetailsTabType,
   ServerMenu,
+  SettingsCategoryMenuNav,
   StatusExpiredOption,
   StatusMapping,
   UserDetailsTabType,
 } from '@/types';
 import {
+  IconApiApp,
+  IconBell,
   IconCalendarEvent,
   IconChecks,
   IconCirclePlusFilled,
+  IconDevices,
   IconFolderPlus,
+  IconGift,
   IconInbox,
+  IconLogout,
   IconLogout2,
   IconSettings,
   IconShieldCog,
+  IconStar,
   IconTrash,
   IconUserCircle,
   IconUsersPlus,
@@ -330,6 +337,51 @@ export const ChannelManageNavItems: CategoryMenuNav<ChannelManageNavItemsKey>[] 
       icon: IconTrash,
     },
   ];
+
+export const SettingsUserNavItems: SettingsCategoryMenuNav[] = [
+  {
+    group: 'userSettings',
+    key: 'my-account',
+    label: 'settings.user.nav.userSettings.myAccount',
+    icon: IconUserCircle,
+  },
+  {
+    group: 'userSettings',
+    key: 'authorized-apps',
+    label: 'settings.user.nav.userSettings.authorizedApps',
+    icon: IconApiApp,
+  },
+  {
+    group: 'userSettings',
+    key: 'devices',
+    label: 'settings.user.nav.userSettings.devices',
+    icon: IconDevices,
+  },
+  {
+    group: 'userSettings',
+    key: 'notifications',
+    label: 'settings.user.nav.userSettings.notifications.title',
+    icon: IconBell,
+  },
+  {
+    group: 'billingSettings',
+    key: 'nitro',
+    label: 'settings.user.nav.billingSettings.nitro',
+    icon: IconStar,
+  },
+  {
+    group: 'billingSettings',
+    key: 'gift-cards',
+    label: 'settings.user.nav.billingSettings.giftCards',
+    icon: IconGift,
+  },
+  {
+    group: 'dangerZone',
+    key: 'logout',
+    label: 'settings.logout',
+    icon: IconLogout,
+  },
+];
 
 export const DirectActionParams: Record<string, ActionParams> = {
   ADD_FRIEND: 'add-friend',

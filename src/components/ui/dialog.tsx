@@ -1,10 +1,10 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { XIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
+import { IconX } from '@tabler/icons-react';
 
 function Dialog({
   ...props
@@ -84,7 +84,7 @@ function DialogContent({
             data-slot="dialog-close"
             className="cursor-pointer absolute top-4 right-4 rounded-sm p-1.5 bg-transparent hover:bg-muted-foreground/10 text-muted-foreground hover:text-foreground transition-colors outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5"
           >
-            <XIcon />
+            <IconX />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

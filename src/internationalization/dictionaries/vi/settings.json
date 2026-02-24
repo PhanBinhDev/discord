@@ -2,6 +2,46 @@
   "settings": {
     "title": "Cài đặt",
     "description": "Quản lý cài đặt tài khoản và tùy chọn của bạn",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "logoutConfirm": {
+      "title": "Xác nhận đăng xuất",
+      "description": "Bạn có chắc chắn muốn đăng xuất không?"
+    },
+    "user": {
+      "title": "Cài đặt Modal",
+      "description": "Quản lý cài đặt tài khoản và tùy chọn của bạn",
+      "nav": {
+        "userSettings": {
+          "title": "Cài đặt người dùng",
+          "myAccount": "Tài khoản của tôi",
+          "authorizedApps": "Ứng dụng ủy quyền",
+          "devices": "Thiết bị",
+          "notifications": {
+            "title": "Thông báo",
+            "overview": "Tổng quan",
+            "sounds": "Âm thanh",
+            "badges": "Huy hiệu",
+            "email": "Email"
+          }
+        },
+        "billingSettings": {
+          "title": "Cài đặt thanh toán",
+          "nitro": "Nitro",
+          "giftCards": "Thẻ quà tặng",
+          "serverBoosts": "Tăng cường máy chủ",
+          "subscriptions": "Quản lý đăng ký",
+          "billings": "Thanh toán"
+        },
+        "appSettings": {
+          "title": "Cài đặt ứng dụng",
+          "voiceAndVideo": {
+            "title": "Âm thanh & Video",
+            "voice": "Âm thanh",
+            "camera": "Camera"
+          }
+        },
+        "languageSettings": "Ngôn ngữ & Thời gian"
+      }
+    }
   }
 }
