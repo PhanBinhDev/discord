@@ -78,6 +78,10 @@
             "and": "và",
             "several": "Nhiều người đang nhập..."
           }
+        },
+        "chat": {
+          "loadPreviousMessages": "Tải tin nhắn trước đó",
+          "edited": "đã chỉnh sửa"
         }
       }
     },

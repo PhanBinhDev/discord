@@ -264,6 +264,7 @@ const conversationMembers = defineTable({
 })
   .index('by_conversation', ['conversationId'])
   .index('by_user', ['userId'])
+  .index('by_conversation_hidden', ['conversationId', 'hiddenAt'])
   .index('by_conversation_user', ['conversationId', 'userId']);
 
 const conversationMessages = defineTable({

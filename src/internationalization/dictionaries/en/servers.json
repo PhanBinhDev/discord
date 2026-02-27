@@ -78,6 +78,10 @@
             "and": "and",
             "several": "Several people are typing..."
           }
+        },
+        "chat": {
+          "loadPreviousMessages": "Load Previous Messages",
+          "edited": "edited"
         }
       }
     },

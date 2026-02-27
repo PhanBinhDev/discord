@@ -4,17 +4,17 @@ import { Doc, Id, TableNames } from '@/convex/_generated/dataModel';
 import { ChannelType, UserStatus } from '@/convex/schema';
 import { DictKey } from '@/internationalization/get-dictionaries';
 import { TablerIcon } from '@tabler/icons-react';
+import { PaginationStatus } from 'convex/react';
 import { FunctionReference } from 'convex/server';
 import { LucideIcon } from 'lucide-react';
 
 export type PaginatedQueryStatus =
-  | 'LoadingFirstPage'
-  | 'CanLoadMore'
-  | 'LoadingMore'
-  | 'Exhausted';
+  | PaginationStatus
+  | 'ErrorFirstPage' // First page failed to load
+  | 'ErrorLoadingMore';
 export interface PaginatedQueryResult<Item> {
   results: ReadonlyArray<Item>;
-  status: PaginatedQueryStatus;
+  status: PaginationStatus;
   isLoading: boolean;
   isFetchingNextPage: boolean;
   hasNextPage: boolean;

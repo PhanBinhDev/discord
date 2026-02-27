@@ -1,4 +1,8 @@
-import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
+import {
+  GenericMutationCtx,
+  GenericQueryCtx,
+  paginationOptsValidator,
+} from 'convex/server';
 import { ConvexError, v } from 'convex/values';
 import { DataModel, Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
@@ -214,7 +218,7 @@ export const sendMessage = mutation({
       throw new ConvexError('Conversation ID or Receiver ID required');
     }
 
-    // Verify user is member of conversation
+    // Single query: verify membership + leftAt cùng lúc
     const membership = await ctx.db
       .query('conversationMembers')
       .withIndex('by_conversation_user', q =>
@@ -226,7 +230,7 @@ export const sendMessage = mutation({
       throw new ConvexError('You are not a member of this conversation');
     }
 
-    // Verify conversation is active
+    // Verify conversation is active — dùng get() thay vì query để tránh scan
     const conversation = await ctx.db.get(conversationId);
     if (!conversation?.isActive) {
       throw new ConvexError('Conversation is not active');
@@ -237,47 +241,45 @@ export const sendMessage = mutation({
     const resolvedType =
       args.type || (hasContent ? 'text' : hasAttachments ? 'file' : 'text');
 
-    // Get URLs for attachments with storageId
-    const attachmentsWithUrls = args.attachments
-      ? await Promise.all(
-          args.attachments.map(async att => {
-            if (att.storageId && !att.url) {
-              const url = await ctx.storage.getUrl(att.storageId);
-              return { ...att, url: url ?? att.url };
-            }
-            return att;
-          }),
-        )
-      : undefined;
+    // Attachments sequentially
+    const attachmentsWithUrls: NonNullable<typeof args.attachments> = [];
+    if (args.attachments) {
+      for (const att of args.attachments) {
+        if (att.storageId && !att.url) {
+          const url = await ctx.storage.getUrl(att.storageId);
+          attachmentsWithUrls.push({ ...att, url: url ?? att.url });
+        } else {
+          attachmentsWithUrls.push(att);
+        }
+      }
+    }
 
-    // Create message
-    const messageId = await ctx.db.insert('conversationMessages', {
-      conversationId,
-      senderId: user._id,
-      content: args.content,
-      type: resolvedType,
-      attachments: attachmentsWithUrls,
-      replyToId: args.replyToId,
-    });
+    // Insert message + patch conversation song song vì không conflict nhau
+    const [messageId] = await Promise.all([
+      ctx.db.insert('conversationMessages', {
+        conversationId,
+        senderId: user._id,
+        content: args.content,
+        type: resolvedType,
+        attachments:
+          attachmentsWithUrls.length > 0 ? attachmentsWithUrls : undefined,
+        replyToId: args.replyToId,
+      }),
+      ctx.db.patch(conversationId, {
+        lastMessageAt: Date.now(),
+      }),
+    ]);
 
-    // Update conversation's last message time
-    await ctx.db.patch(conversationId, {
-      lastMessageAt: Date.now(),
-    });
-
-    // Unhide conversation for all members when new message arrives
-    const allMemberships = await ctx.db
+    const hiddenMemberships = await ctx.db
       .query('conversationMembers')
-      .withIndex('by_conversation', q => q.eq('conversationId', conversationId))
+      .withIndex('by_conversation_hidden', q =>
+        q.eq('conversationId', conversationId).gt('hiddenAt', 0),
+      )
       .collect();
 
-    await Promise.all(
-      allMemberships.map(m => {
-        if (m.hiddenAt) {
-          return ctx.db.patch(m._id, { hiddenAt: undefined });
-        }
-      }),
-    );
+    for (const m of hiddenMemberships) {
+      await ctx.db.patch(m._id, { hiddenAt: undefined });
+    }
 
     return { success: true, messageId, conversationId };
   },
@@ -861,8 +863,7 @@ export const getConversations = query({
 export const getMessages = query({
   args: {
     conversationId: v.id('conversations'),
-    limit: v.optional(v.number()),
-    before: v.optional(v.number()),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
@@ -874,30 +875,21 @@ export const getMessages = query({
       )
       .first();
 
-    if (!membership || membership.leftAt) return [];
+    if (!membership || membership.leftAt)
+      return { page: [], isDone: true, continueCursor: '' };
 
-    const limit = args.limit || 50;
-
-    let messagesQuery = ctx.db
+    const result = await ctx.db
       .query('conversationMessages')
       .withIndex('by_conversation', q =>
         q.eq('conversationId', args.conversationId),
-      );
+      )
+      .order('desc')
+      .paginate(args.paginationOpts);
 
-    if (args.before) {
-      messagesQuery = messagesQuery.filter(q =>
-        q.lt(q.field('_creationTime'), args.before!),
-      );
-    }
-
-    const messages = await messagesQuery.order('desc').take(limit);
-
-    // Get sender details
     const messagesWithSenders = await Promise.all(
-      messages.map(async msg => {
+      result.page.map(async msg => {
         const sender = await ctx.db.get(msg.senderId);
         if (!sender) return null;
-
         return {
           ...msg,
           sender: {
@@ -911,9 +903,14 @@ export const getMessages = query({
       }),
     );
 
-    return messagesWithSenders
-      .filter((m): m is NonNullable<typeof m> => m !== null)
-      .reverse(); // Return in chronological order
+    const filtered = messagesWithSenders.filter(
+      (m): m is NonNullable<typeof m> => m !== null,
+    );
+
+    return {
+      ...result,
+      page: filtered,
+    };
   },
 });
 
